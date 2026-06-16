@@ -9,40 +9,44 @@
     <script src="script.js" defer></script>
 </head>
 <body>
-     <!-- Hauptfokus: Aktuelle Uhrzeit (Schlicht) -->
-    <div class="clock-container">
-        <p class="status-text">Aktuelle Zeit</p>
-        <div id="currentTime" class="clock-display">00:00</div>
-    </div>
+    <!-- Prüfungsdetails (oben) -->
+    <div class="info-bar">
+        <div class="info-bar-inner">
 
-    <!-- Prüfungsdetails -->
-    <div class="info-bar w-full">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            
-            <div class="flex gap-20">
+            <div class="info-group-row">
                 <div class="info-group">
                     <p class="info-label">Anfang</p>
                     <p id="displayStart" class="info-value">--:--</p>
                 </div>
                 <div class="info-group">
                     <p class="info-label">Dauer</p>
-                    <p id="displayDuration" class="info-value">-- <span class="text-sm font-normal text-slate-500">min</span></p>
+                    <p id="displayDuration" class="info-value">-- <span class="unit-text">min</span></p>
+                </div>
+                <div class="info-group">
+                    <p class="info-label">Verbleibende Zeit</p>
+                    <p id="displayRemaining" class="info-value highlight">--:--</p>
                 </div>
                 <div class="info-group">
                     <p class="info-label">Geplantes Ende</p>
-                    <p id="displayEnd" class="info-value highlight">--:--</p>
+                    <p id="displayEnd" class="info-value">--:--</p>
                 </div>
             </div>
 
-            <!-- Dezente Steuerung am rechten Rand -->
-            <div id="controls" class="flex items-center gap-4">
+            <!-- Dezente Steuerung -->
+            <div id="controls">
                 <input type="time" id="inputStart">
-                <input type="number" id="inputDuration" min="1" placeholder="Dauer" class="w-20" value="60">
+                <input type="number" id="inputDuration" min="1" placeholder="Dauer" value="60">
                 <button onclick="saveSettings()" class="btn-ok">Übernehmen</button>
                 <button onclick="resetAll()" class="btn-reset">Alles zurücksetzen</button>
             </div>
 
         </div>
+    </div>
+
+    <!-- Hauptfokus: Aktuelle Uhrzeit (mit Sekunden) -->
+    <div class="clock-container">
+        <p class="status-text">Aktuelle Zeit</p>
+        <div id="currentTime" class="clock-display">00:00:00</div>
     </div>
 </body>
 </html>

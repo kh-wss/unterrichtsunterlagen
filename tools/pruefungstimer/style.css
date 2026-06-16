@@ -1,5 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap');
 
+html {
+    height: 100%;
+    margin: 0;
+    background-color: #0f172a; /* verhindert weißen Hintergrund bei Overflow */
+}
+
 body {
     font-family: 'Inter', sans-serif;
     background-color: #0f172a;
@@ -8,24 +14,85 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100dvh; /* berücksichtigt dynamische Browser-UI auf Mobilgeräten */
     margin: 0;
 }
 
-/* Uhrzeit-Bereich */
+/* ===== Info-Leiste (oben) ===== */
+.info-bar {
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+    padding: 1.5rem 3rem;
+    flex-shrink: 0; /* bleibt immer in voller Größe sichtbar */
+}
+
+.info-bar-inner {
+    max-width: 100rem;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.info-group-row {
+    display: flex;
+    gap: 7rem;
+    flex-wrap: wrap;
+}
+
+.info-label {
+    font-size: clamp(1rem, 1.6vw, 1.5rem);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #94a3b8;
+    margin-bottom: 0.4rem;
+}
+
+/* Anfang, Dauer, Verbleibende Zeit, Geplantes Ende: ca. halb so groß wie die Hauptuhr */
+.info-value {
+    font-size: clamp(1.75rem, 9.5vw, 7.75rem);
+    font-weight: 600;
+    line-height: 1;
+    color: #cbd5e1;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+.info-value.highlight {
+    color: #3b82f6;
+}
+
+.unit-text {
+    font-size: 0.3em; /* skaliert relativ zur Größe des jeweiligen info-value */
+    font-weight: 400;
+    color: #64748b;
+    margin-left: 0.25rem;
+}
+
+/* ===== Hauptfokus: Aktuelle Uhrzeit ===== */
 .clock-container {
     flex: 1;
+    min-height: 0; /* erlaubt Schrumpfen im Flex-Layout */
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
+    overflow: hidden;
+    padding: 0.5rem;
+    padding-top: clamp(0.5rem, 1.5vh, 1.25rem); /* steuert direkt den Abstand zur Info-Leiste */
 }
 
 .clock-display {
-    font-size: 22vw;
+    font-size: clamp(4rem, 22vw, 18rem);
     font-weight: 500;
     line-height: 1;
     color: #f8fafc;
     letter-spacing: -0.02em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
 }
 
 .status-text {
@@ -35,41 +102,10 @@ body {
     letter-spacing: 0.3em;
     font-size: 1.25rem;
     margin-bottom: 1rem;
+    text-align: center;
 }
 
-/* Info-Leiste unten */
-.info-bar {
-    background: #1e293b;
-    border-top: 1px solid #334155;
-    padding: 2rem 3rem;
-}
-
-.info-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #94a3b8;
-    margin-bottom: 0.5rem;
-}
-
-.info-value {
-    font-size: 2rem;
-    font-weight: 600;
-    color: #cbd5e1;
-}
-
-.info-value.highlight {
-    color: #3b82f6;
-}
-
-.unit-text {
-    font-size: 0.875rem;
-    font-weight: 400;
-    color: #64748b;
-    margin-left: 0.25rem;
-}
-
-/* Formularelemente */
+/* ===== Formularelemente ===== */
 input[type="number"], input[type="time"] {
     background: #0f172a;
     border: 1px solid #334155;
@@ -79,7 +115,7 @@ input[type="number"], input[type="time"] {
     font-size: 0.9rem;
 }
 
-/* Buttons */
+/* ===== Buttons ===== */
 .btn-ok {
     background: #334155;
     border: 1px solid #475569;
@@ -103,12 +139,32 @@ input[type="number"], input[type="time"] {
     cursor: pointer;
 }
 
-/* Steuerung Sichtbarkeit */
+/* ===== Steuerung Sichtbarkeit ===== */
 #controls {
     opacity: 0.1;
     transition: opacity 0.4s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 #controls:hover {
     opacity: 1;
+}
+
+/* ===== Kleine Bildschirme ===== */
+@media (max-width: 640px) {
+    .info-bar {
+        padding: 1rem 1.5rem;
+    }
+    .info-group-row {
+        gap: 2rem;
+    }
+    .info-value {
+        font-size: clamp(1.3rem, 8vw, 3.5rem);
+    }
+    .clock-display {
+        font-size: clamp(4rem, 26vw, 12rem);
+    }
 }
