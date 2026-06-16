@@ -1,0 +1,206 @@
+/* =========================================================
+   Gemeinsames Stylesheet – Unterrichtsmaterialien
+   Referenzieren mit:
+   <link rel="stylesheet" href="/unterrichtsmaterialien/shared/style.css">
+   (Pfad ggf. anpassen, je nach Tiefe der Seite)
+   ========================================================= */
+
+:root {
+  --bg: #10151c;
+  --bg-panel: #181f29;
+  --bg-panel-hover: #1f2832;
+  --border: #2a3543;
+  --text: #e6edf5;
+  --text-dim: #8a99ab;
+  --accent: #5fd9c8;       /* Leiterbahn-Türkis */
+  --accent-soft: rgba(95, 217, 200, 0.12);
+  --accent-warm: #f0a868;  /* Bauteil-Amber, für Badges */
+  --accent-warm-soft: rgba(240, 168, 104, 0.14);
+  --radius: 6px;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0);
+  background-size: 28px 28px;
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Layout-Wrapper ---------- */
+
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+/* ---------- Kopfbereich ---------- */
+
+.page-header {
+  margin-bottom: 2.5rem;
+}
+
+.page-header .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.page-header h1 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.page-header p {
+  color: var(--text-dim);
+  max-width: 60ch;
+  margin: 0;
+}
+
+/* Rück-Link auf Unterseiten */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 1.5rem;
+}
+
+.back-link:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ---------- Badges (LF-Kennzeichnung) ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--accent-warm);
+  background: var(--accent-warm-soft);
+  white-space: nowrap;
+}
+
+.badge.tool {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ---------- Sektionen & Karten (Portalseite) ---------- */
+
+.section {
+  margin-bottom: 2.25rem;
+}
+
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.card {
+  display: block;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  background: var(--bg-panel-hover);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.card-title {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.card-desc {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ---------- Platzhalter-Hinweis ---------- */
+
+.placeholder-note {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent-warm);
+  background: var(--accent-warm-soft);
+  border: 1px dashed var(--accent-warm);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  margin-top: 1.5rem;
+}
+
+/* ---------- Footer ---------- */
+
+.page-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}

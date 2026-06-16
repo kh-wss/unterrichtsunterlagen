@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0f172a;
+    color: #e2e8f0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Uhrzeit-Bereich */
+.clock-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.clock-display {
+    font-size: 22vw;
+    font-weight: 500;
+    line-height: 1;
+    color: #f8fafc;
+    letter-spacing: -0.02em;
+}
+
+.status-text {
+    color: #64748b;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+/* Info-Leiste unten */
+.info-bar {
+    background: #1e293b;
+    border-top: 1px solid #334155;
+    padding: 2rem 3rem;
+}
+
+.info-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #94a3b8;
+    margin-bottom: 0.5rem;
+}
+
+.info-value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.info-value.highlight {
+    color: #3b82f6;
+}
+
+.unit-text {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: 0.25rem;
+}
+
+/* Formularelemente */
+input[type="number"], input[type="time"] {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: white;
+    padding: 0.4rem;
+    border-radius: 0.3rem;
+    font-size: 0.9rem;
+}
+
+/* Buttons */
+.btn-ok {
+    background: #334155;
+    border: 1px solid #475569;
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 0.3rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-ok:hover {
+    background: #475569;
+}
+
+.btn-reset {
+    color: #64748b;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+/* Steuerung Sichtbarkeit */
+#controls {
+    opacity: 0.1;
+    transition: opacity 0.4s;
+}
+
+#controls:hover {
+    opacity: 1;
+}

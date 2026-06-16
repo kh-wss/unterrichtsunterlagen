@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prüfungs-Uhr</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+     <!-- Hauptfokus: Aktuelle Uhrzeit (Schlicht) -->
+    <div class="clock-container">
+        <p class="status-text">Aktuelle Zeit</p>
+        <div id="currentTime" class="clock-display">00:00</div>
+    </div>
+
+    <!-- Prüfungsdetails -->
+    <div class="info-bar w-full">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            
+            <div class="flex gap-20">
+                <div class="info-group">
+                    <p class="info-label">Anfang</p>
+                    <p id="displayStart" class="info-value">--:--</p>
+                </div>
+                <div class="info-group">
+                    <p class="info-label">Dauer</p>
+                    <p id="displayDuration" class="info-value">-- <span class="text-sm font-normal text-slate-500">min</span></p>
+                </div>
+                <div class="info-group">
+                    <p class="info-label">Geplantes Ende</p>
+                    <p id="displayEnd" class="info-value highlight">--:--</p>
+                </div>
+            </div>
+
+            <!-- Dezente Steuerung am rechten Rand -->
+            <div id="controls" class="flex items-center gap-4">
+                <input type="time" id="inputStart">
+                <input type="number" id="inputDuration" min="1" placeholder="Dauer" class="w-20" value="60">
+                <button onclick="saveSettings()" class="btn-ok">Übernehmen</button>
+                <button onclick="resetAll()" class="btn-reset">Alles zurücksetzen</button>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
