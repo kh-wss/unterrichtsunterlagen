@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drehfeld mit verteilter Wicklung</title>
+<meta name="description" content="Ständer mit verteilter Drehstromwicklung in Nuten: Die Ströme ändern sich, Nordpol und Südpol laufen am Ständer um, das resultierende Magnetfeld dreht sich.">
+<style>
+/* Layout: 16:9-Bühne als SVG (1920 × 1080) oben, Bedienleiste darunter, Erklärung und Modellhinweise.
+   Die Bühne bleibt hell: Die Farbwerte der Fachkonventionen gelten für weißen Grund. Nur der Rahmen folgt Hell/Dunkel. */
+:root{
+  /* Rahmen (Seite, Bedienung) */
+  --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
+  --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
+  /* Bühne (fest, nicht umschalten) */
+  --stage:#ffffff; --ink:#1b2127;
+  /* Größenfarben: B grün (Festlegung 11.11.2026), Stränge in den Leiterfarben (Festlegung 12.11.2026) */
+  --b:#00B050; --l1:#FFC000; --l2:#00B050; --l3:#7030A0;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-math:Cambria,"Cambria Math",Caladea,"Times New Roman","Liberation Serif","DejaVu Serif",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+    --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+  --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--page);color:var(--fg)}
+body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.4;
+  padding-block:16px 24px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{width:100%;max-width:max(min(100%,720px),calc((100dvh - 230px) * 16 / 9));margin:0 auto;display:grid;gap:12px;min-width:0}
+/* Lernende am eigenen Gerät: Auf schmalen Bildschirmen bleibt die Bühne lesbar groß und lässt sich seitlich schieben. */
+.stage{background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow-x:auto;overflow-y:hidden;max-width:100%;min-width:0}
+.stage svg{display:block;width:100%;min-width:760px;height:auto;aspect-ratio:16/9}
+.stage:fullscreen{border:0;border-radius:0;width:100vw;height:100vh;max-width:none;display:grid;place-items:center}
+.stage:fullscreen svg{min-width:0;width:100vw;height:100vh}
+.tip{display:none;font-size:13px;color:var(--muted)}
+@media (max-width:720px) and (orientation:portrait){.tip{display:block}}
+
+/* Beschriftung in der Bühne: Formelzeichen kursiv (.i), Einheiten, Zahlen und Indizes aufrecht */
+#stage-svg text{font-family:var(--font-math);fill:var(--ink)}
+#stage-svg .t-main{font-size:60px;font-weight:700}
+#stage-svg .t-panel{font-size:34px;font-weight:700}
+#stage-svg .lbl{font-size:30px}
+#stage-svg .lbl-s{font-size:25px}
+#stage-svg .ro{font-size:38px}
+#stage-svg .i{font-style:italic}
+#stage-svg .c-b{fill:#00843c;font-weight:700}
+#stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .pol{font-family:var(--font-ui);font-size:40px;font-weight:700;fill:#fff}
+/* Die Polbuchstaben stehen in der Bohrung am inneren Rand des Eisens (Festlegung 12.11.2026) und tragen deshalb die Polfarbe. */
+#stage-svg .pol-n{fill:#E2231A}
+#stage-svg .pol-s{fill:#0E8A7C}
+#stage-svg .pol-frei{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .lbl-xs{font-size:22px}
+#stage-svg .sans{font-family:var(--font-ui)}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
+#stage-svg .strang{font-family:var(--font-ui);font-size:27px;font-weight:700}
+
+.controls,.notes{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
+.controls{display:grid;gap:10px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cap{font-size:13px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
+button{padding:5px 10px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:8.5em;font-weight:600}
+select{padding:4px 6px}
+input[type=number]{width:6.2em;padding:4px 6px;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 240px;min-width:0;accent-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:16px;height:16px;margin:0}
+:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12.5px;color:var(--muted)}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+/* „Was man sieht“: einklappbar wie „Modell und Vereinfachungen“ (Festlegung der Lehrkraft, 12.11.2026) */
+.erkl-text{margin-top:10px}
+.erkl-text p{margin:0;max-width:75ch}
+.erkl-text p + p{margin-top:6px}
+.notes summary{cursor:pointer;font-weight:600}
+.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
+.notes i,.erkl i{font-family:var(--font-math);font-size:1.08em}
+
+/* Exportmodus (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0;overflow:hidden}
+html.export .controls,html.export .notes,html.export .erkl,html.export .tip{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage" id="stage">
+    <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">Drehfeld mit verteilter Wicklung</title>
+      <desc id="svg-desc">Ständerring im Schnittbild mit Nuten. Die Stränge U, V und W sind auf mehrere Nuten verteilt. Punkt und Kreuz in den Leitern zeigen die Stromrichtung, ihre Größe den Strom. Die Zähne des Ständers sind als Nordpol (rot) und Südpol (grün) gefärbt, die Farbe ist umso kräftiger, je stärker das Feld ist. Die Pole laufen am Ständer um. In der Mitte dreht sich der Pfeil des resultierenden Magnetfelds. Wahlweise ist das Eisen als kleine Elementarmagnete gezeichnet, die sich nach dem Feld ausrichten.</desc>
+    </svg>
+  </div>
+  <div class="tip">Tipp: Handy quer halten oder die Grafik seitlich schieben.</div>
+
+  <div class="controls" id="controls">
+    <div class="row">
+      <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
+      <label class="group" for="sel-speed"><span class="cap">Tempo</span>
+        <select id="sel-speed">
+          <option value="6">1 Umlauf in 6 s</option>
+          <option value="12" selected>1 Umlauf in 12 s</option>
+          <option value="24">1 Umlauf in 24 s</option>
+        </select>
+      </label>
+      <input id="rng-x" type="range" aria-label="Winkel ωt">
+      <label class="group" for="num-x"><span class="cap" id="cap-x"></span>
+        <input id="num-x" type="number">
+      </label>
+    </div>
+    <div class="row">
+      <div class="group" role="group" aria-label="Schrittweise verstellen" id="steps"><span class="cap">Schritt</span></div>
+      <div class="group" role="group" aria-label="Wert direkt wählen" id="presets"><span class="cap">Direkt</span></div>
+    </div>
+    <div class="row">
+      <!-- Schalter für Ebenen: id = "chk-" + Schlüssel in S; der Startzustand kommt aus S.
+           Festlegung der Lehrkraft, 11.11.2026: Zusatzebenen sind beim Öffnen aus – hier außer dem Liniendiagramm (12.11.2026). -->
+      <label class="group" for="sel-q"><span class="cap">Leiter je Spulenseite</span>
+        <select id="sel-q"></select>
+      </label>
+      <label class="chk" for="chk-ef"><input id="chk-ef" type="checkbox">Einzelfelder der Stränge</label>
+      <label class="chk" for="chk-ld"><input id="chk-ld" type="checkbox">Liniendiagramm der Ströme</label>
+      <label class="chk" for="chk-em"><input id="chk-em" type="checkbox">Eisen als Elementarmagnete</label>
+      <label class="chk" for="chk-fl"><input id="chk-fl" type="checkbox">Feldlinien</label>
+      <button type="button" id="btn-fs">Vollbild</button>
+    </div>
+    <div class="hint">
+      Tastatur: <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> kleiner Schritt · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> großer Schritt · <kbd>Pos1</kbd> Anfang · <kbd>F</kbd> Vollbild.
+      Ein Winkel lässt sich verlinken, z.&nbsp;B. <code>#a210</code>.
+    </div>
+  </div>
+
+  <details class="notes" id="erkl">
+    <summary>Was man sieht</summary>
+    <div class="erkl-text">
+      <p>Die Wicklung liegt in den Nuten des Ständers. Jeder Strang hat zwei Spulenseiten, die sich gegenüberliegen, zum Beispiel U1 und U2. Bei einer verteilten Wicklung liegt jede Spulenseite in mehreren Nuten nebeneinander.</p>
+      <p>Die drei Ströme erreichen ihren größten Wert nacheinander. Am Ständer entstehen ein Nordpol und ein Südpol. Sie bleiben nicht an einer Stelle, sondern laufen im Uhrzeigersinn von Zahn zu Zahn. Der Pfeil in der Mitte zeigt das Feld: Er ist immer gleich lang und dreht sich mit. Das ist das Drehfeld.</p>
+      <p>Die Pole sitzen am inneren Rand des Ständers. Am Nordpol treten die Feldlinien aus dem Eisen aus, am Südpol treten sie ein. Am äußeren Rand des Ständers ist kein Pol.</p>
+      <p>Mit mehr Nuten laufen die Pole gleichmäßiger um. Bei drei einzelnen Spulen bleibt dagegen jeder Pol an seiner Spule und wird nur stärker und schwächer.</p>
+      <p>Ansicht „Eisen als Elementarmagnete“: Jeder Elementarmagnet stellt sich ein wie eine Kompassnadel. Sein Nordpol (rot) zeigt in Richtung der Feldlinien. Wo das Feld stark ist, zeigen alle in dieselbe Richtung. Wo es schwach ist, zeigen sie durcheinander. Am Südpol des Ständers zeigen die grünen Enden zur Bohrung, am Nordpol die roten. Im Rücken des Ständers liegen sie längs zum Umfang: Dort grenzt immer ein Nordpol an einen Südpol, nach außen wirkt kein Pol. Jeder Elementarmagnet bleibt an seinem Platz und dreht sich nur. Deshalb wandern die Pole, obwohl sich das Eisen nicht bewegt.</p>
+      <p>Ansicht „Feldlinien“: Eine Feldlinie zeigt an jeder Stelle, wohin sich der Nordpol einer Magnetnadel dreht. In der Bohrung laufen die Feldlinien gerade vom Nordpol zum Südpol. Im Eisen laufen sie durch die Zähne nach außen und im Rücken des Ständers um die Bohrung herum zurück. Das ganze Bild dreht sich mit dem Feld.</p>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>Modell und Vereinfachungen</summary>
+    <ul>
+      <li>Strangströme: <i>i</i><sub>U</sub> = <i>î</i> · sin(<i>ωt</i>), <i>i</i><sub>V</sub> = <i>î</i> · sin(<i>ωt</i> − 120°), <i>i</i><sub>W</sub> = <i>î</i> · sin(<i>ωt</i> − 240°). Gezeichnet ist nur das Verhältnis zum Scheitelwert <i>î</i>, ohne Zahlenwerte.</li>
+      <li>Wicklung: ein Polpaar (<i>p</i> = 1), drei Stränge (<i>m</i> = 3), eine Spulenseite je Nut, Spulenweite 180°. Nutenzahl bei <i>q</i> = 4 Nuten je Pol und Strang: <i>N</i> = 2 · <i>p</i> · <i>m</i> · <i>q</i> = 2 · 1 · 3 · 4 = 24. Bei <i>q</i> = 1 sind es <i>N</i> = 6 Nuten, bei <i>q</i> = 8 sind es <i>N</i> = 48 Nuten.</li>
+      <li>Je Nut ist ein Leiter gezeichnet. In einer echten Maschine liegen in jeder Nut viele Windungen. Die Größe der Leiterkreise richtet sich nur nach dem Platz im Bild.</li>
+      <li>Der Feldpfeil ist auf <i>B̂</i> bezogen und deshalb bei jeder Auswahl gleich lang. In der Maschine ist <i>B̂</i> bei verteilter Wicklung etwas kleiner (Zonenfaktor): bei 4 Leitern je Spulenseite 95,8&#8239;%, bei 8 Leitern 95,6&#8239;% des Werts bei einem Leiter.</li>
+      <li>Bei <i>q</i> = 1 liegt jede Spulenseite in einer Nut. Das ist noch keine verteilte Wicklung. Verteilt heißt: <i>q</i> ≥ 2.</li>
+      <li>Zählrichtung: Bei positivem Strom fließt der Strom in den Nuten bei U1 in die Bildebene hinein (Kreuz) und in den Nuten bei U2 heraus (Punkt). Für V und W gilt dasselbe.</li>
+      <li>Feld eines Strangs: Es liegt auf der Achse des Strangs (Strich-Punkt-Linie). Die Achse steht senkrecht auf der Ebene seiner Spulen. Das Feld ist proportional zum Strom. Bei positivem Strom <i>i</i><sub>U</sub> zeigt <i>B</i><sub>U</sub> nach oben.</li>
+      <li>Resultierendes Feld: <i>B</i><sub>res</sub> = 1,5 · <i>B̂</i>, also immer 1,5-mal so groß wie das größte Feld eines einzelnen Strangs. Es dreht im Uhrzeigersinn: Bei <i>ωt</i> = 90° zeigt es nach oben (Achse von U), bei <i>ωt</i> = 210° nach rechts unten (Achse von V), bei <i>ωt</i> = 330° nach links unten (Achse von W).</li>
+      <li>Pole: Das Feld zeigt in der Bohrung vom Nordpol weg und zum Südpol hin. Die Farbe eines Zahns ist proportional zur Durchflutung, die auf diesen Zahn wirkt (Treppenkurve). Mit einem Läufer aus Eisen und kleinem Luftspalt ist das die Flussdichte unter dem Zahn. Der Läufer ist nicht gezeichnet. Kleine Werte sind kaum zu sehen.</li>
+      <li>Gefärbt sind nur die Zähne bis zum Nutgrund, und die Buchstaben N und S stehen am inneren Rand des Eisens: Ein Pol ist dort, wo die Feldlinien aus dem Eisen austreten (Nordpol) oder in das Eisen eintreten (Südpol). Am äußeren Rand des Ständers treten keine Feldlinien aus; dort ist kein Pol.</li>
+      <li>Die Treppenkurve ändert beim Umlauf ihre Form: Ihr größter Wert liegt zwischen sin 60° = 0,866 und 1, bezogen auf den Höchstwert. Bei wenigen Nuten springen die Pole deshalb sichtbar von Zahn zu Zahn. Der Pfeil zeigt nur die Grundwelle des Felds und dreht gleichmäßig.</li>
+      <li>Elementarmagnete sind ein Gedankenmodell: Ohne Feld zeigen sie in verschiedene Richtungen, im Feld richten sie sich aus. Gezeichnet sind wenige, stark vergrößerte Elementarmagnete. Jeder bleibt an seinem Platz und dreht sich nur.</li>
+      <li>Richtung: Jeder Elementarmagnet stellt sich ein wie eine Magnetnadel. Sein Nordpol zeigt in Richtung der Feldlinie an seinem Platz. Die Flussdichte stammt aus demselben Modell wie die Feldlinien (Grundwelle).</li>
+      <li>Ausrichtung: Sie ist proportional zur Flussdichte. Ab dem 0,6-Fachen der Flussdichte in der Bohrung sind alle ganz ausgerichtet (in echtem Eisen: Sättigung). Ohne Feld zeigt jeder in eine feste, zufällig gewählte Richtung. Restmagnetismus (Hysterese) ist nicht berücksichtigt.</li>
+      <li>Im Rücken des Ständers (Joch) muss der ganze Fluss eines Pols durch einen schmalen Ring. Die Flussdichte ist dort bis zu 4-mal so groß wie in der Bohrung; echte Maschinen haben einen breiteren Rücken. Am äußeren Rand hinter der Polmitte ist sie null: Dort zeigen die Elementarmagnete durcheinander.</li>
+      <li>In die schmalen Zähne bei 8 Leitern je Spulenseite passt kein Elementarmagnet; dort sind nur im Rücken des Ständers welche gezeichnet.</li>
+      <li>Feldlinien zeigen an jeder Stelle die Richtung, in die sich der Nordpol einer Magnetnadel einstellt. Gezeichnet sind sie für die Grundwelle des Felds und einen Ständer ohne Nuten und ohne Läufer. In der Bohrung ist das Feld dann überall gleich stark und gleich gerichtet. Im Eisen sind es Linien gleichen Flusses: in den Zähnen radial, im Joch aus der Feldgleichung für einen Eisenring berechnet. Hinter Nuten und Leitern sind die Linien verdeckt; in Wirklichkeit drängen sie sich durch die Zähne. Mit Läufer verliefe das Feld im Luftspalt radial. Die Knicke an den Übergängen Bohrung → Zahn → Joch sind in der Zeichnung ausgerundet.</li>
+      <li>Nuten: Das Eisen umschließt jeden Leiter, zur Bohrung bleibt ein Schlitz (halbgeschlossene Nut).</li>
+      <li>Nicht berücksichtigt: Sättigung des Eisens, die Öffnungen der Nuten und die Wickelköpfe (die Verbindungen der Spulenseiten vor und hinter dem Blechpaket).</li>
+      <li>Zeitlupe: Bei <i>f</i> = 50 Hz und <i>p</i> = 1 gilt <i>n</i> = <i>f</i> / <i>p</i> = 50 Hz / 1 = 50 s<sup>−1</sup> = 3000 min<sup>−1</sup>. Ein Umlauf dauert dann <i>T</i> = 20 ms.</li>
+      <li>Farben: Die Stränge U, V, W tragen die Leiterfarben Orange, Grün und Lila (auch der Strom, abweichend von „Strom rot“). Das resultierende Feld ist grün wie die Feldlinien.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const D = Math.PI / 180;
+
+/* ================= 1 Parameterblock =================
+   Alles, was die Lehrkraft später selbst ändern können soll, steht hier: Werte, Bereiche, Geometrie, Farben. */
+const CFG = {
+  x: { zeichen: 'ωt', einheit: '°', min: 0, max: 360, step: 1, big: 30, start: 90, hash: 'a', loop: true,
+       presets: [0, 30, 60, 90, 120, 180, 210, 270, 330, 360] },
+  /* Stränge: achse = Richtung, in die das Feld des Strangs bei positivem Strom in der Bohrung zeigt
+     (mathematischer Winkel in °, 0° = rechts, positiv gegen den Uhrzeigersinn). Es sind dieselben Achsen wie bei
+     den Spulen der Animation „Drehfeld aus drei Spulen“. phase = Nacheilung des Strangstroms in °.
+     Die Nuten eines Strangs liegen quer zu seiner Achse: Seite 1 (z. B. U1) um achse − 90°, Seite 2 (U2) um achse + 90°.
+     Festlegung der Lehrkraft, 12.11.2026: Stränge (Strom, Kurve, Einzelfeld) in den Leiterfarben Orange, Grün, Lila.
+     Festlegung der Lehrkraft, 12.11.2026: U → V → W im Uhrzeigersinn, damit das Feld im Uhrzeigersinn dreht.
+     Werden V und W getauscht, dreht das Feld andersherum. */
+  straenge: [
+    { name: 'U', achse: 90,  phase: 0,   farbe: '#FFC000' },
+    { name: 'V', achse: 330, phase: 120, farbe: '#00B050' },
+    { name: 'W', achse: 210, phase: 240, farbe: '#7030A0' },
+  ],
+  /* Verteilung: q = Nuten je Pol und Strang (Lochzahl) = gezeichnete Leiter je Spulenseite.
+     Nutenzahl N = 2 · p · m · q = 6 · q bei p = 1 und m = 3.
+     q = 1: jede Spulenseite in einer Nut (noch nicht verteilt); q ≥ 2: verteilte Wicklung.
+     Festlegung der Lehrkraft, 12.11.2026: umschaltbar zwischen 1, 4 und vielen kleineren Leitern; mindestens 4 als Standard.
+     Bei vielen Nuten werden die Leiter von selbst kleiner (nutMasse). Andere Werte sind möglich, z. B. [1, 2, 4, 6]. */
+  q: { start: 4, werte: [1, 4, 8] },
+  st: { cx: 500, cy: 580,                     // Mittelpunkt des Ständers
+        kB: 100,                              // Maßstab: B̂ eines Strangs ≙ 100 px → B_res ≙ 150 px
+        rI: 255, rA: 385,                     // Radius der Bohrung, Außenradius des Ständers (die Polfarbe reicht bis zum Nutgrund)
+        /* Leiter: Festlegung der Lehrkraft, 12.11.2026: etwas größer (vorher Radius 18). */
+        rLmax: 22, luft: 3,                   // größter Leiterradius, Luft zwischen Leiter und Nutwand
+        lippe: 13, nutAnteil: 0.75,           // Abstand Leiter–Bohrung; größter Anteil der Nutbreite an der Nutteilung (Rest = Zahn)
+        /* Festlegung der Lehrkraft, 12.11.2026: Das Eisen umschließt den Leiter, zur Bohrung bleibt nur ein Schlitz. */
+        schlitz: 0.2,                         // halbe Schlitzbreite als Anteil der halben Nutbreite (mindestens 3 px)
+        rPol: 230,                            // Buchstaben N und S: in der Bohrung am inneren Rand des Eisens (Festlegung 12.11.2026)
+        rAchse: 200, rB: 178, dB: 0,          // halbe Länge der Strangachsen; B_U, B_V, B_W: Abstand vom Mittelpunkt (innerhalb der Polbuchstaben), Versatz neben der Achse
+        rBogen: 399, wBogen: 6,               // Bogen, der die Nuten einer Spulenseite zusammenfasst: Radius, Überstand je Ende in °
+        rMarke: 437 },                        // Abstand der Bezeichnung U1, U2, … vom Mittelpunkt
+  /* Elementarmagnete (Ansicht „Eisen als Elementarmagnete“). Festlegungen der Lehrkraft, 12.11.2026: umschaltbar, ersetzt die
+     Polfarbe; rechteckig ohne Spitze, Nordpol-Hälfte rot, Südpol-Hälfte grün; Nordpol zeigt in Richtung der Feldlinien. */
+  em: { l: 26, breite: 0.36,                  // Länge (px), Breite als Anteil der Länge
+        luecke: 7, ringLuecke: 3, rand: 2,    // Abstand der Drehkreise im Ring und zwischen den Ringen, Abstand zu Nut, Bohrung, Außenrand (px)
+        bVoll: 0.6,                           // Flussdichte, ab der alle ganz ausgerichtet sind, bezogen auf die Flussdichte in der Bohrung
+        saat: 7 },                            // Startwert für die zufälligen Ruhelagen (gleiche Zahl → gleiches Bild)
+  /* Feldlinien (Ansicht „Feldlinien“). Festlegung der Lehrkraft, 12.11.2026: einblendbar. Farbe wie B (grün). */
+  fl: { anzahl: 8, breite: 3.2, pfeil: 16,    // Anzahl der Linien (gerade Zahl), Strichbreite, Länge der Pfeilspitzen (px)
+        rund: 22 },                           // Radius, mit dem die Knicke der Linien ausgerundet werden (px)
+  ld: { x0: 1030, y0: 720, kx: 2.2, amp: 185, xEnd: 1862 },   // Liniendiagramm: Ursprung, px je Grad, î ≙ 185 px
+  col: { ink: '#1b2127', b: '#00B050', bRand: '#0b4a25', nord: '#E2231A', sued: '#0E8A7C', eisen: '#e3e6e9', hilf: '#9aa3ab' },
+  dashDot: '26 6 3 6',                        // Strich-Punkt-Linie (Mittellinie)
+};
+
+/* ================= 2 Physikalisches Modell (rein, ohne Darstellung) =================
+   Stellgröße: Winkel ωt in Grad. Alle Größen sind auf den Scheitelwert bezogen (î = 1, B̂ = 1).
+   Wicklung: ein Polpaar (p = 1), drei Stränge (m = 3), Einschichtwicklung mit Durchmesserspulen (Spulenweite 180°),
+   q Nuten je Pol und Strang, Nutteilung = 360° / (6 · q).
+     i_k = sin(ωt − phase_k)                         Strangstrom, positiv = Zählrichtung
+   Zählrichtung: Bei positivem Strom fließt der Strom in den Nuten der Seite 1 (U1) in die Bildebene hinein (Kreuz)
+   und in den Nuten der Seite 2 (U2) heraus (Punkt). Rechte-Hand-Regel: Das Feld des Strangs zeigt dann in der
+   Bohrung in Richtung achse_k.
+     B_k = i_k · e_k                                 Feld des Strangs k (Grundwelle), auf der Strangachse
+     B_res = B_U + B_V + B_W                         geometrische Summe
+   Ergebnis bei symmetrischem Drehstrom und U → V → W im Uhrzeigersinn: |B_res| = 1,5 und Winkel = 180° − ωt,
+   das Feld dreht also im Uhrzeigersinn (mathematisch negativ). Das gilt für jedes q: Die Verteilung ändert nur B̂
+   (Zonenfaktor), nicht das Verhältnis 1,5 und nicht den Winkel.
+   Zähne (für die Polfarbe): Durchflutung Θ, die auf den Zahn wirkt (Treppenkurve, „Felderregerkurve“).
+     Θ(Zahn) = Summe über alle Spulen: (i_k / q) · ½ · (+1, wenn der Zahn auf der Seite der Spulenachse liegt, sonst −1)
+   Einheit: Durchflutung eines Strangs beim Scheitelwert des Stroms; der größte Wert ist 1.
+   Θ > 0: Das Feld geht aus der Bohrung in den Zahn (Südpol des Ständers). Θ < 0: Nordpol.
+   Mit einem Läufer aus Eisen und kleinem, gleichmäßigem Luftspalt ist die Flussdichte unter dem Zahn proportional zu Θ.
+   Idealisierung: Eisen ohne Sättigung, Nutöffnungen vernachlässigt.
+   Feldlinien und Elementarmagnete: Flussdichte in Bohrung und Eisen aus einem gemeinsamen Modell (feldlinie, feldEisen).
+   Nachgerechnet am 12.11.2026 (Python, unabhängig über die Nutströme und den Durchflutungssatz):
+   Grundwelle der Treppe und Feld der Leiter im Mittelpunkt liegen für q = 1, 2, 3, 4, 8 bei 180° − ωt und sind konstant. */
+function nuten(q) {
+  const tau = 360 / (2 * CFG.straenge.length * q);                 // Nutteilung in °
+  const out = [];
+  CFG.straenge.forEach((s, k) => {
+    for (const seite of [1, 2]) for (let j = 0; j < q; j++) {
+      const w = s.achse + (seite === 1 ? -90 : 90) + (j - (q - 1) / 2) * tau;
+      out.push({ k, strang: s.name, seite, winkel: ((w % 360) + 360) % 360 });
+    }
+  });
+  return out.sort((a, b) => a.winkel - b.winkel);                  // gegen den Uhrzeigersinn, ab 0° (rechts)
+}
+function model(x, q = CFG.q.start) {
+  const out = {};
+  let bx = 0, by = 0;
+  for (const s of CFG.straenge) {
+    const i = Math.sin((x - s.phase) * D);
+    out['i' + s.name] = i;
+    bx += i * Math.cos(s.achse * D);
+    by += i * Math.sin(s.achse * D);
+  }
+  out.bx = bx; out.by = by;
+  out.bRes = Math.hypot(bx, by);
+  out.winkel = ((Math.atan2(by, bx) / D) % 360 + 360) % 360;
+  /* Zahn j liegt zwischen Nut j und Nut j + 1 (gegen den Uhrzeigersinn) */
+  const N = nuten(q), tau = 360 / N.length;
+  out.zaehne = N.map((n) => {
+    const mitte = (n.winkel + tau / 2) % 360;
+    let theta = 0;
+    for (const sp of N) if (sp.seite === 1)                        // je Spule eine Seite 1; ihre Achse liegt 90° weiter
+      theta += (out['i' + sp.strang] / q) * 0.5 * Math.sign(Math.cos((mitte - (sp.winkel + 90)) * D));
+    return { winkel: mitte, theta };
+  });
+  return out;
+}
+/* Feldlinien des resultierenden Felds (Ansicht „Feldlinien“). Modell: nur die Grundwelle, Ständer ohne Nuten und ohne Läufer,
+   Eisen mit sehr großer Permeabilität. Koordinaten im Polsystem: x zeigt in Feldrichtung (zum Südpol des Ständers), y quer dazu.
+     Bohrung (r < rI):   homogenes Feld, Flussfunktion A = B · y → gerade Linien im gleichen Abstand
+     Zähne (rI … rS):    radial (rS = Nutgrund)
+     Joch (rS … rA):     A = B · g(r) · sin φ mit g(r) = K · (1/r − r/rA²). K ist so gewählt, dass g(rS) = rI gilt
+                         (derselbe Fluss wie an der Bohrung). g(rA) = 0: Kein Fluss verlässt den Ständer nach außen.
+   Eine Feldlinie ist eine Linie mit A = konstant. feldlinie(s, …) liefert die geschlossene Linie, die in der Bohrung im
+   Abstand s neben der Mitte läuft, als Punktfolge: Bohrung von der Nordpol-Seite zur Südpol-Seite, Zahn nach außen,
+   Joch um die Bohrung herum, Zahn nach innen. Weil der Betrag des Felds konstant ist, dreht sich das Bild als Ganzes. */
+function feldlinie(s, rI, rS, rA) {
+  const K = rI / (1 / rS - rS / (rA * rA)), a = K / (rA * rA), z = Math.sign(s) || 1, b = Math.abs(s);
+  const X = Math.sqrt(rI * rI - b * b), phi = Math.asin(b / rI);
+  const rJoch = (w) => { const t = b / Math.sin(w); return (-t + Math.sqrt(t * t + 4 * a * K)) / (2 * a); };   // löst g(r) = t
+  const p = [[-X, s], [X, s]];
+  const n = Math.max(2, 2 * Math.ceil((Math.PI - 2 * phi) / (4 * D)));
+  for (let i = 0; i <= n; i++) {
+    const w = phi + (Math.PI - 2 * phi) * i / n, r = (i === 0 || i === n) ? rS : rJoch(w);
+    p.push([r * Math.cos(w), z * r * Math.sin(w)]);
+  }
+  return p;
+}
+/* Flussdichte im Eisen zu den Feldlinien (Ansichten „Feldlinien“ und „Elementarmagnete“), bezogen auf die Flussdichte in
+   der Bohrung. r, w: Lage (w mathematisch, in °); alpha: Richtung des Felds in der Bohrung (in °); rS: Nutgrund. φ = w − alpha.
+     Zähne (rI … rS): B_r = rI · cos φ / r, B_φ = 0                 radial, derselbe Fluss wie an der Bohrung
+     Joch (rS … rA):  B_r = g(r) · cos φ / r, B_φ = −g′(r) · sin φ    aus A = g(r) · sin φ (siehe feldlinie)
+   Am Außenrand ist B_r = 0: Dort tritt kein Fluss aus, also ist dort kein Pol. Ergebnis: Vektor (x nach rechts, y nach oben). */
+function feldEisen(r, w, alpha, rI, rS, rA) {
+  const phi = (w - alpha) * D, K = rI / (1 / rS - rS / (rA * rA));
+  const br = (r <= rS ? rI : K * (1 / r - r / (rA * rA))) * Math.cos(phi) / r;
+  const bp = r <= rS ? 0 : K * (1 / (r * r) + 1 / (rA * rA)) * Math.sin(phi);
+  const c = Math.cos(w * D), sn = Math.sin(w * D);
+  return { bx: br * c - bp * sn, by: br * sn + bp * c };
+}
+
+/* ================= 3 Zustand ================= */
+/* Festlegung der Lehrkraft, 12.11.2026: Liniendiagramm beim Öffnen an (abweichend von „Zusatzebenen aus“). */
+const S = { x: CFG.x.start, playing: false, dauer: 12, ef: false, ld: true, em: false, fl: false, q: CFG.q.start,
+  qr: false };   /* QR-Code beim Öffnen aus, rechts oben ein Platzhalter zum Anklicken (Festlegung der Lehrkraft, 12.11.2026) */
+
+/* ================= 4 Hilfen ================= */
+const $ = (s) => document.querySelector(s);
+const svg = $('#stage-svg');
+function el(tag, attrs = {}, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function txt(x, y, html, attrs = {}, parent = svg) { const t = el('text', { x, y, ...attrs }, parent); t.innerHTML = html; return t; }
+const I = (s) => `<tspan class="i">${s}</tspan>`;                                  // Formelzeichen kursiv
+const SUB = (s, size = 30, rest = '') => `<tspan dy="${size * 0.3}" font-size="${size * 0.7}">${s}</tspan>` + (rest ? `<tspan dy="${-size * 0.3}">${rest}</tspan>` : '');
+const P = (cx, cy, R, deg) => [cx + R * Math.cos(deg * D), cy - R * Math.sin(deg * D)];   // math. Winkel → SVG
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const show = (e, on) => { e.style.display = on ? '' : 'none'; };
+function dez(v, nk) {
+  let s = Math.abs(v).toFixed(nk).replace('.', ',');
+  if (v < 0 && Number(s.replace(',', '.')) !== 0) s = '−' + s;
+  return s;
+}
+const fmtGrad = (a) => { const r = Math.round(a * 100) / 100; return (Number.isInteger(r) ? dez(r, 0) : dez(r, 2)) + '°'; };
+
+function arrowHead(x2, y2, ux, uy, L, W) {
+  const bx = x2 - ux * L, by = y2 - uy * L;
+  return `${x2},${y2} ${bx - uy * W},${by + ux * W} ${bx + uy * W},${by - ux * W}`;
+}
+/* Pfeil, dessen Länge einem Wert folgt; bei sehr kurzen Pfeilen schrumpft die Spitze mit. */
+function makeArrow(parent, color, sw, L, W) {
+  const g = el('g', {}, parent);
+  const line = el('line', { stroke: color, 'stroke-width': sw }, g);
+  const head = el('polygon', { fill: color }, g);
+  const o = {
+    g, L, W,
+    form(sw2, L2, W2) { line.setAttribute('stroke-width', sw2); o.L = L2; o.W = W2; },
+    set(x1, y1, x2, y2) {
+      const dx = x2 - x1, dy = y2 - y1, raw = Math.hypot(dx, dy), len = raw || 1, ux = dx / len, uy = dy / len;
+      const Lc = Math.min(o.L, raw * 0.6), Wc = o.W * Lc / o.L;
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2 - ux * Math.max(Lc - 1, 0)); line.setAttribute('y2', y2 - uy * Math.max(Lc - 1, 0));
+      head.setAttribute('points', arrowHead(x2, y2, ux, uy, Lc, Wc));
+      g.style.visibility = raw < 1.5 ? 'hidden' : '';
+    },
+  };
+  return o;
+}
+
+/* ================= 5 Statische Zeichnung =================
+   Reihenfolge der Gruppen = Reihenfolge der Ebenen: hinten → vorn.
+   Der Ständer hängt von der Nutenzahl ab: baueStaender() zeichnet ihn bei jeder Änderung von q neu. */
+const { st: T, ld: L, col: C } = CFG;
+const gBack = el('g', { id: 'back' });
+const gStaender = el('g', { id: 'staender' });
+const gMag = el('g', { id: 'magnete' });            // Elementarmagnete (zuschaltbar)
+const gFeld = el('g', { id: 'feldlinien' });        // Feldlinien (zuschaltbar); baueStaender() hängt die Gruppe in den Ständer ein
+const gPole = el('g', { id: 'pole' });
+const gAchsen = el('g', { id: 'achsen' });          // immer sichtbar (Festlegung 12.11.2026)
+const gEf = el('g', { id: 'einzelfelder' });
+const gRes = el('g', { id: 'resultierend' });
+const gLd = el('g', { id: 'liniendiagramm' });
+const gLbl = el('g', { id: 'labels' });
+
+const titel = txt(1872, 110, 'Drehfeld', { class: 't-main', 'text-anchor': 'end' }, gBack);   // rückt neben den QR-Code (syncUI)
+txt(60, 96, 'Ständer im Schnittbild', { class: 't-panel' }, gBack);
+const untertitel = txt(60, 140, '', { class: 'lbl-s' }, gBack);
+
+/* Legende (rechts oben) */
+const gLegPol = el('g', { id: 'leg-pol' }, gBack), gLegEm = el('g', { id: 'leg-em' }, gBack), gLegFl = el('g', { id: 'leg-fl' }, gBack);
+{
+  const x = 1010;
+  /* Erste Zeile: Polfarbe des Eisens oder, in der Ansicht „Elementarmagnete“, ein Elementarmagnet */
+  el('rect', { x, y: 190, width: 44, height: 34, fill: C.nord }, gLegPol);
+  el('rect', { x: x + 44, y: 190, width: 44, height: 34, fill: C.sued }, gLegPol);
+  el('rect', { x, y: 190, width: 88, height: 34, fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gLegPol);
+  txt(x + 22, 208, 'N', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:26px' }, gLegPol);
+  txt(x + 66, 208, 'S', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:26px' }, gLegPol);
+  txt(x + 118, 216, 'Nordpol und Südpol · kräftig = starkes Feld', { class: 'lbl-s' }, gLegPol);
+  magnetForm(gLegEm, 88, 32).setAttribute('transform', `translate(${x + 44} 207)`);
+  txt(x + 22, 208, 'S', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:24px' }, gLegEm);
+  txt(x + 66, 208, 'N', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:24px' }, gLegEm);
+  txt(x + 118, 216, 'Elementarmagnet · stellt sich nach dem Feld ein', { class: 'lbl-s' }, gLegEm);
+
+  el('circle', { cx: x + 22, cy: 267, r: 17, fill: '#fff', stroke: C.ink, 'stroke-width': 2.2 }, gBack);
+  el('circle', { cx: x + 22, cy: 267, r: 7, fill: C.ink }, gBack);
+  el('circle', { cx: x + 66, cy: 267, r: 17, fill: '#fff', stroke: C.ink, 'stroke-width': 2.2 }, gBack);
+  el('path', { d: `M ${x + 58} 259 L ${x + 74} 275 M ${x + 58} 275 L ${x + 74} 259`, stroke: C.ink, 'stroke-width': 4, 'stroke-linecap': 'round', fill: 'none' }, gBack);
+  txt(x + 118, 276, 'Strom heraus / hinein · groß = großer Strom', { class: 'lbl-s' }, gBack);
+
+  const a0 = makeArrow(gBack, C.bRand, 12, 36, 16); a0.set(x, 327, x + 92, 327);
+  const a1 = makeArrow(gBack, C.b, 7, 30, 12); a1.set(x, 327, x + 87, 327);
+  txt(x + 118, 336, `${I('B')}${SUB('res', 25, '  resultierendes Magnetfeld (Drehfeld)')}`, { class: 'lbl-s' }, gBack);
+  /* Vierte Zeile nur in der Ansicht „Feldlinien“ */
+  el('line', { x1: x, y1: 387, x2: x + 92, y2: 387, stroke: C.b, 'stroke-width': CFG.fl.breite }, gLegFl);
+  el('path', { d: `M ${x + 56} 387 L ${x + 40} 393 L ${x + 40} 381 Z`, fill: C.b }, gLegFl);
+  txt(x + 118, 396, 'Feldlinien · Richtung, in die ein Nordpol zeigt', { class: 'lbl-s' }, gLegFl);
+}
+/* Festlegung aus „Spule ein- und ausschalten“: Zeitlupe steht in der Grafik. */
+txt(60, 1040, `Zeitlupe: Bei ${I('f')} = 50 Hz dauert ein Umlauf ${I('T')} = 20 ms.`, { class: 'lbl-s' }, gBack);
+
+/* Kreis, auf dem die Spitze des resultierenden Felds läuft: Radius = 1,5 · B̂ */
+el('circle', { cx: T.cx, cy: T.cy, r: 1.5 * T.kB, fill: 'none', stroke: C.hilf, 'stroke-width': 2, 'stroke-dasharray': '10 8' }, gBack);
+
+/* Ständer: Ring aus Eisen, Zähne als Ringsektoren (Polfarbe), Nuten mit je einem Leiterkreis,
+   außen je Spulenseite ein Bogen in der Strangfarbe mit der Bezeichnung U1, U2, …
+   Ein Leiterkreis steht für alle Leiter der Spulenseite in dieser Nut. */
+function sektor(r1, r2, w1, w2) {                                  // Ringsektor von Winkel w1 bis w2 (mathematisch, w2 > w1)
+  const [ax, ay] = P(T.cx, T.cy, r2, w1), [bx, by] = P(T.cx, T.cy, r2, w2);
+  const [cx, cy] = P(T.cx, T.cy, r1, w2), [dx, dy] = P(T.cx, T.cy, r1, w1);
+  const f = (v) => v.toFixed(2);
+  return `M ${f(ax)} ${f(ay)} A ${r2} ${r2} 0 0 0 ${f(bx)} ${f(by)} L ${f(cx)} ${f(cy)} A ${r1} ${r1} 0 0 1 ${f(dx)} ${f(dy)} Z`;
+}
+function bogen(r, w1, w2) {
+  const [ax, ay] = P(T.cx, T.cy, r, w1), [bx, by] = P(T.cx, T.cy, r, w2);
+  return `M ${ax.toFixed(2)} ${ay.toFixed(2)} A ${r} ${r} 0 0 0 ${bx.toFixed(2)} ${by.toFixed(2)}`;
+}
+/* Maße der Nut für eine Nutenzahl: Der Leiter ist so groß wie erlaubt (rLmax); bei vielen Nuten begrenzt die
+   Nutteilung an der Bohrung die Nutbreite, dann werden die Leiter kleiner. */
+function nutMasse(q) {
+  const teilung = 2 * Math.PI * T.rI / (2 * CFG.straenge.length * q);     // Bogenlänge je Nut an der Bohrung in px
+  const h = Math.min(T.rLmax + T.luft, teilung * T.nutAnteil / 2);        // halbe Nutbreite
+  const luft = Math.min(T.luft, 0.2 * h), rL = h - luft;
+  /* h = Radius des runden Nutraums um den Leiter, e = halbe Breite des Schlitzes zur Bohrung, rN = Abstand der Leitermitte vom Mittelpunkt */
+  return { h, rL, e: clamp(T.schlitz * h, 3, h), rN: T.rI + T.lippe * Math.min(1, rL / T.rLmax + 0.25) + rL };
+}
+let ZAHN = [], NUT = [], NM = null;                                // Elemente, die render() einfärbt; Maße der Nut
+function baueStaender(q) {
+  gStaender.replaceChildren();
+  const N = nuten(q), tau = 360 / N.length;
+  NM = nutMasse(q);
+  el('circle', { cx: T.cx, cy: T.cy, r: (T.rI + T.rA) / 2, fill: 'none', stroke: C.eisen, 'stroke-width': T.rA - T.rI }, gStaender);
+  /* Zähne: von Nutmitte zu Nutmitte; Farbe und Deckkraft setzt render() */
+  ZAHN = N.map((n) => el('path', { d: sektor(T.rI, NM.rN + NM.h, n.winkel, n.winkel + tau), fill: C.eisen, 'fill-opacity': 0 }, gStaender));
+  el('circle', { cx: T.cx, cy: T.cy, r: T.rA, fill: 'none', stroke: C.ink, 'stroke-width': 2.5 }, gStaender);
+  el('circle', { cx: T.cx, cy: T.cy, r: T.rI, fill: 'none', stroke: C.ink, 'stroke-width': 2.5 }, gStaender);
+  /* Feldlinien: über Eisen und Polfarbe, unter Nuten und Leitern (die Gruppe wird hier in den Ständer eingehängt) */
+  gStaender.appendChild(gFeld);
+  baueFeldlinien();
+  /* Nuten: runder Raum mit Schlitz zur Bohrung (lokale x-Achse = radial nach außen), darin der Leiter.
+     Punkt und Kreuz stehen in Bühnenkoordinaten, damit das Kreuz aufrecht bleibt. */
+  const f = (v) => v.toFixed(2);
+  /* Form der Nut: runder Raum um den Leiter (Radius h), zur Bohrung nur ein Schlitz der Breite 2 · e. x1 = Übergang Schlitz → Rundung. */
+  const { h, rN, e } = NM, xb = Math.sqrt(T.rI * T.rI - e * e), x1 = rN - Math.sqrt(h * h - e * e), fein = NM.rL < 15;
+  NUT = N.map((n) => {
+    const s = CFG.straenge[n.k];
+    const g = el('g', { transform: `translate(${T.cx} ${T.cy}) rotate(${f(-n.winkel)})` }, gStaender);
+    el('path', { d: `M ${f(xb - 3)} ${f(-e)} L ${f(x1)} ${f(-e)} A ${f(h)} ${f(h)} 0 1 1 ${f(x1)} ${f(e)} L ${f(xb - 3)} ${f(e)} Z`, fill: '#fff' }, g);
+    el('path', { d: `M ${f(xb)} ${f(-e)} L ${f(x1)} ${f(-e)} A ${f(h)} ${f(h)} 0 1 1 ${f(x1)} ${f(e)} L ${f(xb)} ${f(e)}`, fill: 'none', stroke: C.ink, 'stroke-width': fein ? 1.8 : 2.5, 'stroke-linejoin': 'round' }, g);
+    const [x, y] = P(T.cx, T.cy, rN, n.winkel);
+    el('circle', { cx: f(x), cy: f(y), r: f(NM.rL), fill: '#fff', stroke: C.ink, 'stroke-width': fein ? 1.5 : 2.2 }, gStaender);
+    const punkt = el('circle', { cx: f(x), cy: f(y), r: 0, fill: s.farbe }, gStaender);
+    const kreuz = el('path', { d: 'M -1 -1 L 1 1 M -1 1 L 1 -1', stroke: s.farbe, fill: 'none', 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke' }, gStaender);
+    return { ...n, x, y, punkt, kreuz };
+  });
+  /* Spulenseiten: Bogen über die q Nuten, Bezeichnung wie am Klemmbrett (U1, U2, nicht tiefgestellt) */
+  for (const s of CFG.straenge) for (const seite of [1, 2]) {
+    const wm = s.achse + (seite === 1 ? -90 : 90);
+    const halb = Math.min((q - 1) / 2 * tau + T.wBogen, 180 / CFG.straenge.length / 2 - 2.5);   // Nachbarbögen berühren sich nicht
+    el('path', { d: bogen(T.rBogen, wm - halb, wm + halb), fill: 'none', stroke: s.farbe, 'stroke-width': 7, 'stroke-linecap': 'round' }, gStaender);
+    const [xm, ym] = P(T.cx, T.cy, T.rMarke, wm);
+    el('circle', { cx: xm, cy: ym, r: 28, fill: '#fff', stroke: s.farbe, 'stroke-width': 6 }, gStaender);
+    txt(xm, ym + 1, s.name + seite, { class: 'strang', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gStaender);
+  }
+  untertitel.innerHTML = q === 1
+    ? `${N.length} Nuten: Jede Spulenseite liegt in ${I('q')} = 1 Nut (noch nicht verteilt).`
+    : `${N.length} Nuten: Jede Spulenseite ist auf ${I('q')} = ${q} Nuten verteilt.`;
+  baueMagnete(q);
+}
+
+/* ---------- Feldlinien (Ansicht „Feldlinien“) ----------
+   Gezeichnet im Polsystem für die Feldrichtung 0° (nach rechts); render() dreht die Gruppe in die Feldrichtung.
+   Die Gruppe liegt im Ständer über dem Eisen und unter Nuten und Leitern: Hinter den Nuten sind die Linien verdeckt. */
+function baueFeldlinien() {
+  gFeld.replaceChildren();
+  const F = CFG.fl, rS = NM.rN + NM.h, bahn = [], spitzen = [];
+  const xy = ([x, y]) => `${(T.cx + x).toFixed(1)} ${(T.cy - y).toFixed(1)}`;
+  const spitze = (x, y, ux) => {                                   // Pfeilspitze am Punkt (x, y); ux = +1: in Feldrichtung, −1: dagegen
+    const l = F.pfeil / 2, w = F.pfeil * 0.36;
+    spitzen.push(`M ${xy([x + ux * l, y])} L ${xy([x - ux * l, y + w])} L ${xy([x - ux * l, y - w])} Z`);
+  };
+  /* Geschlossene Linie mit ausgerundeten Ecken: Die Übergänge Bohrung → Zahn → Joch sind im Modell Knicke.
+     Ausgerundet wird nur die Zeichnung (Radius F.rund), die Punktfolge aus feldlinie() bleibt unverändert. */
+  const rund = (p, ecken) => {
+    const n = p.length;
+    const stueck = (a, b, f) => { const l = Math.hypot(b[0] - a[0], b[1] - a[1]), t = Math.min(F.rund, l * f) / l; return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; };
+    let d = '';
+    p.forEach((pt, i) => {
+      if (!ecken.includes(i)) { d += `${d ? ' L' : 'M'} ${xy(pt)}`; return; }
+      const vor = (i - 1 + n) % n, nach = (i + 1) % n;
+      d += `${d ? ' L' : 'M'} ${xy(stueck(pt, p[vor], ecken.includes(vor) ? 0.45 : 0.95))} Q ${xy(pt)} ${xy(stueck(pt, p[nach], ecken.includes(nach) ? 0.45 : 0.95))}`;
+    });
+    return d + ' Z';
+  };
+  for (let k = 0; k < F.anzahl; k++) {
+    const s = (k + 0.5 - F.anzahl / 2) * 2 * T.rI / F.anzahl, p = feldlinie(s, T.rI, rS, T.rA);
+    bahn.push(rund(p, [0, 1, 2, p.length - 1]));
+    spitze(-0.45 * Math.sqrt(T.rI * T.rI - s * s), s, 1);          // in der Bohrung: vom Nordpol zum Südpol
+    const j = p[2 + Math.round((p.length - 3) / 2)];               // Mitte des Bogens im Joch: vom Südpol zurück zum Nordpol
+    spitze(j[0], j[1], -1);
+  }
+  el('path', { d: bahn.join(' '), fill: 'none', stroke: '#fff', 'stroke-opacity': 0.85, 'stroke-width': F.breite + 4, 'stroke-linejoin': 'round' }, gFeld);
+  el('path', { d: bahn.join(' '), fill: 'none', stroke: C.b, 'stroke-width': F.breite, 'stroke-linejoin': 'round' }, gFeld);
+  el('path', { d: spitzen.join(' '), fill: C.b, stroke: '#fff', 'stroke-width': 1.2, 'stroke-linejoin': 'round' }, gFeld);
+}
+
+/* ---------- Elementarmagnete (Ansicht „Eisen als Elementarmagnete“) ---------- */
+function zufall(saat) {                                            // fester Zufall (mulberry32): gleiche Saat → gleiche Ruhelagen
+  let a = saat >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/* Form: Rechteck ohne Spitze, Nordpol-Hälfte rot (gezeichnet nach rechts), Südpol-Hälfte grün; gedreht wird die Gruppe. */
+function magnetForm(parent, L, W) {
+  const g = el('g', {}, parent), f = (v) => v.toFixed(1);
+  el('rect', { x: 0, y: f(-W / 2), width: f(L / 2), height: f(W), fill: C.nord }, g);
+  el('rect', { x: f(-L / 2), y: f(-W / 2), width: f(L / 2), height: f(W), fill: C.sued }, g);
+  el('rect', { x: f(-L / 2), y: f(-W / 2), width: f(L), height: f(W), rx: 1.5, fill: 'none', stroke: C.ink, 'stroke-width': L > 40 ? 2 : 1.2 }, g);
+  return g;
+}
+/* Lage: Ringe zwischen Bohrung und Außenrand. Jeder Elementarmagnet muss sich frei drehen können, ohne Bohrung, Außenrand,
+   eine Nut oder einen Nachbarn zu berühren. Im Bereich der Nuten folgt das Muster den Zähnen. */
+let MAG = [];                                                      // Elementarmagnete: Lage, Ruhelage, Element
+function baueMagnete(q) {
+  gMag.replaceChildren(); MAG = [];
+  const E = CFG.em, N = nuten(q), tau = 360 / N.length, { h, rN, e } = NM, rS = rN + h;
+  const rnd = zufall(E.saat + q), rho = E.l / 2 * Math.hypot(1, E.breite);   // rho = Radius des Kreises, in dem sich ein Magnet dreht
+  const frei = (r, w) => {
+    if (r - rho < T.rI + E.rand || r + rho > T.rA - E.rand) return false;
+    return N.every((n) => {
+      const a = (w - n.winkel) * D, px = r * Math.cos(a), py = r * Math.sin(a);
+      return Math.hypot(px - rN, py) >= h + rho + E.rand                          // runder Raum um den Leiter
+        && Math.hypot(px - clamp(px, T.rI - 10, rN), py) >= e + rho + E.rand;      // Schlitz zur Bohrung
+    });
+  };
+  const rIn = T.rI + E.rand + rho, rOut = T.rA - E.rand - rho;
+  const ringe = Math.floor((rOut - rIn) / (2 * rho + E.ringLuecke)) + 1;
+  for (let k = 0; k < ringe; k++) {
+    const r = ringe === 1 ? (rIn + rOut) / 2 : rIn + (rOut - rIn) * k / (ringe - 1);
+    /* Im Bereich der Nuten: Anzahl ein Vielfaches der Nutenzahl, Beginn in Zahnmitte. Im Joch: ein Vielfaches von 6, versetzt. */
+    const nutbereich = r - rho - E.rand < rS, teil = nutbereich ? N.length : 6;
+    const n = teil * Math.floor(2 * Math.PI * r / (teil * (2 * rho + E.luecke)));
+    const start = nutbereich ? N[0].winkel + tau / 2 : (k % 2) * 180 / Math.max(n, 1);
+    for (let j = 0; j < n; j++) {
+      const w = ((start + j * 360 / n) % 360 + 360) % 360;
+      if (!frei(r, w)) continue;
+      const [x, y] = P(T.cx, T.cy, r, w);
+      MAG.push({ r, w, x, y, ruhe: 360 * rnd(), g: magnetForm(gMag, E.l, E.l * E.breite) });
+    }
+  }
+}
+/* Zustand jedes Elementarmagneten zum Modellzustand m: Flussdichte b an seinem Platz (bezogen auf die Bohrung) und ihre
+   Richtung feld, Ausrichtung v = min(1, b / bVoll), Winkel des Nordpol-Endes. Das Nordpol-Ende zeigt in Richtung
+   v · e_Feld + (1 − v) · e_Ruhe: v = 1 ganz nach dem Feld ausgerichtet, v = 0 in der Ruhelage. Winkel mathematisch, in °. */
+function magnetZustand(m) {
+  const rS = NM.rN + NM.h;
+  return MAG.map((k) => {
+    const f = feldEisen(k.r, k.w, m.winkel, T.rI, rS, T.rA), b = Math.hypot(f.bx, f.by);
+    const v = Math.min(1, b / CFG.em.bVoll), feld = Math.atan2(f.by, f.bx) / D;
+    const vx = v * Math.cos(feld * D) + (1 - v) * Math.cos(k.ruhe * D), vy = v * Math.sin(feld * D) + (1 - v) * Math.sin(k.ruhe * D);
+    return { r: k.r, w: k.w, b, v, feld: (feld + 360) % 360, ruhe: k.ruhe, winkel: ((Math.atan2(vy, vx) / D) % 360 + 360) % 360 };
+  });
+}
+
+/* ===== QR-Code rechts oben in der Bühne (Festlegung der Lehrkraft, 12.11.2026, Animation W; technik.md Abschnitt 8) =====
+   Führt zur Adresse der Animation auf GitHub Pages. Die Zeile `const QR = …;` erzeugt
+   python3 scripts/qr_buehne.py <Adresse> quelle.html – zieht die Datei um, den QR-Code neu erzeugen.
+   Beim Öffnen steht dort ein Platzhalter (Festlegung der Lehrkraft, 12.11.2026): Klick oder Enter darauf zeigt den
+   QR-Code, Klick auf den QR-Code blendet ihn wieder aus. ?qr=1 in der Adresse zeigt ihn gleich (Link für den Beamer).
+   Unter 800 px Fensterbreite fehlen beide (am Handy ist die Animation schon offen); im Export nur mit ?qr=1.
+   6 px je Modul: Mit 4,5 px war der Code verkleinert (1280 px) nicht sicher lesbar. */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/drehfeld/verteilte-wicklung/", "n": 37, "d": "M0 0h7v1h-7zM8 0h2v1h-2zM12 0h5v1h-5zM18 0h2v1h-2zM22 0h1v1h-1zM25 0h1v1h-1zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h2v1h-2zM12 1h1v1h-1zM14 1h1v1h-1zM18 1h1v1h-1zM20 1h3v1h-3zM28 1h1v1h-1zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h4v1h-4zM13 2h1v1h-1zM15 2h1v1h-1zM18 2h1v1h-1zM20 2h2v1h-2zM23 2h1v1h-1zM25 2h3v1h-3zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM11 3h5v1h-5zM17 3h1v1h-1zM19 3h3v1h-3zM24 3h2v1h-2zM28 3h1v1h-1zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h3v1h-3zM12 4h2v1h-2zM16 4h2v1h-2zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM26 4h1v1h-1zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h1v1h-1zM12 5h1v1h-1zM15 5h4v1h-4zM20 5h1v1h-1zM22 5h2v1h-2zM25 5h1v1h-1zM28 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM12 7h2v1h-2zM15 7h2v1h-2zM20 7h1v1h-1zM22 7h2v1h-2zM25 7h4v1h-4zM0 8h1v1h-1zM3 8h7v1h-7zM11 8h1v1h-1zM13 8h1v1h-1zM15 8h2v1h-2zM18 8h2v1h-2zM23 8h1v1h-1zM26 8h1v1h-1zM28 8h2v1h-2zM32 8h1v1h-1zM34 8h3v1h-3zM1 9h2v1h-2zM4 9h2v1h-2zM7 9h1v1h-1zM10 9h5v1h-5zM20 9h1v1h-1zM22 9h2v1h-2zM25 9h1v1h-1zM27 9h1v1h-1zM31 9h5v1h-5zM2 10h3v1h-3zM6 10h2v1h-2zM13 10h1v1h-1zM17 10h1v1h-1zM21 10h3v1h-3zM26 10h2v1h-2zM29 10h1v1h-1zM32 10h1v1h-1zM36 10h1v1h-1zM1 11h1v1h-1zM5 11h1v1h-1zM7 11h3v1h-3zM12 11h2v1h-2zM15 11h1v1h-1zM17 11h4v1h-4zM23 11h1v1h-1zM26 11h2v1h-2zM32 11h5v1h-5zM0 12h2v1h-2zM5 12h2v1h-2zM10 12h2v1h-2zM14 12h1v1h-1zM16 12h1v1h-1zM20 12h1v1h-1zM24 12h1v1h-1zM27 12h2v1h-2zM30 12h2v1h-2zM33 12h1v1h-1zM36 12h1v1h-1zM1 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM9 13h2v1h-2zM15 13h3v1h-3zM23 13h1v1h-1zM25 13h1v1h-1zM27 13h1v1h-1zM32 13h2v1h-2zM0 14h1v1h-1zM2 14h1v1h-1zM4 14h4v1h-4zM9 14h2v1h-2zM14 14h4v1h-4zM19 14h2v1h-2zM22 14h1v1h-1zM25 14h3v1h-3zM29 14h2v1h-2zM32 14h5v1h-5zM0 15h2v1h-2zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h3v1h-3zM13 15h1v1h-1zM15 15h4v1h-4zM20 15h1v1h-1zM24 15h1v1h-1zM26 15h3v1h-3zM31 15h1v1h-1zM33 15h3v1h-3zM1 16h1v1h-1zM4 16h4v1h-4zM9 16h1v1h-1zM13 16h1v1h-1zM15 16h3v1h-3zM19 16h2v1h-2zM22 16h1v1h-1zM24 16h2v1h-2zM27 16h2v1h-2zM30 16h1v1h-1zM34 16h1v1h-1zM36 16h1v1h-1zM3 17h1v1h-1zM5 17h1v1h-1zM7 17h3v1h-3zM11 17h1v1h-1zM13 17h1v1h-1zM16 17h4v1h-4zM21 17h2v1h-2zM24 17h1v1h-1zM27 17h1v1h-1zM29 17h1v1h-1zM31 17h1v1h-1zM33 17h1v1h-1zM0 18h1v1h-1zM2 18h2v1h-2zM5 18h3v1h-3zM9 18h1v1h-1zM12 18h1v1h-1zM15 18h1v1h-1zM18 18h2v1h-2zM23 18h1v1h-1zM25 18h1v1h-1zM27 18h1v1h-1zM29 18h1v1h-1zM32 18h2v1h-2zM36 18h1v1h-1zM1 19h1v1h-1zM5 19h1v1h-1zM7 19h1v1h-1zM10 19h1v1h-1zM12 19h1v1h-1zM14 19h1v1h-1zM25 19h4v1h-4zM30 19h1v1h-1zM32 19h1v1h-1zM36 19h1v1h-1zM2 20h1v1h-1zM6 20h3v1h-3zM11 20h1v1h-1zM13 20h1v1h-1zM15 20h1v1h-1zM17 20h1v1h-1zM19 20h1v1h-1zM24 20h1v1h-1zM26 20h1v1h-1zM30 20h4v1h-4zM0 21h1v1h-1zM2 21h1v1h-1zM4 21h1v1h-1zM9 21h4v1h-4zM15 21h1v1h-1zM19 21h1v1h-1zM21 21h1v1h-1zM23 21h1v1h-1zM26 21h2v1h-2zM32 21h1v1h-1zM34 21h1v1h-1zM1 22h1v1h-1zM5 22h2v1h-2zM9 22h1v1h-1zM14 22h5v1h-5zM20 22h1v1h-1zM23 22h2v1h-2zM27 22h2v1h-2zM30 22h2v1h-2zM33 22h1v1h-1zM36 22h1v1h-1zM0 23h1v1h-1zM2 23h2v1h-2zM5 23h1v1h-1zM8 23h2v1h-2zM11 23h4v1h-4zM17 23h1v1h-1zM19 23h1v1h-1zM26 23h3v1h-3zM30 23h5v1h-5zM36 23h1v1h-1zM2 24h2v1h-2zM6 24h3v1h-3zM10 24h3v1h-3zM14 24h7v1h-7zM24 24h1v1h-1zM27 24h2v1h-2zM30 24h2v1h-2zM35 24h2v1h-2zM0 25h2v1h-2zM7 25h1v1h-1zM13 25h2v1h-2zM16 25h1v1h-1zM23 25h1v1h-1zM26 25h2v1h-2zM32 25h3v1h-3zM0 26h7v1h-7zM9 26h1v1h-1zM11 26h2v1h-2zM14 26h1v1h-1zM16 26h1v1h-1zM19 26h1v1h-1zM21 26h1v1h-1zM24 26h2v1h-2zM27 26h3v1h-3zM31 26h2v1h-2zM35 26h2v1h-2zM0 27h1v1h-1zM4 27h2v1h-2zM7 27h1v1h-1zM10 27h6v1h-6zM19 27h1v1h-1zM22 27h1v1h-1zM26 27h1v1h-1zM29 27h2v1h-2zM32 27h4v1h-4zM0 28h1v1h-1zM2 28h3v1h-3zM6 28h2v1h-2zM9 28h3v1h-3zM13 28h1v1h-1zM19 28h1v1h-1zM22 28h4v1h-4zM27 28h9v1h-9zM8 29h1v1h-1zM10 29h6v1h-6zM18 29h5v1h-5zM24 29h5v1h-5zM32 29h1v1h-1zM34 29h2v1h-2zM0 30h7v1h-7zM8 30h1v1h-1zM11 30h2v1h-2zM15 30h2v1h-2zM19 30h3v1h-3zM23 30h4v1h-4zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM36 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM8 31h1v1h-1zM10 31h3v1h-3zM14 31h1v1h-1zM16 31h3v1h-3zM20 31h1v1h-1zM23 31h3v1h-3zM27 31h2v1h-2zM32 31h1v1h-1zM36 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM8 32h4v1h-4zM13 32h1v1h-1zM15 32h1v1h-1zM19 32h1v1h-1zM26 32h7v1h-7zM35 32h1v1h-1zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM8 33h1v1h-1zM11 33h1v1h-1zM16 33h4v1h-4zM23 33h1v1h-1zM26 33h2v1h-2zM29 33h2v1h-2zM33 33h2v1h-2zM36 33h1v1h-1zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM11 34h2v1h-2zM15 34h2v1h-2zM21 34h4v1h-4zM32 34h2v1h-2zM36 34h1v1h-1zM0 35h1v1h-1zM6 35h1v1h-1zM14 35h1v1h-1zM16 35h3v1h-3zM20 35h1v1h-1zM23 35h1v1h-1zM26 35h1v1h-1zM32 35h5v1h-5zM0 36h7v1h-7zM8 36h1v1h-1zM11 36h1v1h-1zM13 36h1v1h-1zM15 36h1v1h-1zM19 36h1v1h-1zM24 36h1v1h-1zM28 36h4v1h-4zM36 36h1v1h-1z"};
+const gQR = el('g', { id: 'qr', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code ausblenden' });
+const gQRPlatz = el('g', { id: 'qr-platz', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code anzeigen' });
+/* Platzhalter: gestrichelter Rahmen, Symbol (drei Suchmuster und einige Module – kein lesbarer Code), „QR-Code“ */
+function qrPlatzhalter(g, x0, y0, p, cls) {
+  el('title', {}, g).textContent = 'Klicken: QR-Code anzeigen';
+  el('rect', { x: x0, y: y0, width: p, height: p, rx: 8, fill: '#fff', stroke: '#9aa3ad', 'stroke-width': 2, 'stroke-dasharray': '8 6' }, g);
+  const s = 3, o = Math.round((p - 21 * s) / 2);
+  let d = '';
+  for (const [cx, cy] of [[0, 0], [14, 0], [0, 14]]) d += `M${cx} ${cy}h7v7h-7zM${cx + 1} ${cy + 1}v5h5v-5zM${cx + 2} ${cy + 2}h3v3h-3z`;
+  for (const [x, y] of [[9, 1], [11, 2], [9, 4], [12, 4], [10, 6], [12, 8], [8, 9], [10, 10], [14, 9], [16, 10], [18, 9], [20, 11], [1, 9], [3, 10], [5, 9], [2, 12],
+    [9, 12], [11, 13], [15, 14], [17, 15], [19, 16], [14, 17], [16, 19], [18, 18], [20, 20], [9, 15], [11, 17], [9, 19], [12, 20]]) d += `M${x} ${y}h1v1h-1z`;
+  el('path', { d, fill: '#5b6570', 'fill-rule': 'evenodd', transform: `translate(${x0 + o} ${y0 + o}) scale(${s})`, 'shape-rendering': 'crispEdges' }, g);
+  txt(x0 + p / 2, y0 + p + 28, 'QR-Code', { class: cls, 'text-anchor': 'middle' }, g);
+}
+qrPlatzhalter(gQRPlatz, 1900 - 96, 20, 96, 'lbl-xs sans');
+const QR_X0 = QR ? 1900 - (QR.n * 6 + 2 * 24) : 1900 - 96;     // linker Rand des QR-Codes: Der Titel steht 60 px davor
+if (QR) {
+  const m = 6, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
+  gQR.dataset.url = QR.url;
+  el('title', {}, gQR).textContent = 'Klicken: QR-Code ausblenden';
+  el('rect', { x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1 }, gQR);
+  el('path', { d: QR.d, fill: '#000', transform: `translate(${x0 + q} ${y0 + q}) scale(${m})`, 'shape-rendering': 'crispEdges' }, gQR);
+  txt(x0 + w / 2, y0 + w + 26, 'Am eigenen', { class: 'lbl-xs sans', 'text-anchor': 'middle' }, gQR);
+  txt(x0 + w / 2, y0 + w + 52, 'Gerät öffnen', { class: 'lbl-xs sans', 'text-anchor': 'middle' }, gQR);
+}
+
+/* Achsen der Stränge als Mittellinien: immer sichtbar (Festlegung der Lehrkraft, 12.11.2026).
+   Die Bezeichnung B_U, B_V, B_W gehört zu den Einzelfeldern und ist zuschaltbar. Sie steht an dem Ende,
+   zu dem das Feld des Strangs bei positivem Strom zeigt. */
+const bLbl = [];                                                   // Bezeichnungen B_U, B_V, B_W; render() setzt die Lage
+for (const s of CFG.straenge) {
+  const [x1, y1] = P(T.cx, T.cy, T.rAchse, s.achse), [x2, y2] = P(T.cx, T.cy, T.rAchse, s.achse + 180);
+  el('line', { x1, y1, x2, y2, stroke: C.ink, 'stroke-width': 1.3, 'stroke-dasharray': CFG.dashDot }, gAchsen);
+  const [xl, yl] = P(T.cx, T.cy, T.rB, s.achse);
+  bLbl.push(txt(xl, yl + 10, `${I('B')}${SUB(s.name)}`, { class: 'lbl halo', 'text-anchor': 'middle' }, gEf));
+}
+
+/* Liniendiagramm (zuschaltbar) */
+txt((L.x0 + L.x0 + 360 * L.kx) / 2, 440, 'Liniendiagramm der Strangströme', { class: 't-panel', 'text-anchor': 'middle' }, gLd);
+for (let d = 90; d <= 360; d += 90) {
+  const x = L.x0 + L.kx * d;
+  el('line', { x1: x, y1: L.y0 - L.amp, x2: x, y2: L.y0 + L.amp + 12, stroke: C.hilf, 'stroke-width': 1.2 }, gLd);
+  txt(x, L.y0 + L.amp + 44, `${d}°`, { class: 'lbl-s', 'text-anchor': 'middle' }, gLd);
+}
+for (let d = 30; d <= 360; d += 30) {
+  const x = L.x0 + L.kx * d;
+  el('line', { x1: x, y1: L.y0 - 9, x2: x, y2: L.y0 + 9, stroke: C.ink, 'stroke-width': 2 }, gLd);
+}
+{
+  const ax = makeArrow(gLd, C.ink, 2.2, 20, 6.5); ax.set(L.x0 - 4, L.y0, L.xEnd, L.y0);
+  const ay = makeArrow(gLd, C.ink, 2.2, 20, 6.5); ay.set(L.x0, L.y0 + L.amp + 22, L.x0, L.y0 - L.amp - 56);
+  txt(L.x0 - 16, L.y0 - L.amp - 34, I('i'), { class: 'lbl', 'text-anchor': 'end' }, gLd);      // Augenblickswert: Kleinbuchstabe
+  txt(L.xEnd + 4, L.y0 - 18, I('ωt'), { class: 'lbl', 'text-anchor': 'end' }, gLd);
+}
+const yI = (v) => L.y0 - L.amp * v;                                // Maßstab: î ≙ amp
+for (const s of CFG.straenge) {
+  let d = '';
+  for (let a = 0; a <= 360 + 1e-9; a += 1) d += (d ? ' L ' : 'M ') + (L.x0 + L.kx * a).toFixed(2) + ' ' + yI(Math.sin((a - s.phase) * D)).toFixed(2);
+  el('path', { d, fill: 'none', stroke: s.farbe, 'stroke-width': 4, 'stroke-linejoin': 'round' }, gLd);
+  /* Jede farbige Linie trägt ihr Formelzeichen: über dem ersten Maximum */
+  txt(L.x0 + L.kx * (s.phase + 90), L.y0 - L.amp - 16, `${I('i')}${SUB(s.name)}`, { class: 'lbl halo', 'text-anchor': 'middle' }, gLd);
+}
+
+/* ================= 6 Dynamische Elemente (einmal anlegen, in render() nur Attribute setzen) ================= */
+/* Ein Nordpol und ein Südpol (p = 1): Die Buchstaben laufen mit der Polmitte um. */
+const polN = txt(0, 0, 'N', { class: 'pol pol-n pol-frei', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gPole);
+const polS = txt(0, 0, 'S', { class: 'pol pol-s pol-frei', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gPole);
+const efPfeil = CFG.straenge.map((s) => makeArrow(gEf, s.farbe, 6, 24, 9.5));
+const kette = [1, 2].map((k) => el('line', { stroke: CFG.straenge[k].farbe, 'stroke-width': 3, 'stroke-dasharray': '9 7' }, gEf));
+const resRand = makeArrow(gRes, C.bRand, 13, 40, 18);              // dunkler Rand, damit Grün neben Südpol und Strang V erkennbar bleibt
+const resPfeil = makeArrow(gRes, C.b, 8, 33, 13);
+const resLbl = txt(0, 0, `${I('B')}${SUB('res')}`, { class: 'lbl c-b halo', 'text-anchor': 'middle' }, gLbl);
+const ro = txt(1010, 110, '', { class: 'ro' }, gLbl);
+const marke = el('line', { stroke: C.ink, 'stroke-width': 1.6, 'stroke-dasharray': '8 7' }, gLd);
+const gMom = el('g', {}, gLd);
+/* Momentanwerte als Pfeile, Spitze auf der Kurve (Festlegung 11.11.2026). Drei Pfeile auf derselben Senkrechten:
+   der längste liegt hinten und ist am breitesten, damit auch gleich große Werte beide sichtbar bleiben. */
+const momPfeil = CFG.straenge.map((s) => makeArrow(gMom, s.farbe, 6, 24, 10));
+const MOM_FORM = [[10, 26, 13], [6.5, 24, 10.5], [3.5, 22, 8.5]];
+
+/* ================= 7 Darstellung: Zustand → Bild ================= */
+function render() {
+  const a = S.x, m = model(a, S.q);
+  /* Zähne: Polfarbe nach der Durchflutung, die auf den Zahn wirkt. Südpol, wo das Feld in den Zahn hineingeht. */
+  ZAHN.forEach((z, j) => {
+    const th = m.zaehne[j].theta;
+    z.setAttribute('fill', th >= 0 ? C.sued : C.nord);
+    z.setAttribute('fill-opacity', S.em ? 0 : Math.min(1, Math.abs(th)).toFixed(3));   // Ansicht „Elementarmagnete“ ersetzt die Polfarbe
+  });
+  /* Leiter in den Nuten: Seite 1 (U1) führt bei positivem Strom das Kreuz, Seite 2 (U2) den Punkt. */
+  for (const n of NUT) {
+    const i = m['i' + n.strang], b = Math.abs(i);
+    const heraus = (n.seite === 2) === (i >= 0), sichtbar = b > 0.04;
+    n.punkt.setAttribute('r', heraus && sichtbar ? (0.64 * NM.rL * b).toFixed(2) : 0);
+    n.kreuz.style.display = !heraus && sichtbar ? '' : 'none';
+    if (!heraus && sichtbar) {
+      n.kreuz.setAttribute('transform', `translate(${n.x.toFixed(2)} ${n.y.toFixed(2)}) scale(${(0.55 * NM.rL * b).toFixed(2)})`);
+      n.kreuz.setAttribute('stroke-width', ((0.08 + 0.19 * b) * NM.rL).toFixed(2));
+    }
+  }
+  /* Polmitten: Das Feld zeigt in der Bohrung vom Nordpol weg und zum Südpol hin. */
+  const [xs, ys] = P(T.cx, T.cy, T.rPol, m.winkel), [xn, yn] = P(T.cx, T.cy, T.rPol, m.winkel + 180);   // in der Bohrung am Rand des Eisens
+  polS.setAttribute('x', xs.toFixed(1)); polS.setAttribute('y', ys.toFixed(1));
+  polN.setAttribute('x', xn.toFixed(1)); polN.setAttribute('y', yn.toFixed(1));
+  /* Elementarmagnete: Jeder dreht sich an seinem Platz; die Richtung folgt aus Fluss und Ruhelage (magnetZustand). */
+  show(gMag, S.em); show(gLegPol, !S.em); show(gLegEm, S.em);
+  /* Feldlinien: Das Bild ist im Polsystem gezeichnet und dreht sich als Ganzes in die Feldrichtung. */
+  show(gFeld, S.fl); show(gLegFl, S.fl);
+  if (S.fl) gFeld.setAttribute('transform', `rotate(${(-m.winkel).toFixed(2)} ${T.cx} ${T.cy})`);
+  if (S.em) magnetZustand(m).forEach((z, i) => {
+    const k = MAG[i];
+    k.g.setAttribute('transform', `translate(${k.x.toFixed(1)} ${k.y.toFixed(1)}) rotate(${(-z.winkel).toFixed(1)})`);
+  });
+  /* Bezeichnung der Einzelfelder: auf der Achse innerhalb des Rings, auf dem die Polbuchstaben umlaufen */
+  bLbl.forEach((t, k) => {
+    const a = CFG.straenge[k].achse, o = T.dB, [bx0, by0] = P(T.cx, T.cy, T.rB, a);
+    t.setAttribute('x', (bx0 - o * Math.sin(a * D)).toFixed(1)); t.setAttribute('y', (by0 - o * Math.cos(a * D) + 10).toFixed(1));
+  });
+  /* Resultierendes Feld */
+  const tx = T.cx + m.bx * T.kB, ty = T.cy - m.by * T.kB;
+  const ux = m.bx / (m.bRes || 1), uy = m.by / (m.bRes || 1);
+  resRand.set(T.cx, T.cy, tx, ty);
+  resPfeil.set(T.cx, T.cy, tx - ux * 6, ty + uy * 6);
+  /* Beschriftung neben dem Schaft (rechts in Pfeilrichtung) */
+  resLbl.setAttribute('x', (T.cx + ux * 92 + uy * 40).toFixed(1));
+  resLbl.setAttribute('y', (T.cy - (uy * 92 - ux * 40) + 10).toFixed(1));
+  /* Einzelfelder: stehende Pfeile auf den Achsen und, gestrichelt, die Aneinanderreihung zur Summe */
+  show(gEf, S.ef);
+  if (S.ef) {
+    let px = T.cx, py = T.cy;
+    CFG.straenge.forEach((s, k) => {
+      const i = m['i' + s.name], th = s.achse * D;
+      const dx = i * T.kB * Math.cos(th), dy = -i * T.kB * Math.sin(th);
+      efPfeil[k].set(T.cx, T.cy, T.cx + dx, T.cy + dy);
+      if (k > 0) {
+        const ln = kette[k - 1];
+        ln.setAttribute('x1', px); ln.setAttribute('y1', py); ln.setAttribute('x2', px + dx); ln.setAttribute('y2', py + dy);
+      }
+      px += dx; py += dy;
+    });
+  }
+  /* Liniendiagramm */
+  show(gLd, S.ld);
+  if (S.ld) {
+    const xd = L.x0 + L.kx * a;
+    marke.setAttribute('x1', xd); marke.setAttribute('x2', xd);
+    marke.setAttribute('y1', L.y0 - L.amp - 8); marke.setAttribute('y2', L.y0 + L.amp + 8);
+    const rang = CFG.straenge.map((s, k) => ({ k, i: m['i' + s.name] })).sort((p, q) => Math.abs(q.i) - Math.abs(p.i));
+    rang.forEach(({ k, i }, r) => {
+      momPfeil[k].form(...MOM_FORM[r]);
+      momPfeil[k].set(xd, L.y0, xd, yI(i));
+      gMom.appendChild(momPfeil[k].g);                              // längster zuerst → liegt hinten
+    });
+  }
+  ro.innerHTML = `${I('ωt')} = ${fmtGrad(a)}`;
+  syncUI();
+}
+
+/* ================= 8 Bedienung ================= */
+const btnPlay = $('#btn-play'), rng = $('#rng-x'), num = $('#num-x');
+for (const e of [rng, num]) { e.min = CFG.x.min; e.max = CFG.x.max; e.step = CFG.x.step; e.value = CFG.x.start; }
+$('#cap-x').innerHTML = `<i>${CFG.x.zeichen}</i> in ${CFG.x.einheit}`;
+function syncUI() {
+  const v = Math.round(S.x * 100) / 100;
+  rng.value = v;
+  if (document.activeElement !== num) num.value = Math.round(v);
+  btnPlay.textContent = S.playing ? '❚❚ Pause' : '▶ Abspielen';
+  btnPlay.setAttribute('aria-pressed', String(S.playing));
+  /* QR-Code und Platzhalter nur auf großen Bildschirmen: am Handy ist die Animation ja schon offen */
+  const exp = document.documentElement.classList.contains('export'), gross = window.innerWidth >= 800;
+  const qrAn = !!QR && S.qr && (gross || exp), platzAn = !!QR && !S.qr && gross && !exp;
+  show(gQR, qrAn); show(gQRPlatz, platzAn);
+  titel.setAttribute('x', (qrAn || platzAn) ? QR_X0 - 60 : 1872);   // Titel springt beim Umschalten nicht
+}
+function setX(v, fromUser = true) {
+  if (!Number.isFinite(v)) return;
+  if (fromUser) S.playing = false;
+  S.x = clamp(v, CFG.x.min, CFG.x.max);
+  render();
+  if (fromUser) writeHash();
+}
+function writeHash() {
+  try { history.replaceState(null, '', '#' + CFG.x.hash + String(Math.round(S.x * 100) / 100).replace('.', '-')); } catch (e) { /* Rahmen erlaubt es nicht */ }
+}
+function readStart() {
+  try {
+    const h = new RegExp('^#' + CFG.x.hash + '(\\d+)(?:-(\\d+))?$').exec(location.hash || '');
+    if (h) return parseFloat(h[1] + (h[2] ? '.' + h[2] : ''));
+  } catch (e) { /* ignorieren */ }
+  return CFG.x.start;
+}
+let last = null;
+function tick(ts) {
+  if (!S.playing) { last = null; return; }
+  if (last !== null) {
+    /* Festlegung der Lehrkraft, 11.11.2026: Abspielen läuft als Endlosschleife über genau eine Periode. */
+    S.x += Math.min((ts - last) / 1000, 0.1) * (CFG.x.max - CFG.x.min) / S.dauer;
+    if (S.x >= CFG.x.max) { if (CFG.x.loop) S.x -= (CFG.x.max - CFG.x.min); else { S.x = CFG.x.max; S.playing = false; } }
+    render();
+  }
+  last = ts;
+  requestAnimationFrame(tick);
+}
+function togglePlay() {
+  S.playing = !S.playing;
+  if (S.playing && S.x >= CFG.x.max) S.x = CFG.x.min;
+  syncUI();
+  if (S.playing) requestAnimationFrame(tick); else writeHash();
+}
+btnPlay.addEventListener('click', togglePlay);
+$('#sel-speed').addEventListener('change', (e) => { S.dauer = Number(e.target.value); });
+rng.addEventListener('input', () => setX(parseFloat(rng.value)));
+num.addEventListener('change', () => setX(parseFloat(String(num.value).replace(',', '.'))));
+for (const d of [-CFG.x.big, -CFG.x.step, CFG.x.step, CFG.x.big]) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = (d > 0 ? '+' : '−') + String(Math.abs(d)).replace('.', ',') + CFG.x.einheit;
+  b.addEventListener('click', () => setX(S.x + d));
+  $('#steps').appendChild(b);
+}
+for (const p of CFG.x.presets) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = String(p).replace('.', ',') + CFG.x.einheit;
+  b.addEventListener('click', () => setX(p));
+  $('#presets').appendChild(b);
+}
+const SCHALTER = ['ef', 'ld', 'em', 'fl'];       // Schlüssel in S, zu jedem gehört <input id="chk-…">
+for (const key of SCHALTER) $('#chk-' + key).addEventListener('change', (e) => { S[key] = e.target.checked; render(); });
+/* Nutenzahl: Auswahl aus CFG.q.werte; der Ständer wird neu gezeichnet. */
+const selQ = $('#sel-q');
+for (const q of CFG.q.werte) {
+  const o = document.createElement('option');
+  o.value = String(q); o.textContent = `${q}${q > 4 ? ' kleine' : ''} (${2 * CFG.straenge.length * q} Nuten)`;
+  selQ.appendChild(o);
+}
+function setQ(q) {
+  if (!CFG.q.werte.includes(q)) return;
+  S.q = q; selQ.value = String(q);
+  baueStaender(q); render();
+}
+selQ.addEventListener('change', () => setQ(Number(selQ.value)));
+function toggleFullscreen() {
+  try { if (document.fullscreenElement) document.exitFullscreen(); else $('#stage').requestFullscreen?.().catch(() => {}); } catch (e) { /* nicht verfügbar */ }
+}
+$('#btn-fs').addEventListener('click', toggleFullscreen);
+function qrUmschalten() {
+  S.qr = !S.qr; render();
+  const z = S.qr ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({ preventScroll: true });
+}
+for (const g of [gQR, gQRPlatz]) {
+  g.addEventListener('click', qrUmschalten);
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
+}
+window.addEventListener('resize', () => syncUI());
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  const inField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if (e.key === ' ' && !inField && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); return; }
+  if (inField && t.type !== 'checkbox') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setX(S.x + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? CFG.x.big : CFG.x.step)); }
+  else if (e.key === 'Home') { e.preventDefault(); setX(CFG.x.min); }
+  else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S.x) setX(v, false); });
+
+/* ================= 9 Schnittstelle für Prüfung und Export (Pflicht) =================
+   scripts/pruefen.py und scripts/video.py steuern die Seite nur hierüber. */
+const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
+if (params.has('export')) document.documentElement.classList.add('export');
+for (const k of SCHALTER) { if (params.has(k)) S[k] = params.get(k) !== '0'; $('#chk-' + k).checked = S[k]; }
+if (params.has('qr')) S.qr = params.get('qr') !== '0';   // ?qr=1: QR-Code gleich zeigen (Beamer, Export)
+if (params.has('q') && CFG.q.werte.includes(Number(params.get('q')))) S.q = Number(params.get('q'));   // z. B. ?q=1
+window.anim = {
+  bauart: 'stellgroesse',
+  cfg: CFG,
+  model,                                                       // reine Physik, zum Nachrechnen: model(ωt, q)
+  nuten,                                                       // Lage der Nuten für eine Nutenzahl
+  set(x) { S.playing = false; S.x = clamp(x, CFG.x.min, CFG.x.max); render(); return S.x; },
+  opt(key, val) {
+    if (key === 'q') { setQ(Number(val)); return; }
+    S[key] = val; const c = $('#chk-' + key); if (c) c.checked = !!val; render();
+  },
+  feldEisen,                                                   // Flussdichte im Eisen (Modell der Feldlinien)
+  feldlinie,                                                   // Punktfolge einer Feldlinie im Polsystem
+  get nut() { return { ...NM }; },                             // Maße der Nut für die gewählte Nutenzahl
+  get state() { const m = model(S.x, S.q); return { ...S, ...m, magnete: magnetZustand(m) }; },
+};
+
+/* ================= 10 Start ================= */
+svg.append(gQR, gQRPlatz);                 // QR-Code und Platzhalter zuoberst: anklickbar, von nichts verdeckt
+S.x = clamp(readStart(), CFG.x.min, CFG.x.max);
+selQ.value = String(S.q);
+baueStaender(S.q);
+render();
+})();
+</script>
+</body>
+</html>
