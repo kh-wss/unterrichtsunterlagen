@@ -1,0 +1,1872 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spule ein- und ausschalten</title>
+<meta name="description" content="Interaktive Animation zur Selbstinduktion: Spule an Gleichspannung ein- und ausschalten, mit Elektronen, Magnetfeld, Spannungs- und Strompfeilen, Lichtbogen und Freilaufdiode.">
+<style>
+/* LAYOUT-NORM:begin v3 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+   Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
+   gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit. */
+:root{
+  /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
+  --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
+  --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
+  /* Bühne: immer weiß, ohne Karoraster – die Größenfarben der Fachkonventionen gelten für weißen Grund */
+  --stage:#ffffff; --ink:#1b2127;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-math:var(--font-ui);   /* Formeln in der Textschrift (Festlegung der Lehrkraft, 12.11.2026; fachkonventionen 3a) */
+  /* Bühnengröße = (Fensterhöhe − --reserve) · 16/9, höchstens 1920 px und höchstens die Seitenbreite.
+     --reserve: Ränder, Abstand und Bedienleiste. Derselbe Wert steht in scripts/pruefen.py (NORM). */
+  --reserve:250px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+    --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+  --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--page);color:var(--fg)}
+body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.45;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+sub,sup{font-size:.72em;line-height:0}
+
+/* 1 Seitenaufbau, immer in dieser Reihenfolge, alles gleich breit: Bühne (#stage) → Bedienleiste (#controls) →
+   Zusatzbereiche (.card, .info, optional) → Modellhinweise (.notes). Über der Bühne steht nichts. */
+.wrap{width:100%;max-width:min(1920px,max(min(100%,720px),calc((100dvh - var(--reserve)) * 16 / 9)));
+  margin:0 auto;display:grid;gap:12px}
+
+/* 2 Bühne: immer 16:9, logisch 1920 × 1080 (SVG-viewBox; Canvas darunter, SVG mit Titel und QR-Code darüber) */
+.stage{position:relative;background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.stage svg,.stage canvas{display:block;width:100%;height:100%}
+.stage canvas + svg{position:absolute;inset:0}
+.stage:fullscreen{border:0;border-radius:0;aspect-ratio:auto;width:100vw;height:100vh;max-width:none}   /* nur noch für Animationen vor v3 */
+
+/* 3 Schrift in der Bühne (Bühnenpixel bei 1920 Breite): Formelzeichen kursiv (.i), Einheiten, Zahlen, Indizes aufrecht */
+#stage-svg text{font-family:var(--font-math);fill:var(--ink)}
+#stage-svg .t-main{font-size:60px;font-weight:700}     /* Titel, oben rechts neben dem QR-Code */
+#stage-svg .t-panel{font-size:34px;font-weight:700}    /* Bereichsüberschrift */
+#stage-svg .ro{font-size:38px}                         /* Momentanwerte */
+#stage-svg .lbl{font-size:30px}                        /* Formelzeichen an Pfeilen und Bauteilen */
+#stage-svg .lbl-s{font-size:25px}
+#stage-svg .lbl-xs{font-size:22px}                     /* kleinste erlaubte Beschriftung */
+#stage-svg .sans{font-family:var(--font-ui)}
+#stage-svg .i{font-style:italic}
+#stage-svg .muted{fill:#58636e}
+#stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .qr-cap{font-family:var(--font-ui);font-size:22px}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
+
+/* 4 Bedienleiste: höchstens drei Zeilen – 1 Lauf (und Wert), 2 Einstellen (nur wenn nötig), 3 Ansicht – dann „Tastatur“.
+   Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+.card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.controls{display:grid;gap:6px;font-size:13.5px;line-height:1.35}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.row .sp{flex:1 1 auto}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
+.group.wert .group{flex-wrap:nowrap}
+.group.wert input[type=range]{min-width:100px}
+.cap{font-size:12px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
+button{padding:3px 9px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:9em;font-weight:600}
+button.primary:hover{opacity:.92}
+select{padding:2px 5px}
+input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
+.seg{display:inline-flex}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
+.seg button:last-child{border-radius:0 5px 5px 0}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:14px;height:14px;margin:0}
+:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.keys .hint{margin-top:6px}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+.sep{width:1px;align-self:stretch;background:var(--rule)}
+@media (max-width:640px){.sep{display:none}}
+
+/* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
+.diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
+.diag text{font-family:var(--font-math);fill:var(--ink)}           /* Schriftstufen wie in der Bühne (Bühnenpixel bei 1920) */
+.diag .lbl{font-size:30px} .diag .lbl-s{font-size:25px} .diag .lbl-xs{font-size:22px}
+.diag .sans{font-family:var(--font-ui)} .diag .i{font-style:italic} .diag .muted{fill:#58636e}
+.diag .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+.info{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.info{grid-template-columns:1fr}}
+.info h2{margin:0;font-size:19px}
+.info h3,.card h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#pText{margin:8px 0 0;max-width:68ch}
+.formulas{margin-top:10px;padding:10px 12px;border-left:3px solid var(--rule);background:var(--btn);border-radius:0 6px 6px 0;display:grid;gap:8px;font-family:var(--font-math);font-size:17px}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px;line-height:1.15}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 3px}
+.vals table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.vals td{padding:4px 0;border-bottom:1px solid var(--rule)}
+.vals td:last-child{text-align:right;font-weight:600}
+.vals tr:last-child td{border-bottom:0}
+
+/* 6 Modellhinweise: immer zuletzt, aufklappbar */
+.notes summary{cursor:pointer;font-weight:600}
+.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
+
+/* 7 Export (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
+html.export .wrap>:not(.stage){display:none}
+
+/* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
+   16:9-Rahmen genau aus. Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.buehne .wrap{width:100%;max-width:none;gap:0}
+html.buehne .stage{border:0;border-radius:0}
+html.buehne .wrap>:not(.stage){display:none}
+
+/* 9 Handy quer (Fenster flach und höchstens 520 px hoch): Bühne links, so groß wie es die Höhe erlaubt; Bedienleiste
+   rechts daneben, bei Bedarf mit eigenem Rollbalken; alles Weitere darunter. Nicht in Vorschau und Export. */
+@media (orientation:landscape) and (max-height:520px){
+  html:not(.buehne):not(.export):not(.vollbild) .wrap{max-width:none;
+    grid-template-columns:min(calc((100dvh - 32px) * 16 / 9),calc(100% - 272px)) minmax(260px,1fr);align-items:start}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>*{grid-column:1 / -1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.stage{grid-column:1;grid-row:1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{grid-column:2;grid-row:1;min-width:0;max-height:calc(100dvh - 32px);
+    overflow-x:hidden;overflow-y:auto;padding:8px 10px}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+}
+
+/* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
+   sichtbar sind nur die Bühne und – wenn eingeschaltet – das Diagramm (#diagCard) darunter. Die Bühne bleibt 16:9 und wird
+   so groß, dass beides auf den Bildschirm passt (mit Diagramm: 1920 × 1480 Bühnenpixel zusammen). Ohne Vollbild-Schnittstelle
+   (iPhone, eingebettete Ansicht) füllt dieselbe Ansicht das Fenster; dann führt .vb-ende zurück.
+   Festlegung der Lehrkraft, 12.11.2026: „Vollbild nimmt ein eingeschaltetes Diagramm mit.“ */
+html.vollbild,html.vollbild body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.vollbild .wrap{position:fixed;inset:0;z-index:20;max-width:none;width:auto;margin:0;gap:0;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;--vb-h:1080}
+html.vollbild .wrap:has(>#diagCard:not([hidden])){--vb-h:1480}
+html.vollbild .wrap>*{display:none}
+html.vollbild .wrap>.stage{display:block;flex:none;border:0;border-radius:0;width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild .wrap>#diagCard:not([hidden]){display:block;flex:none;border:0;border-radius:0;padding:0;background:#fff;
+  width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild #diagCard h3{display:none}
+html.vollbild #diagCard .diag{border:0;border-radius:0}
+.vb-ende{display:none}
+html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:21;opacity:.8}
+/* LAYOUT-NORM:end */
+/* ===== Nur diese Animation (nach dem Normblock) =====
+   Festlegung der Lehrkraft, 12.11.2026: Layout nach der Norm (v3, Skill animation-erstellen, references/layout.md) –
+   nichts über der Bühne, Titel oben rechts in der Bühne, Bedienleiste in drei Zeilen darunter.
+   Abweichung (Festlegung der Lehrkraft, 12.11.2026): Handy hochkant mit eigener Anordnung (Bühne 710 × 1040 statt 16:9),
+   sonst wären Schrift und Teilchen hochkant nur 4–6 px groß. Sonst gilt die Norm. */
+:root{ --u:#0070C0; --i:#FF0000; --b:#00B050; --neg:#d46b00; }           /* Größenfarben nach fachkonventionen 6 */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --u:#4aa6ea; --i:#ff5757; --b:#2fcf78; --neg:#ffa630; } }
+:root[data-theme="dark"]{ --u:#4aa6ea; --i:#ff5757; --b:#2fcf78; --neg:#ffa630; }
+#cv{touch-action:manipulation}
+#stage-svg{pointer-events:none}                         /* Klicks gehen ans Canvas (Schalter), außer auf den QR-Code */
+#stage-svg .qr-knopf{pointer-events:auto}
+#stage-svg .qr-cap{fill:#1f2328}
+.seg .sh{display:none}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){.seg .lg{display:none}.seg .sh{display:inline}}   /* Handy: kurze Szenario-Namen */
+#diag{background:#fff;border-radius:4px}
+.info .phead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
+.badge{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.info i,.notes i{font-family:var(--font-math)}
+.formulas{border-left-color:var(--u)}
+.formulas .c{color:var(--muted);font:13px var(--font-ui)}
+.fr>span:last-child{padding:0 3px}
+.vals tr.u td:first-child{color:var(--u)}
+.vals tr.i td:first-child{color:var(--i)}
+.vals .note{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
+.info.ohne-werte{grid-template-columns:minmax(0,1fr)}
+.neg{color:var(--neg);font-weight:800}
+.msg{min-height:1.2em;margin:8px 0 0;font-size:13px;color:var(--i);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 1 Bühne: 16:9, logisch 1920 × 1080 (Canvas für Teilchen und Schaltung, SVG darüber für Titel und QR-Code).
+       Über ihr steht nichts. Hochkant: eigene Anordnung (Abweichung, siehe oben). -->
+  <div class="stage" id="stage">
+    <canvas id="cv" data-logisch="1920x1080" aria-hidden="true"></canvas>
+    <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">Spule ein- und ausschalten</title>
+      <desc id="svg-desc">Stromkreis aus Spannungsquelle U, Schalter S und RL-Reihenschaltung aus Drahtwiderstand R_Cu und Spule L. Breite Leiter mit Atomrümpfen und Elektronen, Feldlinien um die Spule, Spannungs- und Strompfeile.</desc>
+    </svg>
+  </div>
+
+  <!-- 2 Bedienleiste: unmittelbar unter der Bühne, drei Zeilen, dann „Tastatur und Bedienung“ -->
+  <div class="controls" id="controls" role="toolbar" aria-label="Bedienung">
+    <div class="row">                                   <!-- Zeile 1 · Lauf -->
+      <button id="bSwitch" class="primary" type="button">Schalter schließen</button>
+      <div class="group"><span class="cap">Tempo</span>
+        <div class="seg" role="group" aria-label="Tempo">
+          <button type="button" data-tempo="0.5" aria-pressed="false">0,5×</button>
+          <button type="button" data-tempo="1" aria-pressed="true">1×</button>
+          <button type="button" data-tempo="2" aria-pressed="false">2×</button>
+        </div>
+      </div>
+      <button id="bPause" type="button">Pause</button>
+      <button id="bReset" type="button">Zurücksetzen</button>
+    </div>
+    <div class="row">                                   <!-- Zeile 2 · Einstellen: Szenario und Schutzbeschaltung -->
+      <div class="group"><span class="cap">Szenario</span>
+        <div class="seg" role="group" aria-label="Szenario">
+          <button type="button" data-sc="normal" aria-pressed="true"><span class="lg">24 V · Normalfall</span><span class="sh">Normal</span></button>
+          <button type="button" data-sc="fault" aria-pressed="false"><span class="lg">220 V · Fehlerfall</span><span class="sh">Fehler</span></button>
+        </div>
+      </div>
+      <label class="chk" for="chk-diode"><input id="chk-diode" type="checkbox">Freilaufdiode</label>
+    </div>
+    <div class="row">                                   <!-- Zeile 3 · Ansicht, rechts außen Vollbild -->
+      <label class="chk" for="chk-diag"><input id="chk-diag" type="checkbox">Diagramm</label>
+      <label class="chk" for="chk-form"><input id="chk-form" type="checkbox" checked>Formeln</label>
+      <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox" checked>Berechnung</label>
+      <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox" checked>Momentanwerte</label>
+      <span class="sp"></span>
+      <button id="bFull" type="button">Vollbild</button>
+    </div>
+    <details class="keys">
+      <summary>Tastatur und Bedienung</summary>
+      <div class="hint">Den Schalter in der Grafik anklicken oder antippen. Elektronen (−) bewegen sich zwischen den Atomrümpfen (+); grün: Magnetfeld, blau: Spannungen, rot: Strom.<br>
+        <kbd>Leertaste</kbd>, <kbd>Bild↓</kbd> oder <kbd>→</kbd> schaltet · <kbd>D</kbd> Freilaufdiode · <kbd>M</kbd> Momentanwerte · <kbd>P</kbd> Pause · <kbd>R</kbd> Zurücksetzen · <kbd>F</kbd> Vollbild, <kbd>Esc</kbd> beendet es.<br>
+        Adresse: <code>?szenario=fehler</code>, <code>?diode=1</code>, <code>?diagramm=1</code>, <code>?werte=0</code>, <code>?qr=1</code> (im Artifact <code>#fehlerfall</code>, <code>#diode</code>, <code>#diagramm</code>, <code>#ohnewerte</code>, <code>#qr</code>).</div>
+    </details>
+  </div>
+
+  <!-- 3 Zusatzbereiche: Diagramm (einblendbar), Phasentext mit Formeln, Momentanwerte -->
+  <section id="diagCard" class="card" hidden>
+    <h3>Zeitverlauf</h3>
+    <canvas id="diag" class="diag" role="img" aria-label="Liniendiagramm von Spulenstrom und Spannungen über der Animationszeit"></canvas>
+  </section>
+
+  <section class="info" id="info">
+    <article class="card">
+      <div class="phead"><h2 id="pTitle" aria-live="polite">Schalter offen</h2><span id="pBadge" class="badge"></span></div>
+      <p id="pText"></p>
+      <div id="pForm" class="formulas"></div>
+      <p id="msg" class="msg" role="status"></p>
+    </article>
+    <aside class="card vals" id="werte">
+      <h3>Momentanwerte</h3>
+      <table><tbody id="vals"></tbody></table>
+      <p class="note" id="scNote"></p>
+    </aside>
+  </section>
+
+  <!-- 4 Zuletzt die Modellhinweise -->
+  <details class="card notes">
+    <summary>Modell und Vereinfachungen</summary>
+    <ul>
+      <li>Die Abschnitte laufen unterschiedlich stark in Zeitlupe. Der Faktor steht jeweils in der Grafik.</li>
+      <li>Elektronen und Atomrümpfe sind abstrahiert: ein Elektron je Atomrumpf, alle 16 px eines. Real wandern die Elektronen sehr langsam: bei <i>I</i> = 1,00&#8239;A in <i>A</i> = 1,00&#8239;mm² Kupfer ist <i>v</i><sub>D</sub> = 73,70&#8239;µm/s.</li>
+      <li>Alle Elektronen im Kreis bewegen sich gleichzeitig, weil sich das elektrische Feld nahezu mit Lichtgeschwindigkeit ausbreitet.</li>
+      <li>Annahmen: Kapazität der offenen Kontakte <i>C</i><sub>p</sub> = 100&#8239;pF, Zündspannung <i>U</i><sub>Z</sub> = 350&#8239;V bei <i>d</i> ≈ 10&#8239;µm (Paschen-Minimum in Luft: 327&#8239;V bei 7,5&#8239;µm), Lichtbogenspannung <i>U</i><sub>B</sub> = 15&#8239;V + <i>E</i> · <i>d</i> mit <i>E</i> = 10&#8239;V/mm (24-V-Fall) bzw. 5&#8239;V/mm (220-V-Fall), Kontaktabstand <i>d</i> bis 3&#8239;mm.</li>
+      <li>Der Kontaktabstand ist stark vergrößert gezeichnet. Real zündet der Lichtbogen meist schon beim Trennen, an der schmelzenden Kontaktbrücke.</li>
+      <li>Der Lichtbogen erlischt im Modell, wenn der Strom null wird. Abreißen beim Mindeststrom und erneutes Zünden sind weggelassen.</li>
+      <li>Fehlerfall: <i>U</i> = 220&#8239;V Gleichspannung an einem Schalter ohne Gleichstrom-Bemessung. Der Brandverlauf ist qualitativ. Für Spulen in Steuerstromkreisen gilt die Gebrauchskategorie DC-13 nach DIN EN 60947-5-1.</li>
+      <li>Freilaufdiode mit <i>U</i><sub>F</sub> = 0,7&#8239;V.</li>
+      <li>Auf dem Handy hochkant ist die Schaltung schmaler angeordnet: Spannungspfeile links der Spule, Legende unter der Schaltung. Inhalt und Werte sind dieselben.</li>
+    </ul>
+  </details>
+</div>
+<button type="button" class="vb-ende" id="vb-ende">Vollbild beenden</button>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const stage = $('cv'), stageEl = $('stage'), ctx = stage.getContext('2d');   // stage: Canvas, stageEl: Bühne #stage
+const diag = $('diag'), dctx = diag.getContext('2d');
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TOUCH = matchMedia('(hover: none)').matches;
+
+/* ================= Parameterblock: Anordnung der Schaltung =================
+   Festlegung der Lehrkraft, 12.11.2026: für Beamer und Smartphone optimieren; Bühne weiß ohne Karo.
+   'quer': Beamer, Bildschirm, Handy quer – Bühne 16:9, logisch 1920 × 1080 (Layout-Norm v2). Die Schaltung ist in
+           eigenen Einheiten (1250 × 703) gezeichnet und mit place.s = 1,3 so in die Bühne gesetzt, dass oben rechts Titel
+           und QR-Code frei stehen (Festlegung der Lehrkraft, 12.11.2026: Ecke beim Umbau freiräumen).
+           Schrift in Bühnenpixeln = Größe hier · 1,3 (Norm: kleinste Beschriftung 22, Formelzeichen 30, Momentanwerte 36).
+   'hoch': Handy hochkant – dieselbe Schaltung schmaler, Spannungspfeile links der Spule,
+           Legende und Phasentitel als Text unter der Bühne, größere Schrift.
+   Alle Maße in Bühnenpixeln. Schriftgrößen nach Skill animation-erstellen (Bühne 1920 breit: Beschriftung ≥ 22,
+   Formelzeichen an Pfeilen ≥ 30, Momentanwerte ≥ 36 – hier auf 1250 umgerechnet: ≥ 14, ≥ 20, ≥ 24). */
+const LAYOUTS = {
+  quer: {W: 1250, H: 703, YT: 130, YB: 610, XL: 170, XC: 830, XD: 1205, PIVX: 430, SRCY: 400, RBOXCY: 220, COILYT: 310,
+    XARR: 1005, armSide: 1, DIODEY: 330,
+    U: {ax: 242, lx: 256, ly: 410, align: 'left'},
+    uS: {ay: 22, max: 330, lx: 364, ly: 31, align: 'right', noteRight: false},
+    i: {cx: 500},
+    iD: {cy: 535, max: 116, lx: 1160, ly: 584, align: 'right'},
+    diodeLbl: {x: 1175, y: 322, lines: ['Freilauf-', 'diode'], align: 'right'},
+    hud: {x: 214, y: 210}, note: {x: 214, y: 292, maxW: 450}, legend: {x: 40, y: 672},
+    place: {SW: 1920, SH: 1080, s: 1.3, ox: 12, oy: 140},
+    surplus: {x: 624, y: 104, align: 'left'}, deficit: {x: 364, y: 104, align: 'right'},
+    hint: {x: 632, y: 104, align: 'left'},
+    fs: {eq: 28, sym: 28, pol: 26, lbl: 17, small: 18, hud: 24, badge: 17, legend: 17}},
+  hoch: {W: 710, H: 826, YT: 200, YB: 790, XL: 70, XC: 470, XD: 662, PIVX: 180, SRCY: 690, RBOXCY: 330, COILYT: 430,
+    XARR: 300, armSide: -1, DIODEY: 250,
+    U: {ax: 140, lx: 154, ly: 700, align: 'left'},
+    uS: {ay: 72, max: 300, lx: 290, ly: 42, align: 'center', noteRight: true},
+    i: {cx: 295},
+    iD: {cy: 700, max: 110, lx: 617, ly: 762, align: 'right'},
+    diodeLbl: {x: 632, y: 254, lines: ['Freilaufdiode'], align: 'right'},
+    hud: null, note: {x: 20, y: 946, maxW: 670}, legend: {x: 20, y: 850, rows: true},
+    // Abweichung von der Norm (Festlegung der Lehrkraft, 12.11.2026): eigene Bühnenform hochkant, Titel oben, Legende unten
+    place: {SW: 710, SH: 1040, s: 1, ox: 0, oy: 56},
+    surplus: {x: 374, y: 172, align: 'left'}, deficit: {x: 92, y: 282, align: 'left', size: 19},
+    hint: {x: 378, y: 150, align: 'left'},
+    fs: {eq: 32, sym: 32, pol: 30, lbl: 21, small: 20, hud: 0, badge: 0, legend: 19}}
+};
+const DIAGS = {quer: {W: 1920, H: 400, f: 1.536, pad: 123}, hoch: {W: 640, H: 400, f: 1.45, pad: 84}};   // quer: Norm 1920 × 400
+const BLADE = 110, BW = 30, OFF = 9.5, PR = 5;   // eine Leiterbreite für alle Leiter und die Wicklung; OFF: Abstand der Atomrümpfe von der Mitte
+const A1 = -0.40, A2 = -0.60;           // Klinge: Spalt beim Stau, ganz offen (rad)
+const W2 = 12;                           // halbe Fensterlänge für den Weg über den Lichtbogen
+let PL = null;   // Lage der Schaltung in der Bühne: Bühne SW × SH, Maßstab s, Versatz ox, oy
+let W, H, YT, YB, XL, XC, XD, PIV, FACE_X, SRC, COIL, RBOX, HOUS, L1, XARR, YM, G, FS, DL = DIAGS.quer;
+let MAIN_UP, MAIN_LEN, COIL_PATH, DIODE_PATH, coilRuns = [], SEG = null, SP = 16, layoutName = '';
+let NET_COIL = null, sW0 = 0, sW1 = 0, ION_CACHE = [[], []], COIL_IONS = [];
+
+function mkPath(pts) {
+  let s = 0; const P = [];
+  for (let k = 0; k < pts.length; k++) {
+    if (k > 0) s += Math.hypot(pts[k].x - pts[k-1].x, pts[k].y - pts[k-1].y);
+    P.push({x: pts[k].x, y: pts[k].y, back: !!pts[k].back, s});
+  }
+  return {P, len: s};
+}
+function at(path, s) {
+  const P = path.P;
+  if (s < 0) s = 0; if (s > path.len) s = path.len;
+  let lo = 0, hi = P.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (P[m].s <= s) lo = m; else hi = m; }
+  const a = P[lo], b = P[hi], d = (b.s - a.s) || 1, t = (s - a.s) / d;
+  const tx = (b.x - a.x) / d, ty = (b.y - a.y) / d;
+  return {x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, nx: -ty, ny: tx, back: t < 0.5 ? a.back : b.back};
+}
+function tipPoint(a) { return {x: PIV.x + BLADE * Math.cos(a), y: PIV.y + BLADE * Math.sin(a)}; }
+let downCache = null, downAlpha = NaN;
+function getDown(a) {
+  if (a !== downAlpha) {
+    downCache = mkPath([tipPoint(a), {x: PIV.x, y: PIV.y}, {x: XL, y: YT}, {x: XL, y: YB}, {x: XC, y: YB}]);
+    downAlpha = a;
+  }
+  return downCache;
+}
+function mkSeg(len) { const n = Math.max(1, Math.round(len / 16)); return {len, n, sp: len / n, ph: 0}; }
+// Anordnung setzen: Lage aller Bauteile, Pfade der Leiter und Teilchen; die Physik bleibt unberührt
+function setLayout(name) {
+  const g = LAYOUTS[name]; G = g; FS = g.fs; layoutName = name; DL = DIAGS[name]; PL = g.place;
+  W = g.W; H = g.H; YT = g.YT; YB = g.YB; XL = g.XL; XC = g.XC; XD = g.XD;
+  PIV = {x: g.PIVX, y: YT}; FACE_X = PIV.x + BLADE;
+  SRC = {x: XL, y: g.SRCY, r: 44};
+  COIL = {R: 46, E: 9, yt: g.COILYT, yb: g.COILYT + 230, N: 4};
+  RBOX = {cy: g.RBOXCY, w: 62, h: 90};
+  HOUS = {x: PIV.x - 52, y: YT - 86, w: 236, h: 138};
+  L1 = XC - FACE_X;                      // Weg vom Knoten oben bis zur Kontaktfläche
+  XARR = g.XARR;                         // x der Spannungspfeile an R_Cu und L
+  YM = (COIL.yt + COIL.yb) / 2;
+  MAIN_UP = mkPath([{x: XC, y: YT}, {x: FACE_X, y: YT}]);
+  downCache = null; downAlpha = NaN; arcCache = null;
+  MAIN_LEN = L1 + BLADE + (PIV.x - XL) + (YB - YT) + (XC - XL);
+  const coilPts = [{x: XC, y: YB}, {x: XC, y: COIL.yb + COIL.E}];
+  const NS = 900;
+  for (let k = 1; k <= NS; k++) {
+    const th = -2 * Math.PI * COIL.N * k / NS;
+    coilPts.push({x: XC + COIL.R * Math.sin(th), y: COIL.yb - (COIL.yb - COIL.yt) * k / NS + COIL.E * Math.cos(th), back: Math.cos(th) < 0});
+  }
+  coilPts.push({x: XC, y: YT});
+  COIL_PATH = mkPath(coilPts);
+  sW0 = YB - (COIL.yb + COIL.E);                    // Weg bis zum Beginn der Wicklung
+  sW1 = COIL_PATH.len - (COIL.yt + COIL.E - YT);    // Weg bis zum Ende der Wicklung
+  DIODE_PATH = mkPath([{x: XC, y: YT}, {x: XD, y: YT}, {x: XD, y: YB}, {x: XC, y: YB}]);
+  // Wicklung (ohne Zuleitungen) in Vorder- und Rückseite zerlegen; jedes Stück greift etwas in die Nachbarn, damit an den Biegungen keine Lücke bleibt
+  coilRuns = [];
+  const CP_ = COIL_PATH.P, EXT = 12, iw0 = 1, iw1 = CP_.length - 2, KJ = 24;
+  let start = iw0;
+  for (let k = iw0 + 1; k <= iw1 + 1; k++) {
+    if (k === iw1 + 1 || CP_[k].back !== CP_[start].back) {
+      coilRuns.push({back: CP_[start].back, pts: CP_.slice(Math.max(iw0, start - EXT), Math.min(iw1 + 1, k + EXT))});
+      start = k;
+    }
+  }
+  // Anfang und Ende der Wicklung gehören zum festen Leiterstück: Ecke Zuleitung – Wicklung ohne Stufe
+  NET_COIL = {bottom: CP_.slice(iw0, iw0 + KJ), top: CP_.slice(iw1 - KJ + 1, iw1 + 1).reverse()};
+  coilRuns[0].pts = coilRuns[0].pts.slice(KJ / 2);
+  const lr = coilRuns[coilRuns.length - 1]; lr.pts = lr.pts.slice(0, lr.pts.length - KJ / 2);
+  const old = SEG;
+  SEG = {main: mkSeg(MAIN_LEN), coil: mkSeg(COIL_PATH.len), diode: mkSeg(DIODE_PATH.len)};
+  if (old) for (const k of ['main', 'coil', 'diode']) SEG[k].ph = old[k].ph / old[k].len * SEG[k].len;
+  SP = SEG.main.sp;
+  buildIons();
+}
+
+/* ================= Leiter und Atomrümpfe =================
+   Festlegung der Lehrkraft, 12.11.2026: Ecken sauber, mit und ohne Freilaufdiode.
+   Alle festen Leitungen werden als ein Stück gezeichnet (erst alle Ränder, dann alle Füllungen), mit runden Außenecken;
+   die Atomrümpfe sitzen in zwei Reihen parallel zur Mittellinie, außen im Bogen um die Ecke, innen im Eckpunkt. */
+function netLines() {
+  const L = [
+    [{x: PIV.x, y: YT}, {x: XL, y: YT}, {x: XL, y: YB}, {x: XC, y: YB}, ...NET_COIL.bottom],
+    [{x: FACE_X, y: YT}, {x: XC, y: YT}, ...NET_COIL.top]
+  ];
+  if (diodeOn) L.push([{x: XC, y: YT}, {x: XD, y: YT}, {x: XD, y: YB}, {x: XC, y: YB}]);
+  return L;
+}
+// Parallele zur Mittellinie im Abstand o (o > 0: links der Laufrichtung)
+function offsetLine(pts, o) {
+  const dir = (a, b) => { const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1; return {x: dx / d, y: dy / d}; };
+  const res = [], sg = Math.sign(o), r = Math.abs(o);
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i];
+    if (i === 0 || i === pts.length - 1) {
+      const d = i === 0 ? dir(pts[0], pts[1]) : dir(pts[i - 1], pts[i]);
+      res.push({x: p.x - d.y * o, y: p.y + d.x * o}); continue;
+    }
+    const da = dir(pts[i - 1], p), db = dir(p, pts[i + 1]);
+    const cr = da.x * db.y - da.y * db.x;
+    if (cr * o > 0) res.push({x: p.x + o * (-da.y - db.y), y: p.y + o * (da.x + db.x)});          // Innenecke
+    else {                                                                                        // Außenecke: Bogen
+      const a0 = Math.atan2(sg * da.x, -sg * da.y), a1 = Math.atan2(sg * db.x, -sg * db.y);
+      let d = a1 - a0; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+      for (let k = 0; k <= 8; k++) { const a = a0 + d * k / 8; res.push({x: p.x + r * Math.cos(a), y: p.y + r * Math.sin(a)}); }
+    }
+  }
+  return res;
+}
+// zwei Reihen Atomrümpfe, gegeneinander versetzt (Zickzack, je Reihe alle sp)
+function ionRows(pts, o, sp) {
+  const out = [];
+  for (const sg of [1, -1]) {
+    const P_ = mkPath(offsetLine(pts, sg * o));
+    for (let d = sg > 0 ? sp / 4 : sp * 3 / 4; d < P_.len - 2; d += sp) { const q = at(P_, d); out.push({x: q.x, y: q.y}); }
+  }
+  return out;
+}
+function buildIons() {
+  const g = OFF, sp = 32, yTop = COIL.yt + COIL.E - 8, yBot = COIL.yb + COIL.E + 8;
+  // ohne Diode: zwei Leiterzüge mit Ecken
+  ION_CACHE[0] = [
+    ...ionRows([{x: PIV.x - 16, y: YT}, {x: XL, y: YT}, {x: XL, y: YB}, {x: XC, y: YB}, {x: XC, y: yBot}], g, sp),
+    ...ionRows([{x: FACE_X + 24, y: YT}, {x: XC, y: YT}, {x: XC, y: yTop}], g, sp)
+  ];
+  // mit Diode: äußerer Ring über die Diode, Zuleitungen der Spule als Abzweige (T-Stücke)
+  ION_CACHE[1] = [
+    ...ionRows([{x: PIV.x - 16, y: YT}, {x: XL, y: YT}, {x: XL, y: YB}, {x: XD, y: YB}, {x: XD, y: YT}, {x: FACE_X + 24, y: YT}], g, sp),
+    ...ionRows([{x: XC, y: YT + g + 9}, {x: XC, y: yTop}], g, sp),
+    ...ionRows([{x: XC, y: YB - g - 9}, {x: XC, y: yBot}], g, sp)
+  ];
+  // Wicklung: entlang der Schraubenlinie, abwechselnd links und rechts
+  COIL_IONS = [];
+  let side = 1;
+  for (let d = sW0 + 10; d < sW1 - 10; d += 16) {
+    const q = at(COIL_PATH, d);
+    COIL_IONS.push({x: q.x + q.nx * g * side, y: q.y + q.ny * g * side, back: q.back}); side = -side;
+  }
+}
+function bladeIons() {
+  const c = Math.cos(st.alpha), sn = Math.sin(st.alpha);
+  return ionRows([{x: PIV.x + 16 * c, y: PIV.y + 16 * sn}, {x: PIV.x + (BLADE - 18) * c, y: PIV.y + (BLADE - 18) * sn}], OFF - 1, 32);
+}
+
+/* ================= Physik ================= */
+const SCN = {
+  normal: {U: 24, R: 24, L: 2.4, EB: 10},
+  fault: {U: 220, R: 22, L: 2.2, EB: 5}
+};
+const CP = 100e-12, UZ = 350, UF = 0.7, UB0 = 15, VC = 1000 /* mm/s */, DMAX = 3 /* mm */;
+const K_SLOW = 1 / 16, K_ARC = 1 / 80;
+const V0 = 40, NPZ = 12, DZ = NPZ * 16, IGN_T = 1.0, BURN_T = 9;   // DZ: Länge des Staus bis zur Zündung (Bühnenpixel), unabhängig von der Anordnung
+
+let scenario = 'normal', P = null, diodeOn = false, tempo = 1, paused = false, showDiag = false, showForm = true;
+// Formeln, Berechnung und Momentanwerte einzeln ausblendbar, beim Öffnen an (Festlegung der Lehrkraft, 12.11.2026, Animation I).
+// Ohne Momentanwerte zeigen die Beschriftungen in der Bühne nur das Formelzeichen; gegebene Werte (U = 24 V) bleiben.
+let showRech = true, showWerte = true;
+const st = {};
+const FX = {sparks: [], flames: [], smoke: [], drops: []};
+const hist = [];
+
+function setParams() { const s = SCN[scenario]; P = {...s, I0: s.U / s.R, tau: s.L / s.R}; }
+const dFromU = u => Math.max(0, u) / UZ * DZ;
+const pileCount = D => Math.max(0, Math.round(D / SP * 16 / 13));
+const pileLen = n => Math.ceil(n / 3) * 9;
+const vvis = i => V0 * i / P.I0;
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+function reset() {
+  setParams();
+  Object.assign(st, {
+    sw: 'open', phase: 'off', after: null, iL: 0, iM: 0, iD: 0, uS: P.U, uL: 0, uR: 0,
+    alpha: A2, alphaT: A2, D: dFromU(P.U), tR: 0, tDisp: 0, gapMm: DMAX, UB: UB0,
+    arcs: 0, damage: 0, burnT: 0, deadT: 0, erode: 0, char: 0, glow: 0, soot: 0,
+    ignT: 0, ign: null, flyers: [], flash: 0, clicked: st.clicked || false
+  });
+  SEG.main.ph = SEG.coil.ph = SEG.diode.ph = 0;
+  FX.sparks = []; FX.flames = []; FX.smoke = []; FX.drops = [];
+  hist.length = 0;
+  setMsg('');
+  refreshUI(true);
+}
+
+function userToggle() {
+  st.clicked = true;
+  if (st.phase === 'dead') { setMsg('Der Schalter ist zerstört. Bitte „Zurücksetzen“ wählen.'); return; }
+  if (st.sw === 'closed') openSwitch();
+  else if (st.sw === 'open') { st.sw = 'closing'; st.alphaT = 0; }
+  refreshUI(true);
+}
+function openSwitch() {
+  st.sw = 'open'; st.tR = 0;
+  if (st.iL < 0.02 * P.I0) { st.phase = 'off'; st.after = null; st.iL = 0; st.alphaT = A2; return; }
+  if (diodeOn) { st.phase = 'free'; st.alphaT = A2; return; }
+  startOpening();
+}
+function startOpening() {
+  st.phase = 'open1';
+  st.alphaT = st.alpha < A1 ? st.alpha : A1;
+  st.D = dFromU(st.uS);
+  st.tR = 0;
+}
+function closeContact() {
+  st.alpha = 0; st.alphaT = 0; st.sw = 'closed'; st.phase = 'on'; st.after = null;
+  st.uS = 0; st.D = 0; st.flyers = []; st.ign = null; st.tR = 0;
+  refreshUI(true);
+}
+function endArc() {
+  if (scenario === 'fault') { st.phase = 'dead'; st.deadT = 0; }
+  else { st.phase = 'off'; st.after = 'arc'; st.arcs++; }
+  st.alphaT = st.alpha;
+  refreshUI(true);
+}
+
+function maskMain(s, arcing, D, Lp) {
+  if (arcing) {
+    if (s >= L1 - W2 && s < L1 + W2) return 2;
+    if (s >= L1 - W2 - Lp && s < L1 - W2) return 1;
+    if (s >= L1 + W2 && s < L1 + W2 + D) return 1;
+    return 0;
+  }
+  const lp = Math.max(Lp, 8), dh = Math.max(D, 8);
+  return (s >= L1 - lp && s < L1 + dh) ? 1 : 0;
+}
+function streamS(seg, k) { return ((seg.ph + k * seg.sp) % seg.len + seg.len) % seg.len; }
+function pileSlotPos(k) {
+  const c = Math.floor(k / 3), r = k % 3, lat = [0, -9.5, 9.5][r];
+  const p = at(MAIN_UP, L1 - 5 - c * 9);
+  return {x: p.x + p.nx * lat, y: p.y + p.ny * lat};
+}
+
+function ignite() {
+  st.phase = 'ignite'; st.ignT = 0; st.tR = 0;
+  st.flash = RM ? 0.25 : 1;
+  st.gapMm = Math.max(0.01, DMAX * (st.alpha - A1) / (A2 - A1));
+  const Dold = st.D, Pold = pileCount(Dold), LpOld = pileLen(Pold);
+  const Dnew = dFromU(UB0 + P.EB * st.gapMm), Pnew = pileCount(Dnew), LpNew = pileLen(Pnew);
+  const seg = SEG.main, rev = [];
+  for (let k = 0; k < seg.n; k++) {
+    const s = streamS(seg, k);
+    if (maskMain(s, false, Dold, LpOld) === 1 && maskMain(s, true, Dnew, LpNew) !== 1) rev.push({k, s});
+  }
+  const dn = rev.filter(o => o.s >= L1 - W2).sort((a, b) => a.s - b.s);
+  const up = rev.filter(o => o.s < L1 - W2).sort((a, b) => b.s - a.s);
+  const flyers = []; let slot = Pnew, j = 0;
+  for (const o of dn) { if (slot >= Pold) break; const p = pileSlotPos(slot++); flyers.push({sx: p.x, sy: p.y, k: o.k, cross: o.s >= L1 + W2, delay: Math.min(0.42, j++ * 0.035)}); }
+  for (const o of up) { if (slot >= Pold) break; const p = pileSlotPos(slot++); flyers.push({sx: p.x, sy: p.y, k: o.k, cross: false, delay: 0.1}); }
+  st.flyers = flyers;
+  st.ign = {Dold, Pold, LpOld, Dnew, Pnew, LpNew, fadeFrom: slot, set: new Set(flyers.map(f => f.k))};
+  if (!RM) spawnSparks();
+}
+
+function step(dt) {
+  st.tDisp += dt;
+  if (!(st.phase === 'arc' && st.sw === 'open')) {
+    const da = st.alphaT - st.alpha, m = 3 * dt;
+    st.alpha += Math.abs(da) <= m ? da : Math.sign(da) * m;
+  }
+  if (st.sw === 'closing' && st.alpha > -0.004) closeContact();
+  const {U, R} = P, tau = P.tau;
+  switch (st.phase) {
+    case 'on': {
+      const dR = dt * K_SLOW; st.tR += dR;
+      const iss = U / R; st.iL = iss + (st.iL - iss) * Math.exp(-dR / tau);
+      st.iM = st.iL; st.iD = 0; st.uS = 0; st.uR = R * st.iL; st.uL = U - st.uR;
+      break;
+    }
+    case 'free': {
+      const dR = dt * K_SLOW; st.tR += dR;
+      const iss = -UF / R; st.iL = iss + (st.iL - iss) * Math.exp(-dR / tau);
+      if (st.iL <= 0) { st.iL = 0; st.phase = 'off'; st.after = 'free'; refreshUI(true); }
+      st.iD = st.iL; st.iM = 0; st.uR = R * st.iL;
+      st.uL = st.iL > 0 ? -UF - st.uR : 0;
+      if (st.iL > 0) st.uS = U + UF;
+      st.D = dFromU(st.uS);
+      if (!diodeOn && st.iL > 0.02 * P.I0 && st.sw === 'open') { startOpening(); refreshUI(true); }
+      break;
+    }
+    case 'off': case 'dead': {
+      st.iL = st.iM = st.iD = 0; st.uR = 0;
+      st.uS += (U - st.uS) * (1 - Math.exp(-dt * 6));
+      st.uL = U - st.uS - st.uR; st.D = dFromU(st.uS);
+      if (st.phase === 'dead') st.deadT += dt;
+      break;
+    }
+    case 'open1': {
+      if (diodeOn) { st.phase = 'free'; st.alphaT = A2; st.tR = 0; refreshUI(true); break; }
+      st.D += vvis(st.iL) * dt;
+      st.uS = st.D / DZ * UZ; st.iM = st.iL; st.iD = 0; st.uR = R * st.iL; st.uL = U - st.uR - st.uS;
+      st.tR = CP * st.uS / Math.max(st.iL, 1e-9);
+      if (st.D >= DZ) { ignite(); refreshUI(true); }
+      break;
+    }
+    case 'ignite': {
+      st.ignT += dt;
+      const k = Math.min(1, st.ignT / IGN_T);
+      const UBi = UB0 + P.EB * st.gapMm;
+      st.uS = UZ + (UBi - UZ) * easeOut(Math.min(1, k * 2.5));
+      st.uR = R * st.iL; st.uL = U - st.uR - st.uS; st.iM = st.iL;
+      if (k >= 1) { st.phase = 'arc'; st.flyers = []; st.ign = null; st.D = dFromU(UBi); st.tR = 0; refreshUI(true); }
+      break;
+    }
+    case 'arc': {
+      const fault = scenario === 'fault';
+      const dR = dt * (fault ? 1 : K_ARC); st.tR += dR;
+      if (st.sw === 'open') {
+        st.gapMm = Math.min(DMAX, st.gapMm + VC * dR);
+        st.alpha = st.alphaT = A1 + (A2 - A1) * st.gapMm / DMAX;
+      }
+      let UB = UB0 + P.EB * st.gapMm;
+      if (fault) {
+        st.burnT += dt; st.damage = Math.min(1, st.burnT / BURN_T);
+        if (st.damage >= 1) { st.erode += dt; UB += 120 * st.erode * st.erode; }
+      }
+      st.UB = UB;
+      const iss = (U - UB) / R; st.iL = iss + (st.iL - iss) * Math.exp(-dR / tau);
+      if (diodeOn && st.iL > 0) { st.phase = 'free'; st.tR = 0; st.alphaT = A2; refreshUI(true); break; }
+      if (st.iL <= 0) { st.iL = 0; st.iM = 0; st.uS = UB; st.uR = 0; st.uL = U - UB; endArc(); break; }
+      st.iM = st.iL; st.iD = 0; st.uS = UB; st.uR = R * st.iL; st.uL = U - st.uR - st.uS; st.D = dFromU(UB);
+      break;
+    }
+  }
+  SEG.main.ph = (SEG.main.ph + vvis(st.iM) * dt) % SEG.main.len;
+  SEG.coil.ph = (SEG.coil.ph + vvis(st.iL) * dt) % SEG.coil.len;
+  SEG.diode.ph = (SEG.diode.ph + vvis(st.iD) * dt) % SEG.diode.len;
+  updateFx(dt);
+  hist.push({t: st.tDisp, ph: st.phase, iL: st.iL, uL: st.uL, uR: st.uR, uS: st.uS});
+  while (hist.length && hist[0].t < st.tDisp - 26) hist.shift();
+}
+
+/* ================= Effekte ================= */
+function spawnSparks() {
+  const F = arcF(), T = tipPoint(st.alpha);
+  for (let k = 0; k < 26; k++) {
+    const a = Math.random() * Math.PI * 2, v = 90 + Math.random() * 220;
+    FX.sparks.push({x: (F.x + T.x) / 2, y: (F.y + T.y) / 2, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, life: 0.35 + Math.random() * 0.5});
+  }
+}
+function updateFx(dt) {
+  st.flash = Math.max(0, st.flash - dt * 2.2);
+  for (const p of FX.sparks) { p.vy += 520 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+  FX.sparks = FX.sparks.filter(p => p.life > 0);
+  let glowT = 0;
+  if (st.phase === 'arc') glowT = scenario === 'fault' ? Math.min(1, 0.35 + st.burnT / 2) : 0.35;
+  if (st.phase === 'ignite') glowT = 0.6;
+  if (st.phase === 'dead') glowT = Math.max(0, 0.8 - st.deadT * 0.25);
+  st.glow += (glowT - st.glow) * (1 - Math.exp(-dt * 3));
+  // Ruß auf den Kontakten: wächst, solange der Lichtbogen brennt, und bleibt danach
+  // (Festlegung der Lehrkraft, 12.11.2026: Kontakte richtig rußig schwarz, schon während des Lichtbogens)
+  if (st.phase === 'arc' || st.phase === 'ignite') {
+    const cap = scenario === 'fault' ? 1 : 0.5, rate = scenario === 'fault' ? 0.32 : 0.06;   // Normalfall: Abbrand, kein Brand
+    st.soot = Math.min(cap, st.soot + rate * dt);
+  }
+  if (scenario === 'fault') {
+    st.char = Math.max(st.char, smooth(0.3, 1.0, st.damage));
+    let rate = 0, smoke = 0, drops = 0;
+    if (st.phase === 'arc') { rate = 110 * smooth(0.28, 0.7, st.damage); smoke = 4 + 26 * st.damage; drops = st.burnT > 1.5 && st.damage < 1 ? 5 : 0; }
+    if (st.phase === 'dead') { rate = 110 * Math.exp(-st.deadT / 2.4); smoke = 30 * Math.exp(-st.deadT / 6); }
+    emit(FX.flames, rate * dt, () => {
+      const spread = 30 + 75 * st.char, x = clamp(FACE_X - 20 + gauss() * spread, HOUS.x + 12, HOUS.x + HOUS.w - 12), y = HOUS.y + 30 + Math.random() * 70;
+      return {x, y, vx: gauss() * 12, vy: -(70 + Math.random() * 80), life: 0.6 + Math.random() * 0.8, max: 0, size: 16 + Math.random() * 20, ph: Math.random() * 6};
+    });
+    // Rauch zieht nach links, weg vom Titel oben rechts
+    emit(FX.smoke, smoke * dt, () => ({x: FACE_X - 20 + gauss() * 50, y: HOUS.y + 10 + Math.random() * 30, vx: -10 + gauss() * 10, vy: -(35 + Math.random() * 30), life: 2.5 + Math.random() * 2, max: 0, size: 16 + Math.random() * 12}));
+    emit(FX.drops, drops * dt, () => { const T = tipPoint(st.alpha); const src = Math.random() < 0.5 ? T : {x: FACE_X + 8, y: YT + 8}; return {x: src.x, y: src.y, vx: gauss() * 15, vy: 10, life: 1.2, max: 0}; });
+  }
+  for (const p of FX.flames) { p.ph += dt * 9; p.x += (p.vx + Math.sin(p.ph) * 18) * dt; p.y += p.vy * dt; p.life -= dt; }
+  for (const p of FX.smoke) { p.x += p.vx * dt; p.y += p.vy * dt; p.size += 14 * dt; p.life -= dt; }
+  for (const p of FX.drops) { p.vy += 400 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; if (p.y > HOUS.y + HOUS.h - 6) { p.y = HOUS.y + HOUS.h - 6; p.vy = 0; p.vx = 0; } }
+  FX.flames = FX.flames.filter(p => p.life > 0);
+  FX.smoke = FX.smoke.filter(p => p.life > 0 && p.y > -40);
+  FX.drops = FX.drops.filter(p => p.life > 0);
+}
+function emit(arr, n, make) {
+  let k = Math.floor(n); if (Math.random() < n - k) k++;
+  for (let j = 0; j < k; j++) { const p = make(); p.max = p.life; arr.push(p); }
+}
+function gauss() { return (Math.random() + Math.random() + Math.random() - 1.5) / 1.5; }
+
+/* ================= Farben und Sprites ================= */
+// Bühne immer hell: feste Farben, unabhängig vom Farbschema der Seite (Skill animation-erstellen, Darstellung 2)
+const STAGE = {
+  panel: '#ffffff', fg: '#1b2127', muted: '#4f5a64', grid: '#e3e7ea', accent: '#1d4f73',
+  u: '#0070C0', i: '#FF0000', b: '#00B050', neg: '#d46b00',             // fachkonventionen 6; Minus hervorgehoben
+  cu: '#f1dbca', 'cu-edge': '#c18d69', 'cu-back': '#e6d3c4',
+  el: '#ffcb17', 'el-edge': '#6a4f00', 'el-sign': '#251c00', ion: '#76818e', 'ion-sign': '#ffffff',
+  pad: '#c3c9d0', 'pad-edge': '#69717b', housing: '#e8e5dd', 'housing-edge': '#8c867b',
+  'arc-core': '#ffffff', 'arc-glow': '#5b48f0',
+  'ph-on': '#0070C0', 'ph-open': '#d98200', 'ph-arc': '#5b48f0', 'ph-free': '#00a04a'
+};
+const T = {...STAGE};
+let FONT = 'system-ui, sans-serif', FONTM = 'system-ui, sans-serif';
+function readTokens() {
+  const cs = getComputedStyle(document.documentElement);
+  FONT = cs.getPropertyValue('--font-ui').trim() || FONT;
+  FONTM = cs.getPropertyValue('--font-math').trim() || FONTM;
+}
+function hex2rgb(h) {
+  h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function mix(a, b, t) {
+  const A = hex2rgb(a), B = hex2rgb(b);
+  return `rgb(${Math.round(lerp(A[0], B[0], t))},${Math.round(lerp(A[1], B[1], t))},${Math.round(lerp(A[2], B[2], t))})`;
+}
+function rgba(h, a) { const c = hex2rgb(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+
+const view = {k: 1, kd: 1, bx: 0, by: 0};   // k: Gerätepixel je Bühnenpixel; bx, by: Rand im Vollbild
+const SPR = {};
+function particleSprite(fill, edge, sign, signCol, r, scale) {
+  const c = document.createElement('canvas');
+  const s = Math.ceil((r + 1.5) * 2 * scale); c.width = c.height = s;
+  const g = c.getContext('2d'); g.scale(scale, scale);
+  const m = s / scale / 2;
+  g.beginPath(); g.arc(m, m, r, 0, Math.PI * 2); g.fillStyle = fill; g.fill();
+  g.lineWidth = 1; g.strokeStyle = edge; g.stroke();
+  g.strokeStyle = signCol; g.lineWidth = 1.5; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(m - r * 0.52, m); g.lineTo(m + r * 0.52, m);
+  if (sign === '+') { g.moveTo(m, m - r * 0.52); g.lineTo(m, m + r * 0.52); }
+  g.stroke();
+  return {c, h: s / scale / 2};
+}
+function radialSprite(r, stops) {
+  const c = document.createElement('canvas'); c.width = c.height = r * 2;
+  const g = c.getContext('2d'); const gr = g.createRadialGradient(r, r, 0, r, r, r);
+  for (const [o, col] of stops) gr.addColorStop(o, col);
+  g.fillStyle = gr; g.fillRect(0, 0, r * 2, r * 2); return c;
+}
+function buildSprites() {
+  const s = view.k * PL.s;
+  SPR.el = particleSprite(T.el, T['el-edge'], '-', T['el-sign'], PR, s);
+  SPR.ion = particleSprite(T.ion, T.ion, '+', T['ion-sign'], PR, s);
+  const dark = luminance(T.panel) < 0.4;
+  SPR.flameY = radialSprite(48, [[0, 'rgba(255,252,215,1)'], [0.3, 'rgba(255,205,70,0.95)'], [0.65, 'rgba(255,120,20,0.5)'], [1, 'rgba(255,70,0,0)']]);
+  SPR.flameR = radialSprite(48, [[0, 'rgba(255,160,50,0.9)'], [0.5, 'rgba(220,60,15,0.5)'], [1, 'rgba(150,25,5,0)']]);
+  SPR.smoke = radialSprite(48, dark ? [[0, 'rgba(150,150,150,0.45)'], [1, 'rgba(150,150,150,0)']] : [[0, 'rgba(70,66,62,0.5)'], [1, 'rgba(70,66,62,0)']]);
+}
+function luminance(h) { const [r, g, b] = hex2rgb(h); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; }
+
+/* ================= Zahlen ================= */
+function fmt(v, unit) {
+  if (!isFinite(v)) return '–';
+  const a = Math.abs(v);
+  if (a < 1e-12) return '0 ' + unit;
+  const pre = [[1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let f = 1e-12, p = 'p';
+  for (const [fac, pf] of pre) { if (a >= fac * 0.9995) { f = fac; p = pf; break; } }
+  let m = a / f;
+  let dec = m >= 99.95 ? 0 : m >= 9.995 ? 1 : 2;
+  let s = m.toFixed(dec);
+  return (v < 0 ? '−' : '') + s.replace('.', ',') + ' ' + p + unit;
+}
+
+// gegebene Werte erscheinen, wie sie gegeben sind (fachkonventionen 4): 24 V, 2,4 H, 0,7 V, 100 pF
+function fmtG(v, unit, pre = '') {
+  const f = {'': 1, k: 1e3, m: 1e-3, 'µ': 1e-6, n: 1e-9, p: 1e-12}[pre];
+  const m = +(v / f).toFixed(3);
+  return (m < 0 ? '−' : '') + String(Math.abs(m)).replace('.', ',') + ' ' + pre + unit;
+}
+
+/* ================= Zeichnen: Grundformen ================= */
+function strokePts(pts, w, col, cap = 'round') {
+  if (pts.length < 2) return;
+  ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+  for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k].x, pts[k].y);
+  ctx.lineWidth = w; ctx.strokeStyle = col; ctx.lineCap = cap; ctx.lineJoin = 'round'; ctx.stroke();
+}
+function band(pts, w, back, cap = 'butt') {
+  strokePts(pts, w + 4, back ? rgba(T['cu-edge'], 0.45) : T['cu-edge'], 'butt');
+  strokePts(pts, w, back ? T['cu-back'] : T.cu, cap);
+}
+// mehrere Polylinien als ein Leiter: erst alle Ränder, dann alle Füllungen → Ecken und Abzweige ohne Naht
+function bandGroup(lines) {
+  for (const pts of lines) strokePts(pts, BW + 4, T['cu-edge'], 'butt');
+  for (const pts of lines) strokePts(pts, BW, T.cu, 'butt');
+}
+function sprite(sp, x, y, a = 1) {
+  if (a !== 1) ctx.globalAlpha = a;
+  ctx.drawImage(sp.c, x - sp.h, y - sp.h, sp.h * 2, sp.h * 2);
+  if (a !== 1) ctx.globalAlpha = 1;
+}
+function halo(fn) { ctx.save(); ctx.lineJoin = 'round'; ctx.strokeStyle = T.panel; ctx.lineWidth = 5; fn(true); ctx.restore(); fn(false); }
+function sym(x, y, main, sub, col, size = 21, align = 'left') {
+  const f1 = `italic 600 ${size}px ${FONTM}`, f2 = `600 ${Math.round(size * 0.66)}px ${FONTM}`;
+  ctx.font = f1; const w1 = ctx.measureText(main).width;
+  ctx.font = f2; const w2 = sub ? ctx.measureText(sub).width + 1 : 0;
+  const tw = w1 + w2;
+  const x0 = align === 'left' ? x : align === 'right' ? x - tw : x - tw / 2;
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  halo(h => {
+    ctx.font = f1; if (h) ctx.strokeText(main, x0, y); else { ctx.fillStyle = col; ctx.fillText(main, x0, y); }
+    if (sub) { ctx.font = f2; if (h) ctx.strokeText(sub, x0 + w1 + 1, y + 5); else { ctx.fillStyle = col; ctx.fillText(sub, x0 + w1 + 1, y + 5); } }
+  });
+  return tw;
+}
+function txt(x, y, s, col, size = 15, weight = 500, align = 'left', italic = false) {
+  ctx.font = `${italic ? 'italic ' : ''}${weight} ${size}px ${FONT}`; ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
+  const w = ctx.measureText(s).width;
+  halo(h => { if (h) ctx.strokeText(s, x, y); else { ctx.fillStyle = col; ctx.fillText(s, x, y); } });
+  ctx.textAlign = 'left';
+  return w;
+}
+// Text mit Zeilenumbruch innerhalb maxW
+function wrapTxt(x, y, s, maxW, col, size, italic = false) {
+  ctx.font = `${italic ? 'italic ' : ''}500 ${size}px ${FONT}`;
+  const words = s.split(' '); let line = '', yy = y;
+  for (const w of words) {
+    const t = line ? line + ' ' + w : w;
+    if (line && ctx.measureText(t).width > maxW) { txt(x, yy, line, col, size, 500, 'left', italic); yy += size * 1.25; line = w; }
+    else line = t;
+  }
+  if (line) txt(x, yy, line, col, size, 500, 'left', italic);
+}
+function arrowLine(x1, y1, x2, y2, col, lw = 4, hl = 17, hw = 8) {
+  const dx = x2 - x1, dy = y2 - y1, d = Math.hypot(dx, dy); if (d < 1) return;
+  const ux = dx / d, uy = dy / d, bx = x2 - ux * hl, by = y2 - uy * hl;
+  ctx.lineCap = 'butt';
+  ctx.strokeStyle = T.panel; ctx.lineWidth = lw + 4; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx, by); ctx.stroke();
+  ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx + ux, by + uy); ctx.stroke();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * hw, by + ux * hw); ctx.lineTo(bx + uy * hw, by - ux * hw); ctx.closePath(); ctx.fill();
+}
+// Zählpfeil mit Länge ∝ Wert; abgeschnitten mit Bruchzeichen
+function qArrow(o) {
+  const {x, y, horiz, val, scale, max, col} = o;
+  const sg = o.dir || 1;          // Zählrichtung bleibt fest, das Vorzeichen steht im Wert
+  let L = Math.abs(val * scale), clipped = false;
+  if (L > max) { L = max; clipped = true; }
+  if (L >= 5) {
+    const hx = horiz ? sg * L / 2 : 0, hy = horiz ? 0 : sg * L / 2;
+    arrowLine(x - hx, y - hy, x + hx, y + hy, col);
+    if (clipped) {
+      const bx = x - hx * 0.45, by = y - hy * 0.45;
+      const px = horiz ? 0 : 1, py = horiz ? 1 : 0;
+      ctx.fillStyle = T.panel;
+      ctx.save(); ctx.translate(bx, by); ctx.rotate(horiz ? 0 : Math.PI / 2);
+      ctx.fillRect(-4, -9, 8, 18);
+      ctx.strokeStyle = col; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(-7, 9); ctx.lineTo(-1, -9); ctx.moveTo(1, 9); ctx.lineTo(7, -9); ctx.stroke();
+      ctx.restore();
+      void px; void py;
+    }
+  }
+  return {L, clipped};
+}
+
+/* ================= Feldlinien ================= */
+const NLEV = 6; // Feldlinien je Seite bei vollem Strom
+const FIELD_SETS = Array.from({length: NLEV + 1}, (_, n) => Array.from({length: n}, (_, k) => 4 + (k + 0.5) * 36 / n));
+function loopGeo(a, side) {
+  const h = 62 - 1.0 * a, w = 100 - 1.6 * a;
+  return {xa: XC + side * a, xo: XC + side * (COIL.R + w), h};
+}
+function fieldWeights(ratio) {
+  const lam = NLEV * clamp(ratio, 0, 1), n = Math.floor(lam), fr = lam - n;
+  const t = smooth(0.46, 0.54, fr);
+  const out = [];
+  if (n <= NLEV && 1 - t > 0.01) out.push([n, 1 - t]);
+  if (n + 1 <= NLEV && t > 0.01) out.push([n + 1, t]);
+  return out;
+}
+function bez(p0, p1, p2, p3, t) {
+  const u = 1 - t;
+  return {x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x, y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y,
+          dx: 3*u*u*(p1.x - p0.x) + 6*u*t*(p2.x - p1.x) + 3*t*t*(p3.x - p2.x), dy: 3*u*u*(p1.y - p0.y) + 6*u*t*(p2.y - p1.y) + 3*t*t*(p3.y - p2.y)};
+}
+function loopCtrl(g) {
+  const yt = COIL.yt, yb = COIL.yb;
+  return {
+    c1: [{x: g.xa, y: yt}, {x: g.xa, y: yt - 1.3 * g.h}, {x: g.xo, y: yt - 1.3 * g.h}, {x: g.xo, y: YM}],
+    c2: [{x: g.xo, y: YM}, {x: g.xo, y: yb + 1.3 * g.h}, {x: g.xa, y: yb + 1.3 * g.h}, {x: g.xa, y: yb}]
+  };
+}
+// Pfeilspitze an (x, y) in Richtung (dx, dy)
+function chevron(x, y, dx, dy, col) {
+  const d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d, bx = x - ux * 5.5, by = y - uy * 5.5;
+  ctx.strokeStyle = col; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(bx - uy * 5, by + ux * 5); ctx.lineTo(x, y); ctx.lineTo(bx + uy * 5, by - ux * 5); ctx.stroke();
+}
+// außen: Pfeile je Linie abwechselnd oben, Mitte, unten
+const EXT_POS = [['c2', 0.0], ['c1', 0.80], ['c2', 0.20]];
+function drawFieldExterior(ws) {
+  ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+  for (const [n, w] of ws) {
+    FIELD_SETS[n].forEach((a, k) => { for (const side of [1, -1]) {
+      const g = loopGeo(a, side), C = loopCtrl(g);
+      ctx.strokeStyle = rgba(T.b, 0.95 * w); ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(C.c1[0].x, C.c1[0].y);
+      ctx.bezierCurveTo(C.c1[1].x, C.c1[1].y, C.c1[2].x, C.c1[2].y, C.c1[3].x, C.c1[3].y);
+      ctx.bezierCurveTo(C.c2[1].x, C.c2[1].y, C.c2[2].x, C.c2[2].y, C.c2[3].x, C.c2[3].y);
+      ctx.stroke();
+      const [cv, t] = EXT_POS[k % 3], q = bez(...C[cv], t);
+      chevron(q.x, q.y, q.dx, q.dy, rgba(T.b, w));
+    } });
+  }
+}
+function drawFieldInterior(ws) {
+  ctx.lineWidth = 2.2;
+  for (const [n, w] of ws) {
+    for (const a of FIELD_SETS[n]) for (const side of [1, -1]) {
+      const x = XC + side * a;
+      ctx.strokeStyle = rgba(T.b, 0.95 * w);
+      ctx.beginPath(); ctx.moveTo(x, COIL.yb); ctx.lineTo(x, COIL.yt); ctx.stroke();
+    }
+  }
+}
+// innen: Pfeile je Linie auf drei Zeilen zwischen den Windungen verteilt
+function drawFieldInteriorArrows(ws) {
+  const pitch = (COIL.yb - COIL.yt) / COIL.N, y0 = COIL.yb + COIL.E - 1.5 * pitch;
+  for (const [n, w] of ws) {
+    FIELD_SETS[n].forEach((a, k) => { for (const side of [1, -1]) {
+      chevron(XC + side * a, y0 - (k % 3) * pitch, 0, -1, rgba(T.b, w));
+    } });
+  }
+}
+
+/* ================= Lichtbogen ================= */
+let arcCache = null, arcFrame = 0;
+function arcF() { return {x: FACE_X + 6, y: YT - 9}; }
+function arcPath() {
+  const F = arcF(), Tp = tipPoint(st.alpha);
+  const Tq = {x: Tp.x - 2, y: Tp.y + 7};
+  if (arcCache && (paused || (arcFrame++ % 2))) { arcCache.pts[0] = F; arcCache.pts[arcCache.pts.length - 1] = Tq; return arcCache; }
+  const n = 9, pts = [], dx = Tq.x - F.x, dy = Tq.y - F.y, d = Math.hypot(dx, dy) || 1;
+  const nx = -dy / d, ny = dx / d, amp = Math.min(9, 0.22 * d + 2);
+  for (let k = 0; k <= n; k++) {
+    const t = k / n, j = (k === 0 || k === n) ? 0 : (Math.random() - 0.5) * 2 * amp * Math.sin(Math.PI * t);
+    const bow = -Math.sin(Math.PI * t) * d * 0.18; // Bogen wölbt sich nach oben
+    pts.push({x: F.x + dx * t + nx * j + 0 * bow, y: F.y + dy * t + ny * j + bow * 0.6});
+  }
+  const cum = [0];
+  for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + Math.hypot(pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y));
+  arcCache = {pts, cum, len: cum[cum.length - 1]};
+  return arcCache;
+}
+function arcPoint(arc, t) {
+  const s = clamp(t, 0, 1) * arc.len;
+  let k = 1; while (k < arc.cum.length - 1 && arc.cum[k] < s) k++;
+  const a = arc.pts[k - 1], b = arc.pts[k], u = (s - arc.cum[k - 1]) / ((arc.cum[k] - arc.cum[k - 1]) || 1);
+  return {x: lerp(a.x, b.x, u), y: lerp(a.y, b.y, u)};
+}
+function drawArc(arc, intensity) {
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const g = T['arc-glow'];
+  strokePts(arc.pts, 30 * intensity + 8, rgba(g, 0.14));
+  strokePts(arc.pts, 15 * intensity + 4, rgba(g, 0.38));
+  strokePts(arc.pts, 6.5, rgba(g, 0.9));
+  strokePts(arc.pts, 3, T['arc-core']);
+  ctx.restore();
+}
+
+/* ================= Szene ================= */
+function drawScene() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = T.panel; ctx.fillRect(0, 0, stage.width, stage.height);   // weiße Bühne ohne Karo (Festlegung 12.11.2026)
+  const k = view.k * PL.s;                                   // Schaltungseinheiten → Gerätepixel
+  ctx.setTransform(k, 0, 0, k, view.bx + view.k * PL.ox, view.by + view.k * PL.oy);
+  const fault = scenario === 'fault';
+  const openVis = st.alpha < -0.004;
+  const arcing = st.phase === 'arc' || st.phase === 'ignite';
+  const tip = tipPoint(st.alpha);
+  const down = getDown(st.alpha);
+  const atMain = s => s < L1 ? at(MAIN_UP, s) : at(down, s - L1);
+  const ws = fieldWeights(st.iL / P.I0);
+
+  // Rahmen reale Spule
+  const fx = XC - 154, fy = RBOX.cy - RBOX.h / 2 - 13, fw = 312, fh = COIL.yb + 58 - fy;
+  ctx.save(); ctx.setLineDash([8, 6]); ctx.strokeStyle = T.muted; ctx.lineWidth = 1.8;
+  ctx.strokeRect(fx, fy, fw, fh); ctx.restore();
+  txt(fx + 8, fy + FS.small + 6, 'reale Spule', T.muted, FS.small, 600);
+
+  // Feldlinien außen (hinter allem)
+  drawFieldExterior(ws);
+
+  // Gehäuse
+  const hc = mix(T.housing, '#5a4636', st.char);
+  ctx.fillStyle = hc; roundRect(HOUS.x, HOUS.y, HOUS.w, HOUS.h, 14); ctx.fill();
+  if (st.char > 0.01) {
+    const gr = ctx.createRadialGradient(FACE_X - 10, HOUS.y + 70, 4, FACE_X - 10, HOUS.y + 70, 40 + 110 * st.char);
+    gr.addColorStop(0, rgba('#000000', 0.38 * st.char)); gr.addColorStop(1, rgba('#000000', 0));
+    ctx.fillStyle = gr; roundRect(HOUS.x, HOUS.y, HOUS.w, HOUS.h, 14); ctx.fill();
+  }
+
+  // Quelle: Kreisfläche
+  ctx.fillStyle = T.panel; ctx.beginPath(); ctx.arc(SRC.x, SRC.y, SRC.r, 0, Math.PI * 2); ctx.fill();
+
+  // Wicklung hinten mit ihren Teilchen
+  for (const r of coilRuns) if (r.back) band(r.pts, BW, true, 'round');
+  const cs = SEG.coil, coilE = [];
+  for (let j = 0; j < cs.n; j++) coilE.push(at(COIL_PATH, streamS(cs, j)));
+  for (const q of COIL_IONS) if (q.back) sprite(SPR.ion, q.x, q.y, 0.4);
+  for (const p of coilE) if (p.back) sprite(SPR.el, p.x, p.y, 0.4);
+
+  // Feldlinien innen
+  drawFieldInterior(ws);
+
+  // Leiter vorn: feste Leitungen als ein Stück (saubere Ecken und Abzweige), dann Wicklung vorn, dann Schaltklinge
+  bandGroup(netLines());
+  for (const r of coilRuns) if (!r.back) band(r.pts, BW, false, 'round');
+  band([down.P[0], down.P[1]], BW - 4, false);
+
+  // Kontakte (Silber), darauf der Ruß; die Teilchen bleiben darüber sichtbar, solange Strom fließt
+  drawPads(tip);
+  sootUnder(tip);
+  drawFieldInteriorArrows(ws);
+
+  // Atomrümpfe: Wicklung, feste Leiter, Schaltklinge; dann Elektronen der Wicklung vorn
+  for (const q of COIL_IONS) if (!q.back) sprite(SPR.ion, q.x, q.y);
+  for (const q of ION_CACHE[diodeOn ? 1 : 0]) sprite(SPR.ion, q.x, q.y);
+  for (const q of bladeIons()) sprite(SPR.ion, q.x, q.y);
+  for (const p of coilE) if (!p.back) sprite(SPR.el, p.x, p.y);
+  const ms = SEG.main;
+
+  // Elektronen Hauptkreis
+  const arc = arcing ? arcPath() : null;
+  let D = st.D, Pn = pileCount(D), Lp = pileLen(Pn);
+  const useArcMask = st.phase === 'arc' || st.phase === 'ignite';
+  const ignSet = st.phase === 'ignite' && st.ign ? st.ign.set : null;
+  if (ignSet) { D = st.ign.Dnew; Lp = st.ign.LpNew; }
+  const onArc = [];
+  for (let j = 0; j < ms.n; j++) {
+    if (ignSet && ignSet.has(j)) continue;
+    const s = streamS(ms, j);
+    if (openVis) {
+      const m = maskMain(s, useArcMask, D, Lp);
+      if (m === 1) continue;
+      if (m === 2) { onArc.push(arcPoint(arc, (s - (L1 - W2)) / (2 * W2))); continue; }
+    }
+    const p = atMain(s); sprite(SPR.el, p.x, p.y);
+  }
+  // Stau am festen Kontakt
+  if (openVis) {
+    if (st.phase === 'ignite' && st.ign) {
+      for (let k2 = 0; k2 < st.ign.Pnew; k2++) { const q = pileSlotPos(k2); sprite(SPR.el, q.x, q.y); }
+      const fadeA = 1 - clamp(st.ignT / 0.5, 0, 1);
+      for (let k2 = st.ign.fadeFrom; k2 < st.ign.Pold; k2++) { const q = pileSlotPos(k2); sprite(SPR.el, q.x, q.y, fadeA); }
+      for (const f of st.flyers) onArc.push(flyerPos(f, arc, atMain));
+    } else {
+      for (let k2 = 0; k2 < Pn; k2++) { const q = pileSlotPos(k2); sprite(SPR.el, q.x, q.y); }
+    }
+  }
+  // Elektronen Diodenzweig
+  if (diodeOn) { const d = SEG.diode; for (let j = 0; j < d.n; j++) { const p = at(DIODE_PATH, streamS(d, j)); sprite(SPR.el, p.x, p.y); } }
+
+  // Schaltzeichen über den Bändern
+  ctx.strokeStyle = T.fg; ctx.lineWidth = 2.6;
+  ctx.beginPath(); ctx.arc(SRC.x, SRC.y, SRC.r, 0, Math.PI * 2); ctx.stroke();
+  txt(SRC.x + 30, SRC.y - SRC.r - 8, '+', T.fg, FS.pol, 700);
+  txt(SRC.x + 30, SRC.y + SRC.r + FS.pol, '−', T.fg, FS.pol, 700);
+  ctx.strokeStyle = T.fg; ctx.lineWidth = 2.6;
+  ctx.strokeRect(XC - RBOX.w / 2, RBOX.cy - RBOX.h / 2, RBOX.w, RBOX.h);
+  if (diodeOn) drawDiode();
+  // Drehpunkt
+  ctx.fillStyle = T.pad; ctx.strokeStyle = T['pad-edge']; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(PIV.x, PIV.y, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = T['pad-edge']; ctx.beginPath(); ctx.arc(PIV.x, PIV.y, 3.5, 0, Math.PI * 2); ctx.fill();
+  if (diodeOn) { ctx.fillStyle = T.fg; for (const y of [YT, YB]) { ctx.beginPath(); ctx.arc(XC, y, 6.5, 0, Math.PI * 2); ctx.fill(); } }
+  // Gehäuse-Umriss
+  ctx.save(); ctx.setLineDash([6, 5]); ctx.strokeStyle = st.hover ? T.accent : T['housing-edge']; ctx.lineWidth = st.hover ? 2.2 : 1.5;
+  roundRect(HOUS.x, HOUS.y, HOUS.w, HOUS.h, 14); ctx.stroke(); ctx.restore();
+  sym(HOUS.x + 12, HOUS.y + FS.sym, 'S', '', T.fg, FS.sym - 4);
+  txt(HOUS.x + 12, HOUS.y + HOUS.h - 10, st.phase === 'dead' ? 'Gehäuse verkohlt' : 'Gehäuse (Kunststoff)', T.muted, FS.small - 1, 500);
+
+  // Rußkruste an den Kontaktflächen, Glut, Schmelztropfen
+  sootOver(tip);
+
+  // Lichtbogen, Funken
+  if (arc) {
+    const inten = st.phase === 'ignite' ? 1.4 - 0.6 * clamp(st.ignT / IGN_T, 0, 1) : 0.5 + 0.5 * clamp(st.iL / P.I0, 0, 1);
+    drawArc(arc, inten);
+  }
+  for (const q of onArc) sprite(SPR.el, q.x, q.y);
+  for (const p of FX.sparks) { ctx.strokeStyle = rgba('#ffd34d', clamp(p.life * 2, 0, 1)); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.025, p.y - p.vy * 0.025); ctx.stroke(); }
+
+  // Beschriftung der Bauteile
+  sym(XC - COIL.R - 24, COIL.yt + 8, 'L', '', T.fg, FS.sym, 'right');
+  sym(XC - RBOX.w / 2 - 10, RBOX.cy + 9, 'R', 'Cu', T.fg, FS.sym - 2, 'right');
+  if (diodeOn) G.diodeLbl.lines.forEach((l, k) => txt(G.diodeLbl.x, G.diodeLbl.y + k * (FS.lbl + 3), l, T.fg, FS.lbl, 600, G.diodeLbl.align));
+
+  // Zählpfeile
+  drawArrows();
+
+  // Feuer und Rauch
+  drawFire();
+
+  // Legende und Anzeige
+  drawLegend();
+  drawHud();
+
+  if (st.flash > 0) { ctx.fillStyle = rgba('#ffffff', 0.55 * st.flash); ctx.fillRect(0, 0, W, H); }
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function drawPads(tip) {
+  ctx.lineWidth = 1.5;
+  // fester Kontakt (mit Ruß dunkel bis schwarz)
+  ctx.fillStyle = mix(T.pad, '#141110', 0.95 * st.soot); ctx.strokeStyle = mix(T['pad-edge'], '#000000', st.soot);
+  roundRect(FACE_X - 2, YT - 19, 22, 38, 4); ctx.fill(); ctx.stroke();
+  // Klingenspitze
+  ctx.save(); ctx.translate(tip.x, tip.y); ctx.rotate(st.alpha);
+  roundRect(-16, -16, 18, 32, 4); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  if (st.glow > 0.02) {
+    for (const p of [{x: FACE_X + 6, y: YT - 6}, {x: tip.x - 4, y: tip.y + 4}]) {
+      const gr = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, 26);
+      gr.addColorStop(0, rgba('#ffb020', 0.85 * st.glow)); gr.addColorStop(1, rgba('#ff5000', 0));
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(p.x, p.y, 26, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+// Ruß: tiefschwarz und matt an den Kontaktflächen, nach außen auslaufend auf Leiter und Gehäuse
+const SOOT = '#0c0a09';
+const SOOT_RND = (() => { let seed = 11; return () => (seed = (seed * 16807) % 2147483647) / 2147483647; })();
+const SOOT_BLOBS = Array.from({length: 9}, () => ({dx: (SOOT_RND() - 0.5) * 2, dy: (SOOT_RND() - 0.5) * 2, r: 0.6 + 0.6 * SOOT_RND(), a: 0.6 + 0.4 * SOOT_RND()}));
+const SOOT_SPECKS = Array.from({length: 46}, () => ({ang: SOOT_RND() * Math.PI * 2, d: Math.sqrt(SOOT_RND()), r: 0.8 + 1.4 * SOOT_RND()}));
+const CRUST = Array.from({length: 18}, () => 0.65 + 0.35 * SOOT_RND());
+function sootSpots(tip) {
+  const c = Math.cos(st.alpha), sn = Math.sin(st.alpha);
+  return [{x: FACE_X + 7, y: YT, ux: 1, uy: 0}, {x: tip.x - 6 * c, y: tip.y - 6 * sn, ux: -c, uy: -sn}];
+}
+function sootUnder(tip) {
+  const s = st.soot; if (s < 0.01) return;
+  // Rußfahne auf dem Leiter: vom Kontakt weg auslaufend (feste Seite nach rechts, Klinge zur Drehachse)
+  const len = 40 + 100 * s;
+  for (const p of sootSpots(tip)) {
+    const a = {x: p.x - p.ux * 10, y: p.y - p.uy * 10}, b = {x: p.x + p.ux * len, y: p.y + p.uy * len};
+    const g = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+    g.addColorStop(0, rgba(SOOT, 0.96 * s)); g.addColorStop(0.6, rgba(SOOT, 0.8 * s)); g.addColorStop(1, rgba(SOOT, 0));
+    ctx.strokeStyle = g; ctx.lineWidth = BW + 4; ctx.lineCap = 'butt';
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  // rußige Wolke aus weichen Flecken auf Gehäuse und Leiter
+  for (const p of sootSpots(tip)) {
+    for (const bl of SOOT_BLOBS) {
+      const r = (12 + 30 * s) * bl.r, x = p.x + bl.dx * (8 + 24 * s), y = p.y + bl.dy * (8 + 18 * s);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, rgba(SOOT, 0.55 * s * bl.a)); g.addColorStop(1, rgba(SOOT, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+function sootOver(tip) {
+  const s = st.soot, fault = scenario === 'fault';
+  if (s > 0.04) {
+    // Kruste direkt an den Kontaktflächen: matt schwarz, unregelmäßiger Rand (abgebrannt)
+    const hot = fault ? (st.phase === 'arc' ? 1 : st.phase === 'dead' ? Math.max(0, 1 - st.deadT / 6) : 0) : 0;
+    const al = Math.min(1, 1.25 * s - 0.05);
+    sootSpots(tip).forEach((p, j) => {
+      const r0 = 7 + 13 * s;
+      ctx.fillStyle = rgba(SOOT, al);
+      ctx.beginPath();
+      for (let a = 0; a < CRUST.length; a++) {
+        const ang = a / CRUST.length * Math.PI * 2, r = r0 * CRUST[(a + j * 5) % CRUST.length];
+        const px = p.x + Math.cos(ang) * r, py = p.y + Math.sin(ang) * r * 1.15;
+        if (a) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+      }
+      ctx.closePath(); ctx.fill();
+      // Glutpunkte, solange es brennt (Fehlerfall), danach verglimmend
+      if (hot > 0.02) for (let k = 0; k < 5; k++) {
+        const ang = k * 2.39 + j * 1.7, rr = r0 * (0.25 + 0.12 * k);
+        ctx.fillStyle = rgba('#ff8c2a', 0.8 * hot * s);
+        ctx.beginPath(); ctx.arc(p.x + Math.cos(ang) * rr, p.y + Math.sin(ang) * rr, 1.4 + (k % 2) * 0.8, 0, Math.PI * 2); ctx.fill();
+      }
+    });
+    // feine Rußpartikel rund um die Kontakte
+    for (const p of sootSpots(tip)) for (const sp of SOOT_SPECKS) {
+      const R = (16 + 38 * s) * sp.d;
+      ctx.fillStyle = rgba(SOOT, 0.75 * s);
+      ctx.beginPath(); ctx.arc(p.x + Math.cos(sp.ang) * R, p.y + Math.sin(sp.ang) * R * 0.8, sp.r, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  for (const p of FX.drops) { ctx.fillStyle = rgba('#ff9a2a', clamp(p.life, 0.2, 1)); ctx.beginPath(); ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2); ctx.fill(); }
+}
+function drawDiode() {
+  const cy = G.DIODEY, w = 46, h = 36;
+  ctx.fillStyle = rgba(T.panel, 0.55); ctx.strokeStyle = T.fg; ctx.lineWidth = 2.6;
+  ctx.beginPath(); ctx.moveTo(XD - w / 2, cy + h / 2); ctx.lineTo(XD + w / 2, cy + h / 2); ctx.lineTo(XD, cy - h / 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(XD - w / 2, cy - h / 2); ctx.lineTo(XD + w / 2, cy - h / 2); ctx.stroke();
+}
+function flyerPos(f, arc, atMain) {
+  const p = clamp((st.ignT - f.delay) / 0.55, 0, 1);
+  const ts = streamS(SEG.main, f.k), win = ts >= L1 - W2 && ts < L1 + W2;
+  if (!f.cross) { const q = win ? arcPoint(arc, (ts - (L1 - W2)) / (2 * W2)) : atMain(ts), e = ease(p); return {x: lerp(f.sx, q.x, e), y: lerp(f.sy, q.y, e)}; }
+  if (p < 0.3) { const F = arc.pts[0], e = ease(p / 0.3); return {x: lerp(f.sx, F.x, e), y: lerp(f.sy, F.y, e)}; }
+  if (p < 0.5) return arcPoint(arc, (p - 0.3) / 0.2);
+  const e = ease((p - 0.5) / 0.5); return atMain(L1 + (ts - L1) * e);
+}
+
+// Beschriftung „u_L = −32,2 V“: Formelzeichen kursiv, Index aufrecht, Minus farbig hervorgehoben (Formelschrift)
+function eqLabel(x, y, main, sub, val, unit, col, align = 'left', note = '', o = {}) {
+  const f = o.given ? fmtG(val, unit) : fmt(val, unit), neg = f.startsWith('−'), size = FS.eq;
+  const toks = [{s: main, it: true, col}];
+  if (sub) toks.push({s: sub, sub: true, col});
+  if (showWerte || o.given) {
+    toks.push({s: ' = ', col});
+    if (neg) toks.push({s: '−', b: true, col: T.neg});
+    toks.push({s: neg ? f.slice(1) : f, col});
+  }
+  const w = rich(0, 0, toks, size, col, false);
+  const x0 = align === 'left' ? x : align === 'right' ? x - w : x - w / 2;
+  rich(x0, y, toks, size, col, 'halo');
+  rich(x0, y, toks, size, col, true);
+  if (note) {
+    if (o.noteRight) txt(x0 + w + 10, y, note, T.muted, FS.small - 1, 500);
+    else txt(align === 'left' ? x0 : x, y + FS.small + 6, note, T.muted, FS.small - 1, 500, align);
+  }
+}
+function drawArrows() {
+  const sc = 150 / P.U, isc = 180 / P.I0;
+  // Quelle (gegebener Wert)
+  qArrow({x: G.U.ax, y: SRC.y, horiz: false, val: P.U, scale: sc, max: 230, col: T.u});
+  eqLabel(G.U.lx, G.U.ly, 'U', '', P.U, 'V', T.u, G.U.align, '', {given: true});
+  // u_R, u_L: Zählpfeile bleiben stehen, das Vorzeichen steht im Wert
+  const lx = XARR + G.armSide * 14, al = G.armSide > 0 ? 'left' : 'right', dy = Math.round(FS.eq * 0.33);
+  const r2 = qArrow({x: XARR, y: RBOX.cy, horiz: false, val: st.uR, scale: sc, max: 230, col: T.u});
+  eqLabel(lx, RBOX.cy + dy, 'u', 'R', st.uR, 'V', T.u, al, r2.clipped ? 'Pfeil gekürzt' : '');
+  const r1 = qArrow({x: XARR, y: YM, horiz: false, val: st.uL, scale: sc, max: 230, col: T.u});
+  eqLabel(lx, YM + dy, 'u', 'L', st.uL, 'V', T.u, al, r1.clipped ? 'Pfeil gekürzt' : '');
+  // tatsächliche Polarität an den Anschlüssen der Spule
+  if (Math.abs(st.uL) > 0.02 * P.U) {
+    const rev = st.uL < 0, cp = rev ? T.neg : T.fg;
+    txt(XC + 30, COIL.yt - 14, rev ? '−' : '+', cp, FS.pol, 800, 'center');
+    txt(XC + 30, COIL.yb + COIL.E + 42, rev ? '+' : '−', cp, FS.pol, 800, 'center');
+  }
+  // u_S
+  const r3 = qArrow({x: FACE_X, y: G.uS.ay, horiz: true, val: st.uS, scale: sc, max: G.uS.max, col: T.u});
+  eqLabel(G.uS.lx, G.uS.ly, 'u', 'S', st.uS, 'V', T.u, G.uS.align, r3.clipped ? 'Pfeil gekürzt' : '', {noteRight: G.uS.noteRight});
+  // Strom i neben dem unteren Leiter
+  const yi = YB - BW / 2 - 14;
+  qArrow({x: G.i.cx, y: yi, horiz: true, dir: -1, val: st.iM, scale: isc, max: 210, col: T.i});
+  eqLabel(G.i.cx, yi - 15, 'i', '', st.iM, 'A', T.i, 'center');
+  if (diodeOn) {
+    const xd = XD - BW / 2 - 14;
+    qArrow({x: xd, y: G.iD.cy, horiz: false, dir: -1, val: st.iD, scale: isc * 0.8, max: G.iD.max, col: T.i});
+    eqLabel(G.iD.lx, G.iD.ly, 'i', 'D', st.iD, 'A', T.i, G.iD.align);
+  }
+}
+function drawFire() {
+  ctx.save();
+  for (const p of FX.smoke) {
+    const a = clamp(p.life / p.max, 0, 1) * 0.8;
+    ctx.globalAlpha = a; const s = p.size; ctx.drawImage(SPR.smoke, p.x - s, p.y - s, s * 2, s * 2);
+  }
+  for (const p of FX.flames) {
+    const t = 1 - p.life / p.max, s = p.size * (1 - 0.5 * t);
+    ctx.globalAlpha = clamp(1 - t, 0, 1);
+    ctx.drawImage(t < 0.45 ? SPR.flameY : SPR.flameR, p.x - s, p.y - s * 1.3, s * 2, s * 2.6);
+  }
+  ctx.restore();
+}
+// Formelsatz im Canvas: Formelzeichen kursiv, Indizes und d aufrecht
+function rich(x, y, toks, size, col, draw = true) {
+  // draw: true = füllen, 'halo' = nur Hintergrundkontur, false = nur messen
+  let cx = x;
+  for (const t of toks) {
+    if (t.frac) {
+      const fs = size * 0.88;
+      const wn = rich(0, 0, t.frac[0], fs, col, false), wd = rich(0, 0, t.frac[1], fs, col, false);
+      const w = Math.max(wn, wd) + 8, ax = y - size * 0.32;
+      if (draw) {
+        rich(cx + (w - wn) / 2, ax - 5, t.frac[0], fs, col);
+        rich(cx + (w - wd) / 2, ax + fs * 0.95 + 1, t.frac[1], fs, col);
+        if (draw !== 'halo') { ctx.strokeStyle = col; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(cx + 1, ax); ctx.lineTo(cx + w - 1, ax); ctx.stroke(); }
+      }
+      cx += w + 2; continue;
+    }
+    const fs = t.sub ? size * 0.66 : size;
+    ctx.font = `${t.it ? 'italic ' : ''}${t.b ? 800 : 600} ${fs}px ${FONTM}`;
+    const w = ctx.measureText(t.s).width;
+    if (draw) {
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      if (draw === 'halo') { ctx.lineJoin = 'round'; ctx.strokeStyle = T.panel; ctx.lineWidth = 5; ctx.strokeText(t.s, cx, y + (t.sub ? size * 0.25 : 0)); }
+      else { ctx.fillStyle = t.col || col; ctx.fillText(t.s, cx, y + (t.sub ? size * 0.25 : 0)); }
+    }
+    cx += w + (t.sub ? 1 : 0);
+  }
+  return cx - x;
+}
+// Legende (quer in der Bühne; hochkant als Text unter der Bühne)
+function drawLegend() {
+  if (!G.legend) return;
+  const f = FS.legend, gap = 34, rows = !!G.legend.rows, lh = f + 12;   // rows: hochkant in drei Zeilen
+  let x = G.legend.x, y = G.legend.y;
+  sprite(SPR.el, x + 6, y - 5); x += 18; x += txt(x, y, 'Elektron', T.muted, f, 500) + gap;
+  sprite(SPR.ion, x + 6, y - 5); x += 18; x += txt(x, y, 'Atomrumpf', T.muted, f, 500) + gap;
+  ctx.strokeStyle = T.b; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x + 28, y - 5); ctx.stroke(); x += 36;
+  x += txt(x, y, 'Magnetfeldlinie', T.muted, f, 500) + 6;
+  x += sym(x, y, 'B', '', T.b, f + 3) + gap;
+  if (rows) { x = G.legend.x; y += lh; }
+  arrowLine(x + 30, y - 5, x, y - 5, T.i, 2.8, 11, 5.5); x += 40;
+  if (rows) { txt(x, y, 'Strompfeil: technische Stromrichtung', T.muted, f, 500); txt(x, y + lh, '(Elektronen fließen entgegengesetzt)', T.muted, f, 500); }
+  else txt(x, y, 'Strompfeil: technische Stromrichtung (Elektronen fließen entgegengesetzt)', T.muted, f, 500);
+}
+function stageNote() {
+  if (st.phase === 'open1' || st.phase === 'ignite') return 'Spalt bei der Zündung real ≈ 10 µm, hier stark vergrößert gezeichnet';
+  if (st.phase === 'off' && st.after === 'arc') return 'Kontaktabstand stark vergrößert gezeichnet';
+  return '';
+}
+function drawHud() {
+  const info = phaseInfo();
+  if (G.hud) {
+    // Phase in der Bühne, damit ein Standbild für sich verständlich ist (Titel: SVG oben rechts, Norm)
+    const {x, y} = G.hud;
+    txt(x, y, scenario === 'fault' ? 'FEHLERFALL · 220 V' : 'NORMALFALL · 24 V', T.muted, FS.lbl, 700);
+    txt(x, y + 32, info.title, T.fg, FS.hud, 700);
+    txt(x, y + 58, info.badge, T.muted, FS.badge, 500);
+  }
+  const note = stageNote();
+  if (note && G.note) wrapTxt(G.note.x, G.note.y, note, G.note.maxW, T.muted, FS.small, true);
+  if (st.phase === 'open1') {
+    txt(G.surplus.x, G.surplus.y, 'Elektronenüberschuss (−)', T.fg, FS.lbl, 600, G.surplus.align);
+    txt(G.deficit.x, G.deficit.y, 'Elektronenmangel (+)', T.fg, G.deficit.size || FS.lbl, 600, G.deficit.align);
+  }
+  if (st.phase === 'dead') (layoutName === 'hoch' ? ['Kontakte abgebrannt', 'und verrußt'] : ['Kontakte abgebrannt und verrußt'])
+    .forEach((l, k) => txt(G.hint.x, G.hint.y + k * (FS.lbl + 4), l, T.fg, FS.lbl, 700, G.hint.align));
+  if (!st.clicked && st.phase === 'off') {
+    const pulse = RM ? 0.6 : 0.5 + 0.5 * Math.sin(performance.now() / 300);
+    ctx.save(); ctx.strokeStyle = rgba(T.accent, 0.35 + 0.4 * pulse); ctx.lineWidth = 3;
+    roundRect(HOUS.x - 6 - 3 * pulse, HOUS.y - 6 - 3 * pulse, HOUS.w + 12 + 6 * pulse, HOUS.h + 12 + 6 * pulse, 18); ctx.stroke(); ctx.restore();
+    txt(G.hint.x, G.hint.y, TOUCH ? 'Schalter antippen' : 'Schalter anklicken', T.accent, FS.lbl + 1, 700, G.hint.align);
+  }
+}
+
+/* ================= Phasentexte ================= */
+const v = (s, sub = '') => `<i>${s}</i>${sub ? `<sub>${sub}</sub>` : ''}`;
+const fr = (a, b) => `<span class="fr"><span>${a}</span><span>${b}</span></span>`;
+const ex = '<span>e</span><sup>−<i>t</i>/<i>τ</i></sup>';
+function slowLabel(k) {
+  const f = 1 / (k * tempo);
+  if (f >= 1000) return `Zeitlupe ≈ 1 : 10<sup>${Math.round(Math.log10(f))}</sup>`;
+  return `Zeitlupe 1 : ${f.toFixed(f < 10 ? 1 : 0).replace('.', ',').replace(',0', '')}`;
+}
+function slowPlain(k) {
+  const f = 1 / (k * tempo);
+  if (Math.abs(f - 1) < 1e-6) return 'Echtzeit';
+  if (f < 1) return `Zeitraffer ${String(1 / f).replace('.', ',')} : 1`;
+  if (f >= 1000) { const e = Math.round(Math.log10(f)); return `Zeitlupe ≈ 1 : 10^${e}`.replace('^' + e, toSup(e)); }
+  return `Zeitlupe 1 : ${f.toFixed(f < 10 ? 1 : 0).replace('.', ',').replace(',0', '')}`;
+}
+function toSup(n) { const m = '⁰¹²³⁴⁵⁶⁷⁸⁹'; return String(n).split('').map(c => m[+c]).join(''); }
+/* Zeilen im Formelkasten (Festlegung der Lehrkraft, 12.11.2026, Animation I: Formeln und Berechnung einzeln ausblendbar)
+   Text                     → Formel (nur Formelzeichen), erscheint mit „Formeln“
+   Z(links, formel, rechnung) → „links = formel = rechnung“; ohne Formeln „links = rechnung“, ohne Berechnung „links = formel“
+   {r: …}                   → reine Berechnung mit laufenden Werten, erscheint mit „Berechnung“
+   {a: …}                   → Angabe (Annahme, Norm), erscheint, sobald einer der beiden Schalter an ist */
+const Z = (lhs, formel, rechnung, o = {}) => ({lhs, formel, rechnung, op: o.op || '=', nach: o.nach || '', kom: o.kom || ''});
+function zeileHTML(z) {
+  if (typeof z === 'string') return showForm ? z : '';
+  if (z.r !== undefined) return showRech ? z.r : '';
+  if (z.a !== undefined) return (showForm || showRech) ? z.a : '';
+  const teile = [];
+  if (showForm && z.formel) teile.push(z.formel);
+  if (showRech && z.rechnung) teile.push(z.rechnung);
+  if (!teile.length) return '';
+  return `${z.lhs} ${z.op} ${teile.join(' = ')}${z.nach}${z.kom ? ` <span class="c">${z.kom}</span>` : ''}`;
+}
+function phaseInfo() {
+  const {U, R, L, I0, tau} = P, fault = scenario === 'fault';
+  const W0 = 0.5 * L * I0 * I0;
+  const iRatio = st.iL / I0;
+  switch (st.phase) {
+    case 'on':
+      if (iRatio < 0.99) return {
+        title: 'Einschalten: Strom steigt an', badge: `${slowPlain(K_SLOW)} · t = ${fmt(st.tR, 's')} nach dem Schließen`,
+        text: `Alle Elektronen im Stromkreis setzen sich gleichzeitig in Bewegung. Das Magnetfeld der Spule wächst. Dabei wird in der Spule eine Gegenspannung ${v('u', 'L')} induziert (erzeugt). Sie bremst den Strom. Deshalb steigt der Strom nur langsam an. Am Anfang liegt die ganze Spannung an ${v('L')}, am Ende an ${v('R', 'Cu')}.`,
+        form: [Z(v('τ'), fr(v('L'), v('R', 'Cu')), `${fr(fmtG(L, 'H'), fmtG(R, 'Ω'))} = ${fmt(tau, 's')}`),
+               `${v('i')} = ${fr(v('U'), v('R', 'Cu'))} · (1 − ${ex}) &nbsp;&nbsp; ${v('u', 'L')} = ${v('U')} · ${ex} &nbsp;&nbsp; ${v('u', 'R')} = ${v('R', 'Cu')} · ${v('i')}`,
+               `${v('U')} = ${v('u', 'L')} + ${v('u', 'R')} <span class="c">(Maschensatz, Schalter geschlossen: ${v('u', 'S')} = 0)</span>`]
+      };
+      return {
+        title: 'Strom konstant', badge: `${slowPlain(K_SLOW)} · t = ${fmt(st.tR, 's')} nach dem Schließen`,
+        text: `Der Strom ist jetzt konstant. Das Magnetfeld ändert sich nicht mehr. Deshalb wird keine Spannung induziert: ${v('u', 'L')} = 0. Die ganze Spannung liegt am Drahtwiderstand ${v('R', 'Cu')}. Im Magnetfeld ist Energie gespeichert. Alle Elektronen fließen gleichmäßig im Kreis.`,
+        form: [Z(v('I'), fr(v('U'), v('R', 'Cu')), `${fr(fmtG(U, 'V'), fmtG(R, 'Ω'))} = ${fmt(I0, 'A')}`),
+               Z(v('W'), `${fr('1', '2')} · ${v('L')} · ${v('I')}<sup>2</sup>`, `${fr('1', '2')} · ${fmtG(L, 'H')} · (${fmt(I0, 'A')})<sup>2</sup> = ${fmt(W0, 'J')}`)]
+      };
+    case 'open1': return {
+      title: 'Ausschalten: Elektronen stauen sich', badge: `${slowPlain(CP * UZ * V0 / (P.I0 * DZ))} · t = ${fmt(st.tR, 's')} nach dem Öffnen`,
+      text: `Der Schalter öffnet. Die Spule hält den Strom aufrecht (Lenz). Die Elektronen fließen weiter. Vor dem Schalter stauen sie sich: Elektronenüberschuss (−). Hinter dem Schalter fehlen sie: Elektronenmangel (+). Dadurch steigt die Spannung ${v('u', 'S')} am Schalter sehr schnell an. ${v('u', 'L')} kehrt die Richtung um.`,
+      form: [`${v('u', 'L')} = ${v('L')} · ${fr('d' + v('i'), 'd' + v('t'))} &lt; 0 &nbsp;&nbsp; ${v('u', 'S')} = ${v('U')} − ${v('u', 'R')} − ${v('u', 'L')}`,
+             Z(`ohne Durchschlag: ${v('û', 'S')}`, `${v('I')} · √(${fr(v('L'), v('C', 'p'))})`, `${fmt(I0, 'A')} · √(${fr(fmtG(L, 'H'), fmtG(CP, 'F', 'p'))}) = ${fmt(I0 * Math.sqrt(L / CP), 'V')}`, {op: '≈', kom: `(${v('C', 'p')} angenommen)`})]
+    };
+    case 'ignite': return {
+      title: 'Durchschlag: Lichtbogen zündet', badge: `${slowPlain(1e-9)} · Augenblick des Durchschlags`,
+      text: `Die Spannung ist so groß, dass die Luft zwischen den Kontakten leitend wird. Ein Lichtbogen zündet. Die gestauten Elektronen springen über den Spalt. ${v('u', 'S')} fällt auf die Lichtbogenspannung.`,
+      form: [{a: `Zündspannung (Annahme): ${v('U', 'Z')} ≈ ${fmtG(UZ, 'V')} bei ${v('d')} ≈ 10&#8239;µm`},
+             {a: `<span class="c">Vergleich Paschen-Minimum in Luft bei 1 bar: 327&#8239;V bei 7,5&#8239;µm</span>`}]
+    };
+    case 'arc':
+      if (fault) return {
+        title: 'Fehlerfall: Lichtbogen erlischt nicht', badge: `${slowPlain(1)} · t = ${fmt(st.tR, 's')} nach der Zündung`,
+        text: `Bei ${v('U')} = 220&#8239;V Gleichspannung reißt der Lichtbogen nicht ab: Gleichstrom hat keinen Nulldurchgang. Die Quelle speist ihn weiter. Der Schalter ist nicht für Gleichstrom bemessen. Die Kontakte schmelzen ab. Das Kunststoffgehäuse verkohlt und brennt.`,
+        form: [Z(v('i'), fr(v('U') + ' − ' + v('U', 'B'), v('R', 'Cu')), `${fr(fmtG(U, 'V') + ' − ' + fmt(UB0 + P.EB * DMAX, 'V'), fmtG(R, 'Ω'))} = ${fmt((U - UB0 - P.EB * DMAX) / R, 'A')}`, {op: '→', nach: ' &gt; 0'}),
+               Z(v('P', 'B'), `${v('U', 'B')} · ${v('i')}`, `${fmt(st.UB, 'V')} · ${fmt(st.iL, 'A')} = ${fmt(st.UB * st.iL, 'W')}`)]
+      };
+      return {
+        title: 'Lichtbogen brennt', badge: `${slowPlain(K_ARC)} · t = ${fmt(st.tR, 's')} nach der Zündung`,
+        text: `Der Strom fließt jetzt durch den Lichtbogen (heißes, leitendes Gas). Das Magnetfeld baut sich ab. Seine Energie wird im Lichtbogen in Wärme umgesetzt. Die Kontakte brennen dabei etwas ab (Abbrand).`,
+        form: [`${v('u', 'S')} = ${v('U', 'B')} ≈ ${fmtG(UB0, 'V')} … ${fmt(UB0 + P.EB * DMAX, 'V')} &nbsp;&nbsp; ${v('L')} · ${fr('d' + v('i'), 'd' + v('t'))} = ${v('U')} − ${v('R', 'Cu')} · ${v('i')} − ${v('U', 'B')} &lt; 0`,
+               Z(`umgesetzte Energie aus der Spule: ${v('W')}`, `${fr('1', '2')} · ${v('L')} · ${v('I')}<sup>2</sup>`, fmt(W0, 'J'))]
+      };
+    case 'free': return {
+      title: 'Freilaufdiode übernimmt den Strom', badge: `${slowPlain(K_SLOW)} · t = ${fmt(st.tR, 's')} nach dem Öffnen`,
+      text: `Die Freilaufdiode leitet. Der Spulenstrom fließt im Kreis Spule – Diode weiter und nimmt langsam ab. Das Magnetfeld baut sich ab, seine Energie wird in ${v('R', 'Cu')} und in der Diode in Wärme umgesetzt. Am Schalter liegt nur ${v('U')} + ${v('U', 'F')}. Es entsteht kein Lichtbogen.`,
+      form: [Z(v('u', 'S'), `${v('U')} + ${v('U', 'F')}`, `${fmtG(U, 'V')} + ${fmtG(UF, 'V')} = ${fmt(U + UF, 'V')}`),
+             `${v('u', 'L')} = −(${v('U', 'F')} + ${v('R', 'Cu')} · ${v('i')})`,
+             Z(`Abklingzeit ${v('t')}`, `${v('τ')} · ln(${fr(v('I') + ' + ' + v('U', 'F') + '/' + v('R', 'Cu'), v('U', 'F') + '/' + v('R', 'Cu'))})`, fmt(tau * Math.log((I0 + UF / R) / (UF / R)), 's'))]
+    };
+    case 'dead': return {
+      title: 'Schalter zerstört', badge: 'Ruhezustand',
+      text: `Die Kontakte sind abgebrannt und schwarz verrußt, das Gehäuse ist verkohlt. Das Metall selbst verkohlt nicht: Schwarz wird es durch Ruß aus dem verbrannten Kunststoff und durch Oxid. Der Lichtbogen ist erst erloschen, als die Kontakte so weit weggebrannt waren, dass die Spannung nicht mehr reichte. Abhilfe: ein Schalter, der für Gleichstrom an Spulen bemessen ist (DC-13), oder eine Freilaufdiode.`,
+      form: [{a: `Gebrauchskategorie DC-13 nach DIN EN 60947-5-1: Schalten von Elektromagneten (Gleichstrom)`}]
+    };
+    default: {
+      if (st.after === 'arc') return {
+        title: 'Lichtbogen erloschen', badge: 'Ruhezustand',
+        text: `Der Strom ist null, das Magnetfeld ist weg. Am offenen Schalter liegt wieder die Spannung ${v('U')}. Die Kontakte zeigen Abbrand: dunkle Stellen nach ${st.arcs} ${st.arcs === 1 ? 'Lichtbogen' : 'Lichtbögen'}. Mit Freilaufdiode passiert das nicht.`,
+        form: [Z(v('u', 'S'), v('U'), fmtG(U, 'V'), {nach: ` &nbsp;&nbsp; ${v('i')} = 0`})]
+      };
+      if (st.after === 'free') return {
+        title: 'Strom abgeklungen', badge: 'Ruhezustand',
+        text: `Der Spulenstrom ist über die Diode abgeklungen. Das Magnetfeld ist weg. Am offenen Schalter liegt die Spannung ${v('U')}. Die Kontakte sind unbeschädigt.`,
+        form: [Z(v('u', 'S'), v('U'), fmtG(U, 'V'), {nach: ` &nbsp;&nbsp; ${v('i')} = 0`})]
+      };
+      return {
+        title: 'Schalter offen', badge: 'Ruhezustand',
+        text: `Der Schalter ist offen. Es fließt kein Strom. Am offenen Schalter liegt die ganze Spannung ${v('U')}. Darum steht dort ein kleiner Ladungsüberschuss. Zum Einschalten den Schalter anklicken oder antippen.`,
+        form: [Z(v('u', 'S'), v('U'), fmtG(U, 'V'), {nach: ` &nbsp;&nbsp; ${v('i')} = 0`})]
+      };
+    }
+  }
+}
+
+/* ================= Diagramm ================= */
+function drawDiagram() {
+  const DW = DL.W, DH = DL.H, f = DL.f, z = n => Math.round(n * f);
+  const k = view.kd; dctx.setTransform(k, 0, 0, k, 0, 0);
+  const c = dctx;
+  c.fillStyle = T.panel; c.fillRect(0, 0, DW, DH);
+  const pl = DL.pad, pr = DL.pad, pt = z(34), pb = z(34), pw = DW - pl - pr, ph = DH - pt - pb;
+  const U = P.U, I0 = P.I0, WIN = 24;
+  const tNow = st.tDisp, t0 = Math.max(0, tNow - WIN);
+  const X = t => pl + (t - t0) / WIN * pw;
+  const Y = val => pt + ph / 2 - val / (2 * U) * (ph / 2);
+  // Phasenbänder
+  const colOf = {on: T['ph-on'], open1: T['ph-open'], ignite: T['ph-open'], arc: T['ph-arc'], free: T['ph-free']};
+  const nameOf = {on: 'Ein · 1 : 16', open1: 'Stau · ≈ 1 : 10⁸', ignite: 'Zündung', arc: scenario === 'fault' ? 'Lichtbogen · Echtzeit' : 'Lichtbogen · 1 : 80', free: 'Freilauf · 1 : 16'};
+  let runStart = null, runPh = null;
+  const flush = (tEnd) => {
+    if (runPh && colOf[runPh]) {
+      const x1 = X(runStart), x2 = X(tEnd);
+      c.fillStyle = rgba(colOf[runPh], 0.09); c.fillRect(x1, pt, x2 - x1, ph);
+      if (x2 - x1 > z(80)) { c.font = `600 ${z(14.5)}px ${FONT}`; c.fillStyle = colOf[runPh]; c.textAlign = 'left'; c.fillText(nameOf[runPh], x1 + 5, pt + z(16)); }
+    }
+  };
+  for (const h of hist) { if (h.t < t0) continue; if (h.ph !== runPh) { flush(h.t); runPh = h.ph; runStart = h.t; } }
+  flush(tNow);
+  // Gitter und Achsen
+  c.strokeStyle = T.grid; c.lineWidth = 1; c.beginPath();
+  for (let q = -2; q <= 2; q++) { const y = Y(q * U) + 0.5; c.moveTo(pl, y); c.lineTo(pl + pw, y); }
+  c.stroke();
+  c.strokeStyle = T.muted; c.lineWidth = 1.4; c.beginPath(); c.moveTo(pl, Y(0)); c.lineTo(pl + pw, Y(0)); c.stroke();
+  c.font = `600 ${z(14.5)}px ${FONTM}`; c.textAlign = 'right'; c.fillStyle = T.u;
+  for (let q = -2; q <= 2; q++) c.fillText(fmtG(q * U, 'V'), pl - 6, Y(q * U) + 5);
+  c.textAlign = 'left'; c.fillStyle = T.i;
+  for (let q = -2; q <= 2; q++) c.fillText(fmtG(q * I0, 'A'), pl + pw + 6, Y(q * U) + 5);
+  c.font = `500 ${z(14.5)}px ${FONT}`; c.fillStyle = T.muted; c.textAlign = 'center';
+  c.fillText(layoutName === 'hoch' ? 'Animationszeit (Abschnitte gedehnt)' : 'Animationszeit (Abschnitte unterschiedlich gedehnt, Werte über ±2 · U abgeschnitten)', pl + pw / 2, DH - z(10));
+  // Kurven
+  c.save(); c.beginPath(); c.rect(pl, pt - 2, pw, ph + 4); c.clip();
+  const series = [
+    {key: 'iL', col: T.i, dash: [], f: h => h.iL / I0 * U},
+    {key: 'uL', col: T.u, dash: [], f: h => h.uL},
+    {key: 'uR', col: T.u, dash: [9, 5], f: h => h.uR},
+    {key: 'uS', col: T.u, dash: [2, 4], f: h => h.uS}
+  ];
+  for (const s of series) {
+    c.strokeStyle = s.col; c.lineWidth = 2.6; c.setLineDash(s.dash); c.lineJoin = 'round'; c.beginPath();
+    let started = false;
+    for (const h of hist) { if (h.t < t0) continue; const x = X(h.t), y = Y(clamp(s.f(h), -2.05 * U, 2.05 * U)); if (!started) { c.moveTo(x, y); started = true; } else c.lineTo(x, y); }
+    c.stroke();
+  }
+  c.setLineDash([]); c.restore();
+  // Spitzen beschriften
+  for (const key of ['uL', 'uS']) {
+    let run = null; const out = [];
+    for (const h of hist) {
+      if (h.t < t0) continue; const val = h[key];
+      if (Math.abs(val) > 2 * U) { if (!run) run = {t: h.t, v: val}; else if (Math.abs(val) > Math.abs(run.v)) run.v = val; }
+      else if (run) { out.push(run); run = null; }
+    }
+    if (run) out.push(run);
+    for (const r of out) {
+      const x = Math.min(X(r.t) + 4, pl + pw - z(160)), y = r.v > 0 ? pt + z(34) : pt + ph - z(8);
+      c.fillStyle = T.u; c.textAlign = 'left';
+      c.font = `italic 600 ${z(16)}px ${FONTM}`; c.fillText('u', x, y); const w1 = c.measureText('u').width;
+      c.font = `600 ${z(11)}px ${FONTM}`; c.fillText(key === 'uL' ? 'L' : 'S', x + w1 + 1, y + z(4));
+      c.font = `600 ${z(14.5)}px ${FONTM}`; c.fillText(` Spitze ${fmt(r.v, 'V')}`, x + w1 + z(9), y);
+    }
+  }
+  // Legende
+  const lg = [['i', T.i, []], ['u_L', T.u, []], ['u_R', T.u, [9, 5]], ['u_S', T.u, [2, 4]]];
+  const step_ = z(80);
+  let lx = pl + pw - 4 * step_ + z(8);
+  for (const [n, col, dash] of lg) {
+    c.strokeStyle = col; c.lineWidth = 2.6; c.setLineDash(dash); c.beginPath(); c.moveTo(lx, z(17)); c.lineTo(lx + z(28), z(17)); c.stroke(); c.setLineDash([]);
+    c.fillStyle = col; c.font = `italic 600 ${z(17)}px ${FONTM}`; c.textAlign = 'left'; c.fillText(n[0], lx + z(33), z(22));
+    if (n.length > 1) { const w = c.measureText(n[0]).width; c.font = `600 ${z(12)}px ${FONTM}`; c.fillText(n.slice(2), lx + z(33) + w + 1, z(26)); }
+    lx += step_;
+  }
+}
+
+/* ================= Oberfläche ================= */
+const html = document.documentElement;
+const ui = {sw: $('bSwitch'), diode: $('chk-diode'), diagB: $('chk-diag'), formB: $('chk-form'), rechB: $('chk-rech'), werteB: $('chk-werte'), werte: $('werte'), info: $('info'), pause: $('bPause'), reset: $('bReset'), fs: $('bFull'),
+  title: $('pTitle'), badge: $('pBadge'), text: $('pText'), form: $('pForm'), vals: $('vals'), note: $('scNote'), msg: $('msg'), diagCard: $('diagCard'),
+  controls: $('controls'), vbEnde: $('vb-ende')};
+let lastUi = 0, lastTitle = '';
+function setMsg(s) { ui.msg.textContent = s; }
+function refreshUI(force) {
+  const now = performance.now();
+  if (!force && now - lastUi < 120) return;
+  lastUi = now;
+  const info = phaseInfo();
+  if (info.title !== lastTitle) { ui.title.textContent = info.title; lastTitle = info.title; }
+  ui.badge.innerHTML = info.badge.replace(/\^(\d+)/, '<sup>$1</sup>');
+  ui.text.innerHTML = info.text;
+  ui.form.hidden = !showForm && !showRech;
+  if (showForm || showRech) {
+    const neg = t => t.replace(/^−/, '<span class="neg">−</span>');
+    const law = `${v('u', 'i')} = ${v('L')} · ${fr('d' + v('i'), 'd' + v('t'))} = ${v('N')} · ${fr('d' + v('Φ'), 'd' + v('t'))} <span class="c">(Induktionsgesetz; ${v('u', 'i')} entspricht hier ${v('u', 'L')})</span>`;
+    const small = Math.abs(st.uL) < 0.005 * P.U;
+    const now2 = small ? {r: `${fr('d' + v('i'), 'd' + v('t'))} ≈ 0 → ${v('u', 'i')} ≈ 0 <span class="c">(aktuell)</span>`}
+      : {r: `${fr('d' + v('i'), 'd' + v('t'))} = ${fr(v('u', 'L'), v('L'))} = ${neg(fmt(st.uL / P.L, 'A/s'))} → ${v('u', 'i')} = ${neg(fmt(st.uL, 'V'))} <span class="c">(aktuell)</span>`};
+    ui.form.innerHTML = [law, now2, ...info.form].map(zeileHTML).filter(Boolean).map(f => `<div>${f}</div>`).join('');
+  }
+  ui.sw.textContent = st.phase === 'dead' ? 'Schalter zerstört' : st.sw === 'closed' ? 'Schalter öffnen' : st.sw === 'closing' ? 'schließt …' : 'Schalter schließen';
+  ui.sw.disabled = st.phase === 'dead';
+  const W0 = 0.5 * P.L * st.iL * st.iL;
+  const rows = [
+    ['u', v('U'), fmtG(P.U, 'V')],
+    ['i', v('i'), fmt(st.iM, 'A')],
+    ...(diodeOn ? [['i', v('i', 'D'), fmt(st.iD, 'A')]] : []),
+    ['u', v('u', 'L'), fmt(st.uL, 'V')],
+    ['u', v('u', 'R'), fmt(st.uR, 'V')],
+    ['u', v('u', 'S'), fmt(st.uS, 'V')],
+    ['', `${v('W')} in der Spule`, fmt(W0, 'J')]
+  ];
+  ui.werte.hidden = !showWerte; ui.info.classList.toggle('ohne-werte', !showWerte);
+  ui.vals.innerHTML = rows.map(r => `<tr class="${r[0]}"><td>${r[1]}</td><td>${r[2].replace(/^−/, '<span class="neg">−</span>')}</td></tr>`).join('');
+  ui.note.innerHTML = `${scenario === 'fault' ? 'Fehlerfall' : 'Normalfall'}: ${v('U')} = ${fmtG(P.U, 'V')}, ${v('R', 'Cu')} = ${fmtG(P.R, 'Ω')}, ${v('L')} = ${fmtG(P.L, 'H')}, ${v('τ')} = ${fmt(P.tau, 's')}, ${v('I')} = ${fmt(P.I0, 'A')}`;
+}
+
+function setPressed(btn, on) { btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+function setChk(el, on) { el.checked = !!on; }    // Kästchen der Bedienleiste (Norm: .chk)
+function setDiode(on) { diodeOn = !!on; setChk(ui.diode, diodeOn); refreshUI(true); }
+function setDiag(on) { showDiag = !!on; setChk(ui.diagB, showDiag); ui.diagCard.hidden = !showDiag; fit(); }
+function setForm(on) { showForm = !!on; setChk(ui.formB, showForm); refreshUI(true); }
+function setRech(on) { showRech = !!on; setChk(ui.rechB, showRech); refreshUI(true); }
+function setWerte(on) { showWerte = !!on; setChk(ui.werteB, showWerte); refreshUI(true); drawScene(); }
+function setPause(on) { paused = !!on; ui.pause.textContent = paused ? 'Weiter' : 'Pause'; }
+function setScenario(sc) {
+  scenario = sc === 'fehler' || sc === 'fault' ? 'fault' : 'normal';
+  document.querySelectorAll('[data-sc]').forEach(x => setPressed(x, x.dataset.sc === scenario));
+  reset();
+}
+function setTempo(t) {
+  tempo = t;
+  document.querySelectorAll('[data-tempo]').forEach(x => setPressed(x, parseFloat(x.dataset.tempo) === t));
+  refreshUI(true);
+}
+ui.sw.addEventListener('click', () => { userToggle(); keepAwake(); });
+ui.diode.addEventListener('change', e => setDiode(e.target.checked));
+ui.diagB.addEventListener('change', e => setDiag(e.target.checked));
+ui.formB.addEventListener('change', e => setForm(e.target.checked));
+ui.rechB.addEventListener('change', e => setRech(e.target.checked));
+ui.werteB.addEventListener('change', e => setWerte(e.target.checked));
+ui.vbEnde.addEventListener('click', () => setVollbild(false));
+ui.pause.addEventListener('click', () => setPause(!paused));
+ui.reset.addEventListener('click', () => reset());
+ui.fs.addEventListener('click', () => setVollbild(!html.classList.contains('vollbild')));
+document.querySelectorAll('[data-sc]').forEach(b => b.addEventListener('click', () => setScenario(b.dataset.sc)));
+document.querySelectorAll('[data-tempo]').forEach(b => b.addEventListener('click', () => setTempo(parseFloat(b.dataset.tempo))));
+// Klickpunkt → Schaltungseinheiten (Bühne mit Rand im Vollbild, Schaltung mit Maßstab und Versatz)
+function toLogical(e) {
+  const r = stage.getBoundingClientRect(), kc = Math.min(r.width / PL.SW, r.height / PL.SH);
+  const X = (e.clientX - r.left - (r.width - PL.SW * kc) / 2) / kc, Y = (e.clientY - r.top - (r.height - PL.SH * kc) / 2) / kc;
+  return {x: (X - PL.ox) / PL.s, y: (Y - PL.oy) / PL.s};
+}
+function inSwitch(p) { return p.x > HOUS.x - 16 && p.x < HOUS.x + HOUS.w + 16 && p.y > HOUS.y - 16 && p.y < HOUS.y + HOUS.h + 16; }
+stage.addEventListener('pointermove', e => { const h = inSwitch(toLogical(e)); st.hover = h; stage.style.cursor = h ? 'pointer' : 'default'; });
+stage.addEventListener('pointerleave', () => { st.hover = false; });
+stage.addEventListener('click', e => { if (inSwitch(toLogical(e))) { userToggle(); keepAwake(); } });
+// Tastatur und Presenter (Fernbedienungen senden meist Bild↓/Bild↑ oder Pfeiltasten)
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const t = e.target, onCtl = t && (t.tagName === 'BUTTON' || t.tagName === 'INPUT' || t.tagName === 'SUMMARY' || t.isContentEditable);
+  const k = e.key;
+  if (k === ' ' || e.code === 'Space') { if (onCtl) return; e.preventDefault(); userToggle(); keepAwake(); return; }
+  if (k === 'PageDown' || k === 'PageUp' || k === 'ArrowRight' || k === 'ArrowLeft') { e.preventDefault(); userToggle(); keepAwake(); return; }
+  if (k === 'Escape') { if (html.classList.contains('vollbild')) setVollbild(false); return; }
+  switch (k.toLowerCase()) {
+    case 'f': setVollbild(!html.classList.contains('vollbild')); break;
+    case 'd': setDiode(!diodeOn); break;
+    case 'm': setWerte(!showWerte); break;
+    case 'p': setPause(!paused); break;
+    case 'r': reset(); break;
+    default: return;
+  }
+  e.preventDefault();
+});
+
+/* Vollbild nach Normblock 10 (Layout-Norm v3, Baustein setVollbild aus dem Gerüst): die ganze Seite; sichtbar sind nur
+   die Bühne und – wenn eingeschaltet – das Diagramm darunter (Festlegung der Lehrkraft, 12.11.2026: „Vollbild nimmt ein
+   eingeschaltetes Diagramm mit“). Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse: Die Ansicht füllt das Fenster,
+   „Vollbild beenden“ (.vb-ende) führt zurück. */
+function setVollbild(an) {
+  html.classList.toggle('vollbild', an);
+  ui.fs.textContent = an ? 'Vollbild beenden' : 'Vollbild';
+  try {
+    if (an && !document.fullscreenElement) html.requestFullscreen?.().catch(() => {});
+    if (!an && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* nicht verfügbar: Ersatz über die Klasse */ }
+  if (an) keepAwake();
+  fit();
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && html.classList.contains('vollbild')) setVollbild(false); else fit(); });
+
+// Bildschirm wach halten, solange jemand mit der Animation arbeitet (Beamer, Handy); Ablehnung ist kein Fehler
+let wakeLock = null, wanted = false;
+async function keepAwake() {
+  wanted = true;
+  try {
+    if ('wakeLock' in navigator && !wakeLock && document.visibilityState === 'visible') {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    }
+  } catch (e) { wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => { if (wanted && document.visibilityState === 'visible') keepAwake(); });
+
+/* ===== QR-Code rechts oben in der Bühne (Festlegungen der Lehrkraft, 12.11.2026, Animation W; Baustein aus dem Gerüst) =====
+   Führt zur Adresse der Animation auf GitHub Pages (technik.md Abschnitt 8). Die Zeile `const QR = …;` erzeugt
+   python3 scripts/qr_buehne.py <Adresse> quelle.html  – null heißt: noch keine Adresse.
+   Beim Öffnen steht dort nur ein Platzhalter (QR-Symbol, „QR-Code“). Klick, Enter oder Leertaste darauf zeigt den QR-Code,
+   Klick auf den QR-Code blendet ihn wieder aus. ?qr=1 (im Artifact #qr) zeigt ihn gleich (Link für den Beamer).
+   Unter 800 px Fensterbreite fehlen beide (am Handy ist die Animation schon offen); im Export nur mit ?qr=1.
+   Die Bühne ist ein Canvas; Titel, QR-Code und Platzhalter liegen im SVG darüber (Layout-Norm, layout.md 2),
+   in Bühnenpixeln 1920 × 1080: 6 px je Modul, ganzzahlig.
+   Festlegung der Lehrkraft, 12.11.2026: Ordner im Repo spule/ein-ausschalten/ (Datei dort als index.html).
+   Festlegung der Lehrkraft, 12.11.2026 (beim Umbau auf die Layout-Norm): Ecke oben rechts freigeräumt – die Schaltung
+   endet links von x = 1610, ihr oberer Leiter liegt unter y = 280.
+   Annahme: In der Anordnung „hoch“ (Handy, Tablet hochkant) fehlen beide – dort ist die Animation schon am eigenen Gerät offen. */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/spule/ein-ausschalten/", "n": 37, "d": "M0 0h7v1h-7zM8 0h3v1h-3zM13 0h1v1h-1zM16 0h3v1h-3zM20 0h1v1h-1zM23 0h1v1h-1zM26 0h1v1h-1zM28 0h1v1h-1zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h2v1h-2zM11 1h1v1h-1zM13 1h5v1h-5zM19 1h7v1h-7zM28 1h1v1h-1zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM9 2h3v1h-3zM14 2h1v1h-1zM20 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h10v1h-10zM19 3h1v1h-1zM22 3h1v1h-1zM24 3h4v1h-4zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM10 4h1v1h-1zM13 4h1v1h-1zM17 4h3v1h-3zM21 4h2v1h-2zM26 4h3v1h-3zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h1v1h-1zM11 5h1v1h-1zM13 5h1v1h-1zM15 5h1v1h-1zM19 5h3v1h-3zM24 5h3v1h-3zM28 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM8 7h3v1h-3zM12 7h4v1h-4zM17 7h4v1h-4zM24 7h1v1h-1zM27 7h2v1h-2zM0 8h1v1h-1zM2 8h2v1h-2zM5 8h3v1h-3zM9 8h2v1h-2zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM19 8h5v1h-5zM26 8h3v1h-3zM30 8h1v1h-1zM33 8h1v1h-1zM35 8h2v1h-2zM0 9h2v1h-2zM3 9h1v1h-1zM7 9h1v1h-1zM10 9h3v1h-3zM15 9h2v1h-2zM21 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM31 9h1v1h-1zM35 9h1v1h-1zM2 10h6v1h-6zM10 10h1v1h-1zM12 10h2v1h-2zM15 10h1v1h-1zM17 10h2v1h-2zM22 10h2v1h-2zM26 10h1v1h-1zM28 10h3v1h-3zM32 10h2v1h-2zM1 11h2v1h-2zM5 11h1v1h-1zM7 11h1v1h-1zM11 11h2v1h-2zM15 11h1v1h-1zM19 11h1v1h-1zM24 11h3v1h-3zM29 11h2v1h-2zM32 11h3v1h-3zM4 12h5v1h-5zM10 12h2v1h-2zM13 12h2v1h-2zM17 12h1v1h-1zM22 12h1v1h-1zM24 12h3v1h-3zM29 12h2v1h-2zM32 12h5v1h-5zM0 13h2v1h-2zM7 13h1v1h-1zM11 13h2v1h-2zM14 13h3v1h-3zM18 13h2v1h-2zM21 13h1v1h-1zM24 13h1v1h-1zM27 13h1v1h-1zM29 13h5v1h-5zM35 13h2v1h-2zM0 14h1v1h-1zM2 14h3v1h-3zM6 14h1v1h-1zM8 14h1v1h-1zM12 14h1v1h-1zM16 14h6v1h-6zM24 14h1v1h-1zM29 14h1v1h-1zM32 14h1v1h-1zM34 14h2v1h-2zM0 15h1v1h-1zM2 15h3v1h-3zM8 15h4v1h-4zM14 15h1v1h-1zM17 15h2v1h-2zM21 15h2v1h-2zM24 15h1v1h-1zM26 15h1v1h-1zM29 15h4v1h-4zM35 15h1v1h-1zM0 16h1v1h-1zM4 16h3v1h-3zM11 16h3v1h-3zM16 16h5v1h-5zM24 16h2v1h-2zM29 16h1v1h-1zM33 16h2v1h-2zM0 17h5v1h-5zM8 17h1v1h-1zM11 17h1v1h-1zM16 17h1v1h-1zM19 17h10v1h-10zM30 17h1v1h-1zM33 17h1v1h-1zM35 17h2v1h-2zM0 18h1v1h-1zM2 18h6v1h-6zM9 18h2v1h-2zM12 18h2v1h-2zM15 18h5v1h-5zM22 18h1v1h-1zM24 18h1v1h-1zM26 18h2v1h-2zM31 18h1v1h-1zM33 18h4v1h-4zM0 19h1v1h-1zM4 19h2v1h-2zM8 19h2v1h-2zM13 19h2v1h-2zM17 19h3v1h-3zM23 19h2v1h-2zM26 19h4v1h-4zM31 19h2v1h-2zM35 19h1v1h-1zM2 20h1v1h-1zM4 20h3v1h-3zM8 20h2v1h-2zM11 20h4v1h-4zM17 20h2v1h-2zM21 20h1v1h-1zM23 20h1v1h-1zM26 20h2v1h-2zM31 20h2v1h-2zM36 20h1v1h-1zM1 21h3v1h-3zM9 21h2v1h-2zM13 21h2v1h-2zM16 21h1v1h-1zM19 21h2v1h-2zM22 21h2v1h-2zM28 21h1v1h-1zM33 21h1v1h-1zM0 22h1v1h-1zM3 22h2v1h-2zM6 22h1v1h-1zM8 22h1v1h-1zM10 22h2v1h-2zM13 22h1v1h-1zM16 22h2v1h-2zM20 22h4v1h-4zM25 22h2v1h-2zM28 22h1v1h-1zM30 22h2v1h-2zM0 23h5v1h-5zM10 23h2v1h-2zM13 23h2v1h-2zM18 23h1v1h-1zM21 23h10v1h-10zM32 23h4v1h-4zM0 24h1v1h-1zM2 24h1v1h-1zM4 24h3v1h-3zM8 24h1v1h-1zM12 24h1v1h-1zM14 24h2v1h-2zM18 24h1v1h-1zM20 24h8v1h-8zM29 24h4v1h-4zM34 24h1v1h-1zM36 24h1v1h-1zM1 25h4v1h-4zM8 25h2v1h-2zM11 25h3v1h-3zM16 25h3v1h-3zM20 25h1v1h-1zM24 25h13v1h-13zM1 26h1v1h-1zM4 26h1v1h-1zM6 26h2v1h-2zM9 26h4v1h-4zM14 26h3v1h-3zM18 26h3v1h-3zM24 26h2v1h-2zM29 26h3v1h-3zM33 26h1v1h-1zM35 26h1v1h-1zM0 27h1v1h-1zM2 27h1v1h-1zM4 27h2v1h-2zM8 27h1v1h-1zM11 27h1v1h-1zM16 27h1v1h-1zM21 27h1v1h-1zM24 27h1v1h-1zM27 27h1v1h-1zM29 27h2v1h-2zM35 27h2v1h-2zM2 28h1v1h-1zM6 28h2v1h-2zM11 28h5v1h-5zM18 28h1v1h-1zM21 28h3v1h-3zM25 28h1v1h-1zM27 28h8v1h-8zM8 29h1v1h-1zM11 29h1v1h-1zM15 29h1v1h-1zM17 29h1v1h-1zM20 29h1v1h-1zM22 29h2v1h-2zM25 29h4v1h-4zM32 29h1v1h-1zM34 29h1v1h-1zM36 29h1v1h-1zM0 30h7v1h-7zM8 30h2v1h-2zM12 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM21 30h1v1h-1zM24 30h2v1h-2zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h3v1h-3zM0 31h1v1h-1zM6 31h1v1h-1zM8 31h1v1h-1zM11 31h3v1h-3zM16 31h1v1h-1zM19 31h2v1h-2zM22 31h1v1h-1zM27 31h2v1h-2zM32 31h1v1h-1zM35 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM10 32h1v1h-1zM12 32h2v1h-2zM18 32h2v1h-2zM22 32h1v1h-1zM26 32h1v1h-1zM28 32h6v1h-6zM35 32h2v1h-2zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM8 33h2v1h-2zM13 33h3v1h-3zM17 33h2v1h-2zM20 33h4v1h-4zM28 33h3v1h-3zM32 33h2v1h-2zM36 33h1v1h-1zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM8 34h1v1h-1zM10 34h1v1h-1zM16 34h1v1h-1zM18 34h3v1h-3zM22 34h2v1h-2zM27 34h1v1h-1zM30 34h1v1h-1zM32 34h3v1h-3zM0 35h1v1h-1zM6 35h1v1h-1zM9 35h2v1h-2zM12 35h3v1h-3zM16 35h1v1h-1zM20 35h1v1h-1zM25 35h2v1h-2zM29 35h1v1h-1zM31 35h4v1h-4zM0 36h7v1h-7zM8 36h1v1h-1zM13 36h5v1h-5zM19 36h2v1h-2zM22 36h5v1h-5zM29 36h2v1h-2zM32 36h1v1h-1zM34 36h3v1h-3z"};
+const SVGNS = 'http://www.w3.org/2000/svg', QRSVG = $('stage-svg');
+function svgEl(tag, attrs, parent) { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function svgTxt(x, y, s, attrs, parent) { const t = svgEl('text', {x, y, ...attrs}, parent); t.textContent = s; return t; }
+// Titel nach der Norm: oben rechts (t-main), rückt links neben den QR-Code, springt beim Umschalten nicht
+const gTitel = svgTxt(1872, 120, 'Spule ein- und ausschalten', {class: 't-main', 'text-anchor': 'end'}, QRSVG);
+const gQRScale = svgEl('g', {}, QRSVG);
+const gQR = svgEl('g', {id: 'qr', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code ausblenden'}, gQRScale);
+const gQRPlatz = svgEl('g', {id: 'qr-platz', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code anzeigen'}, gQRScale);
+let qrAn = false;                                  // QR-Code beim Öffnen aus, Platzhalter an
+const QR_BOX = QR && (() => {
+  const m = 6, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
+  gQR.dataset.url = QR.url;
+  svgEl('title', {}, gQR).textContent = 'Klicken: QR-Code ausblenden';
+  svgEl('rect', {x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1}, gQR);
+  svgEl('path', {d: QR.d, fill: '#000', transform: `translate(${x0 + q} ${y0 + q}) scale(${m})`, 'shape-rendering': 'crispEdges'}, gQR);
+  svgTxt(x0 + w / 2, y0 + w + 26, 'Am eigenen', {class: 'qr-cap', 'text-anchor': 'middle'}, gQR);
+  svgTxt(x0 + w / 2, y0 + w + 52, 'Gerät öffnen', {class: 'qr-cap', 'text-anchor': 'middle'}, gQR);
+  // Platzhalter, rechts oben bündig mit dem QR-Code: gestrichelter Rahmen, Symbol (drei Suchmuster und einige Module –
+  // kein lesbarer Code), darunter „QR-Code“
+  const p = 96, px = 1900 - p, s = 3, o = Math.round((p - 21 * s) / 2);
+  svgEl('title', {}, gQRPlatz).textContent = 'Klicken: QR-Code anzeigen';
+  svgEl('rect', {x: px, y: y0, width: p, height: p, rx: 8, fill: '#fff', stroke: '#9aa3ad', 'stroke-width': 2, 'stroke-dasharray': '8 6'}, gQRPlatz);
+  let d = '';
+  for (const [cx, cy] of [[0, 0], [14, 0], [0, 14]]) d += `M${cx} ${cy}h7v7h-7zM${cx + 1} ${cy + 1}v5h5v-5zM${cx + 2} ${cy + 2}h3v3h-3z`;
+  for (const [x, y] of [[9, 1], [11, 2], [9, 4], [12, 4], [10, 6], [12, 8], [8, 9], [10, 10], [14, 9], [16, 10], [18, 9], [20, 11], [1, 9], [3, 10], [5, 9],
+    [2, 12], [9, 12], [11, 13], [15, 14], [17, 15], [19, 16], [14, 17], [16, 19], [18, 18], [20, 20], [9, 15], [11, 17], [9, 19], [12, 20]]) d += `M${x} ${y}h1v1h-1z`;
+  svgEl('path', {d, fill: '#5b6570', 'fill-rule': 'evenodd', transform: `translate(${px + o} ${y0 + o}) scale(${s})`, 'shape-rendering': 'crispEdges'}, gQRPlatz);
+  svgTxt(px + p / 2, y0 + p + 28, 'QR-Code', {class: 'qr-cap', 'text-anchor': 'middle'}, gQRPlatz);
+  return {x0, y0, w};
+})();
+const qrGross = () => window.innerWidth >= 800 && layoutName === 'quer', qrExport = () => html.classList.contains('export');
+function qrSichtbar() { return !!QR && qrAn && (qrGross() || (qrExport() && layoutName === 'quer')); }
+function qrPlatzSichtbar() { return !!QR && !qrAn && qrGross() && !qrExport(); }
+function qrAnzeigen() {
+  QRSVG.setAttribute('viewBox', `0 0 ${PL.SW} ${PL.SH}`);
+  gQRScale.setAttribute('transform', `scale(${PL.SW / 1920})`);
+  if (layoutName === 'hoch') {                     // Abweichung hochkant: Titel links oben, kleiner
+    gTitel.setAttribute('class', 't-panel'); gTitel.setAttribute('text-anchor', 'start'); gTitel.setAttribute('x', 20); gTitel.setAttribute('y', 40);
+  } else {
+    gTitel.setAttribute('class', 't-main'); gTitel.setAttribute('text-anchor', 'end'); gTitel.setAttribute('y', 120);
+    gTitel.setAttribute('x', QR_BOX && (qrSichtbar() || qrPlatzSichtbar() || qrGross()) ? QR_BOX.x0 - 60 : 1872);
+  }
+  gQR.style.display = qrSichtbar() ? '' : 'none';
+  gQRPlatz.style.display = qrPlatzSichtbar() ? '' : 'none';
+}
+function qrUmschalten() {
+  qrAn = !qrAn; qrAnzeigen();
+  const z = qrAn ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({preventScroll: true});
+}
+for (const g of [gQR, gQRPlatz]) {
+  g.addEventListener('click', e => { e.stopPropagation(); qrUmschalten(); });
+  // Tasten hier abfangen – sonst schaltet die Leertaste zugleich den Schalter S
+  g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
+}
+
+// Anordnung wählen und Bühne so groß machen, dass Bühne und Bedienleiste ohne Scrollen ins Fenster passen
+let layoutPref = 'auto';
+function chooseLayout() {
+  if (layoutPref !== 'auto') return layoutPref;
+  if (html.classList.contains('export') || html.classList.contains('buehne')) return 'quer';
+  return (innerHeight > innerWidth * 1.05 && innerWidth < 700) ? 'hoch' : 'quer';
+}
+function fit() {
+  const lay = chooseLayout();
+  if (lay !== layoutName) setLayout(lay);
+  html.classList.toggle('lay-hoch', lay === 'hoch');
+  // Bühne: Größe nach der Norm aus dem CSS (16:9); hochkant eigene Form (Abweichung, Festlegung der Lehrkraft, 12.11.2026)
+  stageEl.style.aspectRatio = lay === 'hoch' ? `${PL.SW} / ${PL.SH}` : '';
+  stage.dataset.logisch = `${PL.SW}x${PL.SH}`;
+  const cw = Math.max(1, stageEl.clientWidth), ch = Math.max(1, stageEl.clientHeight);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  stage.width = Math.round(cw * dpr); stage.height = Math.round(ch * dpr);
+  const kc = Math.min(cw / PL.SW, ch / PL.SH);        // im Vollbild mit Rand oben/unten oder links/rechts
+  view.k = kc * dpr; view.bx = (cw - PL.SW * kc) / 2 * dpr; view.by = (ch - PL.SH * kc) / 2 * dpr;
+  diag.style.aspectRatio = `${DL.W} / ${DL.H}`;
+  const dw = diag.clientWidth || DL.W;
+  diag.width = Math.round(dw * dpr); diag.height = Math.round(dw * DL.H / DL.W * dpr);
+  view.kd = diag.width / DL.W;
+  qrAnzeigen();
+  buildSprites();
+  drawScene();
+  if (showDiag) drawDiagram();
+}
+new ResizeObserver(() => fit()).observe(stageEl);
+addEventListener('resize', () => fit());
+addEventListener('orientationchange', () => setTimeout(fit, 150));
+
+let lastT = performance.now();
+function frame(now) {
+  let dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+  if (!paused) step(dt * tempo);
+  drawScene();
+  if (showDiag) drawDiagram();
+  refreshUI(false);
+  requestAnimationFrame(frame);
+}
+
+/* ================= Schnittstelle window.anim =================
+   Für Prüfung, Video und Experimente in der Browser-Konsole (Skill animation-erstellen, Technik 5). */
+const DT_FIX = 1 / 60;
+window.anim = {
+  bauart: 'ablauf',
+  cfg: {SCN, CP, UZ, UF, UB0, VC, DMAX, K_SLOW, K_ARC, V0, DZ, NLEV, LAYOUTS},
+  // reine Physik zum Nachrechnen (t real in s): art 'ein' = Einschalten, 'freilauf' = Abklingen über die Diode ab Strom o.i0
+  model(t, art = 'ein', o = {}) {
+    const s = SCN[o.szenario === 'fehler' ? 'fault' : 'normal'], tau = s.L / s.R;
+    if (art === 'ein') { const e = Math.exp(-t / tau); return {tau, i: s.U / s.R * (1 - e), uL: s.U * e, uR: s.U * (1 - e), uS: 0}; }
+    if (art === 'freilauf') { const iinf = -UF / s.R, i = iinf + ((o.i0 ?? s.U / s.R) - iinf) * Math.exp(-t / tau); return {tau, i, uR: s.R * i, uL: -UF - s.R * i, uS: s.U + UF}; }
+    throw new Error('art: ein oder freilauf');
+  },
+  get state() {
+    const {flyers, ign, hover, ...rest} = st;     // hover: Mauszeiger über dem Schalter – Bedienung, kein Zustand
+    return {...rest, szenario: scenario === 'fault' ? 'fehler' : 'normal', diode: diodeOn, U: P.U, R: P.R, L: P.L, tau: P.tau, I0: P.I0,
+      anordnung: layoutName, tempo, pause: paused, formeln: showForm, berechnung: showRech, momentanwerte: showWerte, qr: qrAn};
+  },
+  opt(key, val) {
+    switch (key) {
+      case 'szenario': setScenario(val); break;
+      case 'diode': setDiode(val); break;
+      case 'diag': case 'diagramm': setDiag(val); break;   // Norm: das zuschaltbare Diagramm heißt 'diag'
+      case 'formeln': setForm(val); break;
+      case 'berechnung': setRech(val); break;
+      case 'momentanwerte': setWerte(val); break;
+      case 'tempo': setTempo(+val); break;
+      case 'anordnung': layoutPref = val || 'auto'; fit(); break;
+      case 'qr': qrAn = !!val; qrAnzeigen(); break;
+      default: throw new Error('unbekannte Option ' + key);
+    }
+    drawScene(); refreshUI(true);
+  },
+  act(name) {
+    if (name === 'schalter') userToggle();
+    else if (name === 'reset') reset();
+    else if (name === 'vollbild') setVollbild(!html.classList.contains('vollbild'));
+    else throw new Error('unbekannte Aktion ' + name);
+    drawScene(); refreshUI(true);
+  },
+  // Animationszeit in festen Schritten vorrücken – unabhängig von Tempo, Pause und Bildrate
+  advance(sec) { const n = Math.round(sec / DT_FIX); for (let k = 0; k < n; k++) step(DT_FIX); drawScene(); if (showDiag) drawDiagram(); refreshUI(true); },
+  pause(on) { setPause(on); },
+  vollbild(an = true) { setVollbild(!!an); return html.classList.contains('vollbild'); }   // Normblock 10
+};
+
+/* ================= Start ================= */
+// Adresse: ?export=1 (nur Bühne 1920 × 1080), ?buehne=1 (Vorschau für Moodle), ?szenario=fehler, ?diode=1, ?diagramm=1,
+// ?anordnung=hoch, ?qr=1, ?formeln=0, ?berechnung=0, ?werte=0;
+// im Artifact dieselben Schalter als #fehlerfall, #diode, #diagramm, #hoch, #export, #buehne, #qr, #ohneformeln, #ohneberechnung, #ohnewerte
+const Q = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
+const HASH = (() => { try { return location.hash.slice(1).split(/[,&+]/); } catch (e) { return []; } })();
+const has = (q, h) => Q.has(q) && Q.get(q) !== '0' || HASH.includes(h);
+if (has('export', 'export')) html.classList.add('export');
+if (has('buehne', 'buehne')) html.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne
+readTokens();
+setLayout('quer');
+if (Q.get('szenario') === 'fehler' || HASH.includes('fehlerfall')) scenario = 'fault';
+document.querySelectorAll('[data-sc]').forEach(x => setPressed(x, x.dataset.sc === scenario));
+reset();
+if (has('diode', 'diode')) setDiode(true);
+if (has('diagramm', 'diagramm')) { showDiag = true; setChk(ui.diagB, true); ui.diagCard.hidden = false; }
+if (Q.get('anordnung') === 'hoch' || HASH.includes('hoch')) layoutPref = 'hoch';
+if (Q.get('anordnung') === 'quer' || HASH.includes('quer')) layoutPref = 'quer';
+if (has('qr', 'qr')) qrAn = true;                 // QR-Code gleich sichtbar (Beamer-Link)
+if (Q.get('formeln') === '0' || HASH.includes('ohneformeln')) { showForm = false; setChk(ui.formB, false); }
+if (Q.get('berechnung') === '0' || HASH.includes('ohneberechnung')) { showRech = false; setChk(ui.rechB, false); }
+if (Q.get('werte') === '0' || HASH.includes('ohnewerte')) { showWerte = false; setChk(ui.werteB, false); }
+fit();
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
+</body>
+</html>
