@@ -47,6 +47,9 @@ body{font-family:var(--font-ui);font-size:15px;line-height:1.4;
 #stage-svg .c-phi{fill:var(--phi);font-weight:600}
 #stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
 #stage-svg .ro{font-size:38px}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
 #stage-svg .pol{font-family:var(--font-ui);font-weight:700;font-size:30px;fill:#fff}
 
 .controls{display:grid;gap:10px;background:var(--stage);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
@@ -131,7 +134,6 @@ html.calc .nur-berechnung{display:inline}
       <label class="chk" for="chk-trace"><input id="chk-trace" type="checkbox">Kurve mitzeichnen</label>
       <label class="chk" for="chk-arc"><input id="chk-arc" type="checkbox" checked>Winkelbogen α</label>
       <label class="chk" for="chk-ro"><input id="chk-ro" type="checkbox" checked>Winkelwerte</label>
-      <label class="chk" for="chk-qr"><input id="chk-qr" type="checkbox" checked>QR-Code</label>
       <label class="chk" for="chk-rad"><input id="chk-rad" type="checkbox">Bogenmaß</label>
       <label class="group" for="sel-pfeil"><span class="cap">Pfeil am Nordpol</span>
         <select id="sel-pfeil">
@@ -224,7 +226,7 @@ function model(alphaDeg) {
 /* ================= Zustand ================= */
 const S = { alpha: CFG.alphaStart, playing: false, rev: 12, proj: true, trace: false, arc: true, ro: true, phi: false, pfeil: 'ann', rad: false,   /* pfeil 'ann' als Standard: Festlegung der Lehrkraft, 12.11.2026 */ fl: false, div: '30',
   calc: false,   /* Formel und Berechnung nur über den Knopf „Berechnung“: Lernende rechnen selbst (Lehrkraft, 12.11.2026) */
-  qr: true };
+  qr: false };   /* QR-Code beim Öffnen aus, rechts oben ein Platzhalter zum Anklicken (Festlegung der Lehrkraft, 12.11.2026) */
 
 /* ================= Hilfsfunktionen ================= */
 const $ = (s) => document.querySelector(s);
@@ -404,10 +406,28 @@ for (let d = 30; d <= CFG.alphaMax; d += 30) {
 const gAxisLbl = el('g', {}, gLbl);
 /* QR-Code zur Animation im Repo (Lehrkraft, 12.11.2026). Erzeugt mit Python qrcode, Fehlerkorrektur M.
    Adresse ändern: QR neu erzeugen (Skript im Arbeitsordner), nicht von Hand.
-   Die Adresse im Code endet auf ?qr=0: Wer über den QR-Code kommt, sieht ihn nicht noch einmal – auf jedem Gerät,
-   auch Tablet und Laptop (Lehrkraft, 12.11.2026). Unter 800 px ist er zusätzlich aus. */
-const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/erzeugung/?qr=0", "n": 37, "d": "M0 0h7v1h-7zM10 0h1v1h-1zM13 0h2v1h-2zM16 0h1v1h-1zM20 0h1v1h-1zM25 0h2v1h-2zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM13 1h1v1h-1zM15 1h2v1h-2zM18 1h1v1h-1zM21 1h2v1h-2zM25 1h2v1h-2zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h3v1h-3zM14 2h1v1h-1zM18 2h2v1h-2zM21 2h2v1h-2zM26 2h1v1h-1zM28 2h1v1h-1zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h2v1h-2zM15 3h1v1h-1zM17 3h1v1h-1zM20 3h2v1h-2zM24 3h2v1h-2zM27 3h2v1h-2zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h1v1h-1zM11 4h2v1h-2zM15 4h1v1h-1zM17 4h1v1h-1zM19 4h7v1h-7zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h3v1h-3zM14 5h1v1h-1zM16 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM25 5h2v1h-2zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM8 7h3v1h-3zM15 7h1v1h-1zM19 7h1v1h-1zM22 7h2v1h-2zM27 7h2v1h-2zM0 8h1v1h-1zM6 8h1v1h-1zM8 8h2v1h-2zM11 8h1v1h-1zM13 8h6v1h-6zM20 8h1v1h-1zM22 8h5v1h-5zM29 8h2v1h-2zM33 8h3v1h-3zM1 9h2v1h-2zM4 9h1v1h-1zM7 9h2v1h-2zM16 9h1v1h-1zM19 9h1v1h-1zM22 9h2v1h-2zM25 9h1v1h-1zM27 9h1v1h-1zM29 9h1v1h-1zM31 9h5v1h-5zM1 10h2v1h-2zM5 10h2v1h-2zM15 10h2v1h-2zM20 10h3v1h-3zM24 10h1v1h-1zM27 10h2v1h-2zM35 10h2v1h-2zM2 11h1v1h-1zM4 11h2v1h-2zM10 11h1v1h-1zM14 11h1v1h-1zM18 11h1v1h-1zM22 11h3v1h-3zM26 11h1v1h-1zM29 11h1v1h-1zM32 11h2v1h-2zM36 11h1v1h-1zM2 12h3v1h-3zM6 12h3v1h-3zM10 12h1v1h-1zM12 12h5v1h-5zM19 12h2v1h-2zM24 12h1v1h-1zM27 12h2v1h-2zM30 12h2v1h-2zM33 12h1v1h-1zM36 12h1v1h-1zM0 13h3v1h-3zM5 13h1v1h-1zM7 13h3v1h-3zM11 13h2v1h-2zM15 13h2v1h-2zM19 13h2v1h-2zM23 13h1v1h-1zM26 13h2v1h-2zM31 13h1v1h-1zM33 13h1v1h-1zM0 14h3v1h-3zM6 14h1v1h-1zM10 14h3v1h-3zM14 14h2v1h-2zM18 14h1v1h-1zM20 14h1v1h-1zM22 14h1v1h-1zM26 14h3v1h-3zM30 14h4v1h-4zM35 14h2v1h-2zM0 15h2v1h-2zM3 15h3v1h-3zM8 15h4v1h-4zM14 15h3v1h-3zM18 15h1v1h-1zM20 15h1v1h-1zM24 15h1v1h-1zM27 15h3v1h-3zM31 15h1v1h-1zM33 15h3v1h-3zM5 16h5v1h-5zM11 16h2v1h-2zM15 16h1v1h-1zM18 16h3v1h-3zM22 16h2v1h-2zM25 16h3v1h-3zM29 16h2v1h-2zM32 16h1v1h-1zM34 16h3v1h-3zM0 17h1v1h-1zM2 17h2v1h-2zM5 17h1v1h-1zM8 17h1v1h-1zM10 17h4v1h-4zM16 17h1v1h-1zM18 17h6v1h-6zM27 17h2v1h-2zM31 17h1v1h-1zM33 17h3v1h-3zM0 18h2v1h-2zM3 18h2v1h-2zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h3v1h-3zM14 18h1v1h-1zM16 18h1v1h-1zM18 18h2v1h-2zM23 18h3v1h-3zM27 18h3v1h-3zM33 18h1v1h-1zM36 18h1v1h-1zM0 19h2v1h-2zM4 19h1v1h-1zM7 19h2v1h-2zM11 19h6v1h-6zM19 19h2v1h-2zM23 19h2v1h-2zM30 19h1v1h-1zM36 19h1v1h-1zM2 20h7v1h-7zM10 20h2v1h-2zM16 20h2v1h-2zM19 20h1v1h-1zM22 20h1v1h-1zM24 20h5v1h-5zM30 20h1v1h-1zM32 20h3v1h-3zM0 21h2v1h-2zM9 21h1v1h-1zM11 21h1v1h-1zM13 21h3v1h-3zM17 21h1v1h-1zM19 21h1v1h-1zM23 21h1v1h-1zM25 21h3v1h-3zM32 21h1v1h-1zM34 21h1v1h-1zM0 22h1v1h-1zM2 22h1v1h-1zM5 22h3v1h-3zM13 22h1v1h-1zM15 22h3v1h-3zM21 22h2v1h-2zM24 22h10v1h-10zM35 22h2v1h-2zM1 23h2v1h-2zM5 23h1v1h-1zM7 23h1v1h-1zM9 23h4v1h-4zM16 23h4v1h-4zM22 23h2v1h-2zM27 23h1v1h-1zM29 23h5v1h-5zM35 23h2v1h-2zM2 24h5v1h-5zM8 24h3v1h-3zM12 24h1v1h-1zM14 24h2v1h-2zM17 24h1v1h-1zM19 24h1v1h-1zM27 24h1v1h-1zM30 24h2v1h-2zM35 24h2v1h-2zM0 25h4v1h-4zM10 25h1v1h-1zM14 25h1v1h-1zM18 25h2v1h-2zM23 25h1v1h-1zM25 25h1v1h-1zM27 25h2v1h-2zM31 25h1v1h-1zM33 25h2v1h-2zM0 26h1v1h-1zM2 26h1v1h-1zM6 26h5v1h-5zM12 26h2v1h-2zM15 26h2v1h-2zM20 26h3v1h-3zM27 26h3v1h-3zM31 26h1v1h-1zM34 26h3v1h-3zM0 27h1v1h-1zM2 27h2v1h-2zM5 27h1v1h-1zM8 27h3v1h-3zM13 27h2v1h-2zM16 27h1v1h-1zM19 27h1v1h-1zM22 27h1v1h-1zM26 27h9v1h-9zM0 28h1v1h-1zM5 28h3v1h-3zM9 28h3v1h-3zM15 28h1v1h-1zM17 28h1v1h-1zM19 28h2v1h-2zM22 28h1v1h-1zM24 28h9v1h-9zM34 28h2v1h-2zM8 29h1v1h-1zM10 29h1v1h-1zM12 29h1v1h-1zM14 29h3v1h-3zM18 29h4v1h-4zM23 29h2v1h-2zM26 29h3v1h-3zM32 29h1v1h-1zM0 30h7v1h-7zM13 30h1v1h-1zM15 30h6v1h-6zM23 30h2v1h-2zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM36 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM9 31h1v1h-1zM12 31h3v1h-3zM16 31h1v1h-1zM19 31h1v1h-1zM23 31h2v1h-2zM26 31h3v1h-3zM32 31h1v1h-1zM36 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM9 32h1v1h-1zM11 32h3v1h-3zM15 32h1v1h-1zM18 32h1v1h-1zM22 32h1v1h-1zM24 32h2v1h-2zM27 32h6v1h-6zM34 32h2v1h-2zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM11 33h2v1h-2zM17 33h1v1h-1zM19 33h2v1h-2zM22 33h2v1h-2zM26 33h2v1h-2zM29 33h2v1h-2zM33 33h2v1h-2zM36 33h1v1h-1zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM10 34h4v1h-4zM17 34h1v1h-1zM20 34h3v1h-3zM26 34h1v1h-1zM29 34h1v1h-1zM34 34h3v1h-3zM0 35h1v1h-1zM6 35h1v1h-1zM10 35h3v1h-3zM15 35h2v1h-2zM18 35h3v1h-3zM22 35h2v1h-2zM26 35h4v1h-4zM32 35h2v1h-2zM36 35h1v1h-1zM0 36h7v1h-7zM8 36h1v1h-1zM10 36h3v1h-3zM14 36h1v1h-1zM19 36h1v1h-1zM24 36h1v1h-1zM28 36h4v1h-4zM33 36h1v1h-1zM36 36h1v1h-1z"};
-const gQR = el('g', { id: 'qr' }, gBack);
+   Beim Öffnen steht dort ein Platzhalter (Festlegung der Lehrkraft, 12.11.2026): Klick oder Enter darauf zeigt den
+   QR-Code, Klick auf den QR-Code blendet ihn wieder aus. ?qr=1 in der Adresse zeigt ihn gleich (Link für den Beamer).
+   Unter 800 px Fensterbreite fehlen beide (am Handy ist die Animation schon offen); im Export nur mit ?qr=1. */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/erzeugung/", "n": 37, "d": "M0 0h7v1h-7zM10 0h2v1h-2zM13 0h1v1h-1zM18 0h2v1h-2zM25 0h2v1h-2zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM11 1h1v1h-1zM13 1h2v1h-2zM18 1h2v1h-2zM21 1h2v1h-2zM25 1h2v1h-2zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h7v1h-7zM18 2h5v1h-5zM26 2h1v1h-1zM28 2h1v1h-1zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM12 3h1v1h-1zM14 3h4v1h-4zM19 3h3v1h-3zM24 3h2v1h-2zM27 3h2v1h-2zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h1v1h-1zM11 4h2v1h-2zM19 4h7v1h-7zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h1v1h-1zM11 5h2v1h-2zM14 5h3v1h-3zM18 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM25 5h2v1h-2zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM8 7h1v1h-1zM10 7h3v1h-3zM19 7h1v1h-1zM22 7h2v1h-2zM27 7h2v1h-2zM0 8h1v1h-1zM6 8h1v1h-1zM8 8h4v1h-4zM15 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h5v1h-5zM29 8h2v1h-2zM33 8h3v1h-3zM0 9h1v1h-1zM2 9h1v1h-1zM4 9h1v1h-1zM9 9h2v1h-2zM12 9h3v1h-3zM20 9h1v1h-1zM22 9h2v1h-2zM25 9h1v1h-1zM27 9h1v1h-1zM29 9h1v1h-1zM31 9h5v1h-5zM4 10h3v1h-3zM9 10h2v1h-2zM12 10h1v1h-1zM14 10h1v1h-1zM20 10h3v1h-3zM24 10h1v1h-1zM27 10h2v1h-2zM35 10h2v1h-2zM1 11h2v1h-2zM5 11h1v1h-1zM8 11h2v1h-2zM13 11h4v1h-4zM18 11h1v1h-1zM22 11h3v1h-3zM26 11h1v1h-1zM29 11h1v1h-1zM32 11h2v1h-2zM36 11h1v1h-1zM0 12h1v1h-1zM3 12h1v1h-1zM6 12h1v1h-1zM10 12h1v1h-1zM12 12h2v1h-2zM16 12h1v1h-1zM19 12h2v1h-2zM24 12h1v1h-1zM27 12h2v1h-2zM30 12h2v1h-2zM33 12h1v1h-1zM36 12h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM9 13h1v1h-1zM11 13h3v1h-3zM15 13h3v1h-3zM19 13h2v1h-2zM23 13h1v1h-1zM26 13h2v1h-2zM31 13h1v1h-1zM33 13h1v1h-1zM2 14h1v1h-1zM4 14h1v1h-1zM6 14h4v1h-4zM11 14h2v1h-2zM15 14h1v1h-1zM17 14h1v1h-1zM20 14h1v1h-1zM22 14h1v1h-1zM26 14h3v1h-3zM30 14h4v1h-4zM35 14h2v1h-2zM0 15h1v1h-1zM2 15h3v1h-3zM9 15h4v1h-4zM15 15h4v1h-4zM20 15h1v1h-1zM24 15h1v1h-1zM27 15h3v1h-3zM31 15h1v1h-1zM33 15h3v1h-3zM0 16h2v1h-2zM3 16h1v1h-1zM6 16h2v1h-2zM9 16h1v1h-1zM11 16h1v1h-1zM14 16h3v1h-3zM19 16h1v1h-1zM22 16h2v1h-2zM25 16h3v1h-3zM29 16h2v1h-2zM32 16h1v1h-1zM34 16h3v1h-3zM2 17h2v1h-2zM5 17h1v1h-1zM9 17h3v1h-3zM13 17h1v1h-1zM18 17h1v1h-1zM20 17h4v1h-4zM27 17h2v1h-2zM31 17h1v1h-1zM33 17h3v1h-3zM1 18h2v1h-2zM5 18h3v1h-3zM11 18h1v1h-1zM13 18h3v1h-3zM18 18h1v1h-1zM20 18h1v1h-1zM23 18h3v1h-3zM27 18h3v1h-3zM33 18h1v1h-1zM36 18h1v1h-1zM1 19h2v1h-2zM11 19h4v1h-4zM19 19h2v1h-2zM23 19h2v1h-2zM30 19h1v1h-1zM36 19h1v1h-1zM0 20h2v1h-2zM6 20h8v1h-8zM15 20h3v1h-3zM19 20h1v1h-1zM22 20h1v1h-1zM24 20h5v1h-5zM30 20h1v1h-1zM32 20h3v1h-3zM2 21h2v1h-2zM5 21h1v1h-1zM7 21h1v1h-1zM12 21h4v1h-4zM19 21h1v1h-1zM23 21h1v1h-1zM25 21h3v1h-3zM32 21h1v1h-1zM34 21h1v1h-1zM0 22h1v1h-1zM5 22h2v1h-2zM8 22h2v1h-2zM11 22h3v1h-3zM15 22h2v1h-2zM18 22h1v1h-1zM21 22h2v1h-2zM24 22h10v1h-10zM35 22h2v1h-2zM2 23h3v1h-3zM9 23h1v1h-1zM11 23h2v1h-2zM14 23h1v1h-1zM16 23h1v1h-1zM19 23h1v1h-1zM22 23h2v1h-2zM27 23h1v1h-1zM29 23h5v1h-5zM35 23h2v1h-2zM0 24h1v1h-1zM5 24h2v1h-2zM8 24h1v1h-1zM12 24h2v1h-2zM15 24h6v1h-6zM27 24h1v1h-1zM30 24h2v1h-2zM35 24h2v1h-2zM0 25h4v1h-4zM5 25h1v1h-1zM7 25h5v1h-5zM13 25h2v1h-2zM16 25h1v1h-1zM23 25h1v1h-1zM25 25h1v1h-1zM27 25h2v1h-2zM31 25h1v1h-1zM33 25h2v1h-2zM0 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM11 26h1v1h-1zM13 26h2v1h-2zM20 26h3v1h-3zM27 26h3v1h-3zM31 26h1v1h-1zM34 26h3v1h-3zM0 27h1v1h-1zM2 27h1v1h-1zM5 27h1v1h-1zM11 27h1v1h-1zM14 27h2v1h-2zM19 27h1v1h-1zM22 27h1v1h-1zM26 27h11v1h-11zM0 28h1v1h-1zM2 28h2v1h-2zM6 28h2v1h-2zM9 28h4v1h-4zM17 28h1v1h-1zM19 28h2v1h-2zM22 28h1v1h-1zM24 28h9v1h-9zM34 28h1v1h-1zM8 29h1v1h-1zM10 29h1v1h-1zM12 29h1v1h-1zM14 29h8v1h-8zM23 29h2v1h-2zM26 29h3v1h-3zM32 29h1v1h-1zM0 30h7v1h-7zM9 30h1v1h-1zM12 30h1v1h-1zM14 30h3v1h-3zM19 30h2v1h-2zM23 30h2v1h-2zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM36 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM9 31h3v1h-3zM14 31h1v1h-1zM16 31h4v1h-4zM23 31h2v1h-2zM26 31h3v1h-3zM32 31h1v1h-1zM36 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM11 32h1v1h-1zM13 32h4v1h-4zM22 32h1v1h-1zM24 32h2v1h-2zM27 32h6v1h-6zM34 32h2v1h-2zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM11 33h1v1h-1zM14 33h1v1h-1zM16 33h5v1h-5zM22 33h2v1h-2zM26 33h2v1h-2zM29 33h2v1h-2zM33 33h2v1h-2zM36 33h1v1h-1zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM9 34h3v1h-3zM13 34h5v1h-5zM20 34h3v1h-3zM26 34h1v1h-1zM29 34h1v1h-1zM34 34h3v1h-3zM0 35h1v1h-1zM6 35h1v1h-1zM9 35h1v1h-1zM18 35h3v1h-3zM22 35h2v1h-2zM26 35h4v1h-4zM32 35h2v1h-2zM36 35h1v1h-1zM0 36h7v1h-7zM8 36h2v1h-2zM14 36h2v1h-2zM19 36h1v1h-1zM24 36h1v1h-1zM28 36h4v1h-4zM33 36h1v1h-1zM36 36h1v1h-1z"};
+const gQR = el('g', { id: 'qr', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code ausblenden' });
+const gQRPlatz = el('g', { id: 'qr-platz', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code anzeigen' });
+gQR.dataset.url = QR.url;
+el('title', {}, gQR).textContent = 'Klicken: QR-Code ausblenden';
+/* Platzhalter: gestrichelter Rahmen, Symbol (drei Suchmuster und einige Module – kein lesbarer Code), „QR-Code“;
+   rechts oben bündig mit dem QR-Code */
+function qrPlatzhalter(g, x0, y0, p, cls) {
+  el('title', {}, g).textContent = 'Klicken: QR-Code anzeigen';
+  el('rect', { x: x0, y: y0, width: p, height: p, rx: 8, fill: '#fff', stroke: '#9aa3ad', 'stroke-width': 2, 'stroke-dasharray': '8 6' }, g);
+  const s = 3, o = Math.round((p - 21 * s) / 2);
+  let d = '';
+  for (const [cx, cy] of [[0, 0], [14, 0], [0, 14]]) d += `M${cx} ${cy}h7v7h-7zM${cx + 1} ${cy + 1}v5h5v-5zM${cx + 2} ${cy + 2}h3v3h-3z`;
+  for (const [x, y] of [[9, 1], [11, 2], [9, 4], [12, 4], [10, 6], [12, 8], [8, 9], [10, 10], [14, 9], [16, 10], [18, 9], [20, 11], [1, 9], [3, 10], [5, 9], [2, 12],
+    [9, 12], [11, 13], [15, 14], [17, 15], [19, 16], [14, 17], [16, 19], [18, 18], [20, 20], [9, 15], [11, 17], [9, 19], [12, 20]]) d += `M${x} ${y}h1v1h-1z`;
+  el('path', { d, fill: '#5b6570', 'fill-rule': 'evenodd', transform: `translate(${x0 + o} ${y0 + o}) scale(${s})`, 'shape-rendering': 'crispEdges' }, g);
+  txt(x0 + p / 2, y0 + p + 28, 'QR-Code', { class: cls, 'text-anchor': 'middle' }, g);
+}
+qrPlatzhalter(gQRPlatz, 1900 - 96, 20, 96, 'lbl-xs sans');
 const QR_X0 = 1697;   // rechts oben (Lehrkraft, 12.11.2026)
 { const m = 4.5, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
   el('rect', { x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1 }, gQR);
@@ -657,10 +677,11 @@ function syncUI() {
   const sp = $('#sel-pfeil'); if (sp && sp.value !== S.pfeil) sp.value = S.pfeil;
   $('#btn-calc').setAttribute('aria-pressed', String(S.calc));
   document.documentElement.classList.toggle('calc', S.calc);
-  // QR-Code nur auf großen Bildschirmen: am Handy ist die Animation ja schon offen
-  const qrSichtbar = S.qr && (window.innerWidth >= 800 || document.documentElement.classList.contains('export'));
-  show(gQR, qrSichtbar);
-  for (const t of titel) t.setAttribute('x', qrSichtbar ? QR_X0 - 60 : 1872);
+  // QR-Code und Platzhalter nur auf großen Bildschirmen: am Handy ist die Animation ja schon offen
+  const exp = document.documentElement.classList.contains('export'), gross = window.innerWidth >= 800;
+  const qrAn = S.qr && (gross || exp), platzAn = !S.qr && gross && !exp;
+  show(gQR, qrAn); show(gQRPlatz, platzAn);
+  for (const t of titel) t.setAttribute('x', (qrAn || platzAn) ? QR_X0 - 60 : 1872);   // Titel springt beim Umschalten nicht
 }
 /* Nächstes volles Vielfache von CFG.tastRaster in Richtung dir (+1/−1), auch wenn α dazwischen steht:
    47° → 60° bzw. 30°; 60° → 90° bzw. 30°. Toleranz 0,005° = halbe letzte angezeigte Stelle. */
@@ -716,7 +737,7 @@ for (const p of CFG.presets) {
   b.addEventListener('click', () => setAlpha(p));
   presetBox.appendChild(b);
 }
-for (const [id, key] of [['chk-proj', 'proj'], ['chk-trace', 'trace'], ['chk-arc', 'arc'], ['chk-ro', 'ro'], ['chk-qr', 'qr'], ['chk-rad', 'rad'], ['chk-fl', 'fl'], ['chk-phi', 'phi']]) {
+for (const [id, key] of [['chk-proj', 'proj'], ['chk-trace', 'trace'], ['chk-arc', 'arc'], ['chk-ro', 'ro'], ['chk-rad', 'rad'], ['chk-fl', 'fl'], ['chk-phi', 'phi']]) {
   $('#' + id).addEventListener('change', (e) => { S[key] = e.target.checked; if (key === 'phi' || key === 'rad') buildDivisionLabels(); render(); });
 }
 $('#sel-div').addEventListener('change', (e) => { S.div = e.target.value; buildDivisionLabels(); });
@@ -742,6 +763,14 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
 });
 $('#btn-calc').addEventListener('click', () => { S.calc = !S.calc; render(); });
+function qrUmschalten() {
+  S.qr = !S.qr; render();
+  const z = S.qr ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({ preventScroll: true });
+}
+for (const g of [gQR, gQRPlatz]) {
+  g.addEventListener('click', qrUmschalten);
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
+}
 window.addEventListener('resize', () => syncUI());
 window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S.alpha) setAlpha(v, false); });
 
@@ -760,6 +789,7 @@ window.anim = {
 };
 
 /* ================= Start ================= */
+svg.append(gQR, gQRPlatz);                 // QR-Code und Platzhalter zuoberst: anklickbar, von nichts verdeckt
 S.alpha = clamp(readStart(), 0, CFG.alphaMax);
 buildDivisionLabels();
 render();
