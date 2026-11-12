@@ -264,7 +264,7 @@ html.calc .nur-berechnung{display:inline}
       <summary>Tastatur und Verlinken</summary>
       <div class="hint">
         <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> zum nächsten 30°-Wert · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> ±0,5° · <kbd>Pos1</kbd> 0° · <kbd>F</kbd> Vollbild, <kbd>Esc</kbd> beendet es.
-        Ein Winkel lässt sich verlinken, z.&nbsp;B. <code>#a135</code> oder <code>#a37-5</code> für 37,5°; <code>?qr=1</code> zeigt den QR-Code gleich.
+        Die Animation läuft beim Öffnen; ein verlinkter Winkel steht still, z.&nbsp;B. <code>#a135</code> oder <code>#a37-5</code> für 37,5°. <code>?auto=0</code> öffnet angehalten, <code>?qr=1</code> zeigt den QR-Code gleich.
       </div>
     </details>
   </div>
@@ -944,6 +944,7 @@ window.anim = {
     if (key === 'div' || key === 'phi' || key === 'rad') buildDivisionLabels();
     render();
   },
+  pause(an = true) { if (!!an === S.playing) togglePlay(); return !S.playing; },   // Abspielen anhalten (Prüfung) oder fortsetzen
   vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },   // Normblock 10
   act(name) { if (name === 'reset') zuruecksetzen(); else if (name === 'abspielen') togglePlay(); else throw new Error('unbekannte Aktion ' + name); },
   get state() { const m = model(S.alpha); return { ...S, ...m, u1: CFG.uHat * m.u }; },   // u1 in V
@@ -954,7 +955,14 @@ svg.append(gQR, gQRPlatz);                 // QR-Code und Platzhalter zuoberst: 
 S.alpha = clamp(readStart(), 0, CFG.alphaMax);
 buildDivisionLabels();
 render();
-if (params.get('auto') === '1') togglePlay();
+/* Abspielen beim Öffnen (Festlegung der Lehrkraft, 12.11.2026, 18:56). Nicht im Export (Standbild), nicht bei einem
+   verlinkten Winkel (#a135, ?alpha=…: genau dieser Zustand soll zu sehen sein), nicht mit ?auto=0 und nicht, wenn das
+   Gerät „Bewegung reduzieren“ eingestellt hat. ?auto=1 startet immer. */
+const autoStart = params.get('auto') === '1' || (params.get('auto') !== '0'
+  && !document.documentElement.classList.contains('export')
+  && !/^#a\d/.test(location.hash || '') && !params.has('alpha')
+  && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches));
+if (autoStart) togglePlay();
 })();
 </script>
 </body>
