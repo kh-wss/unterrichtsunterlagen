@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Erzeugung von Wechselspannung</title>
+<style>
+/* Layout: 16:9-Bühne als SVG (1920 × 1080 wie Beamer und Video) oben, Bedienleiste darunter.
+   Die Bühne bleibt bewusst hell: Die Farbwerte der Fachkonventionen gelten für weißen Grund. */
+:root{
+  --page:#e8ebee;
+  --stage:#ffffff;
+  --ink:#1b2127;
+  --muted:#58636e;
+  --rule:#c6ccd2;
+  --btn:#f5f6f7;
+  --btn-hover:#e9ecef;
+  --primary:#24303a;      /* Bedien-Akzent neutral: keine Verwechslung mit Größenfarben */
+  --primary-ink:#ffffff;
+  --focus:#2b6cb0;
+  --u1:#0070C0;           /* Spannung blau (Fachkonventionen, Abschnitt 6) */
+  --phi:#00B050;          /* Φ: grün (Festlegung der Lehrkraft, 11.11.2026) */
+  --font-ui:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-math:Cambria,"Cambria Math",Caladea,"Times New Roman","Liberation Serif","DejaVu Serif",serif;
+  color-scheme:light;
+}
+html,body{background:var(--page);color:var(--ink)}
+body{font-family:var(--font-ui);font-size:15px;line-height:1.4;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:16px}
+.wrap{width:100%;max-width:max(min(100%,720px),calc((100dvh - 230px) * 16 / 9));margin:0 auto;display:grid;gap:12px}
+.stage{background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.stage svg{display:block;width:100%;height:100%}
+.stage:fullscreen{border:0;border-radius:0;aspect-ratio:auto;width:100vw;height:100vh;max-width:none}
+
+/* SVG-Beschriftung: Formelzeichen kursiv, Einheiten, Zahlen, Indizes und π aufrecht */
+#stage-svg text{font-family:var(--font-math);fill:var(--ink)}
+#stage-svg .t-main{font-size:66px;font-weight:700}
+#stage-svg .t-panel{font-size:34px;font-weight:700}
+#stage-svg .lbl{font-size:30px}
+#stage-svg .lbl-s{font-size:25px}
+#stage-svg .lbl-xs{font-size:22px}
+#stage-svg .sans{font-family:var(--font-ui)}
+#stage-svg .i{font-style:italic}
+#stage-svg .c-u1{fill:var(--u1);font-weight:600}
+#stage-svg .c-phi{fill:var(--phi);font-weight:600}
+#stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .ro{font-size:38px}
+#stage-svg .pol{font-family:var(--font-ui);font-weight:700;font-size:30px;fill:#fff}
+
+.controls{display:grid;gap:10px;background:var(--stage);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cap{font-size:13px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--ink);border:1px solid var(--rule);border-radius:5px}
+button{background:var(--btn);padding:5px 10px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:8.5em;font-weight:600}
+button.primary:hover{background:#34424f}
+select{background:#fff;padding:4px 6px}
+input[type=number]{width:6.2em;padding:4px 6px;background:#fff;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 240px;min-width:0;accent-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:16px;height:16px;margin:0}
+:is(button,select,input):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12.5px;color:var(--muted)}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+.sep{width:1px;align-self:stretch;background:var(--rule)}
+@media (max-width:640px){.sep{display:none}}
+
+/* Exportmodus (?export=1): nur die Bühne, exakt 1920 × 1080 px */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
+html.export .controls,html.export .notes{display:none}
+button[aria-pressed="true"]:not(.primary){background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.nur-berechnung{display:none}
+html.calc .nur-berechnung{display:inline}
+
+/* Erklärung unter der Bühne, ein- und ausklappbar (Festlegung der Lehrkraft, 12.11.2026) */
+.notes{background:var(--stage);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.notes summary{cursor:pointer;font-weight:600}
+.erkl{display:grid;gap:8px;margin-top:10px;max-width:88ch;font-size:15.5px;line-height:1.5}
+.erkl h3{font-size:15.5px;margin:6px 0 0}
+.erkl p,.erkl ul{margin:0}
+.erkl ul{padding-left:22px;display:grid;gap:2px}
+.erkl .jetzt{padding:8px 12px;background:#eaf2fa;border-radius:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage" id="stage">
+    <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">Erzeugung von Wechselspannung</title>
+      <desc id="svg-desc">Generatormodell mit drehendem Polrad und konzentrierter Spule, Drehzeiger und Liniendiagramm der induzierten Spannung u1 = û · sin α; der Spannungszeiger zeigt in die Laufrichtung des Nordpols; wahlweise mit magnetischem Fluss.</desc>
+    </svg>
+  </div>
+
+  <div class="controls" id="controls">
+    <div class="row">
+      <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
+      <label class="group" for="sel-speed"><span class="cap">Tempo</span>
+        <select id="sel-speed">
+          <option value="6">1 Umdrehung in 6 s</option>
+          <option value="12" selected>1 Umdrehung in 12 s</option>
+          <option value="24">1 Umdrehung in 24 s (wie Video)</option>
+          <option value="48">1 Umdrehung in 48 s</option>
+        </select>
+      </label>
+      <input id="rng-alpha" type="range" min="0" max="360" step="0.5" value="60" aria-label="Drehwinkel α_G in Grad">
+      <label class="group" for="num-alpha"><span class="cap"><i>α</i><sub>G</sub> in °</span>
+        <input id="num-alpha" type="number" min="0" max="360" step="0.5" value="60">
+      </label>
+    </div>
+    <div class="row">
+      <div class="group" role="group" aria-label="Schrittweise drehen">
+        <span class="cap">Schritt</span>
+        <button type="button" data-step="-15">−15°</button>
+        <button type="button" data-step="-0.5">−0,5°</button>
+        <button type="button" data-step="0.5">+0,5°</button>
+        <button type="button" data-step="15">+15°</button>
+      </div>
+      <span class="sep" aria-hidden="true"></span>
+      <div class="group" role="group" aria-label="Winkel direkt wählen" id="presets">
+        <span class="cap">Direkt</span>
+      </div>
+    </div>
+    <div class="row">
+      <label class="chk" for="chk-proj"><input id="chk-proj" type="checkbox" checked>Projektionslinien</label>
+      <label class="chk" for="chk-trace"><input id="chk-trace" type="checkbox">Kurve mitzeichnen</label>
+      <label class="chk" for="chk-arc"><input id="chk-arc" type="checkbox" checked>Winkelbogen α</label>
+      <label class="chk" for="chk-ro"><input id="chk-ro" type="checkbox" checked>Winkelwerte</label>
+      <label class="chk" for="chk-qr"><input id="chk-qr" type="checkbox" checked>QR-Code</label>
+      <label class="chk" for="chk-rad"><input id="chk-rad" type="checkbox">Bogenmaß</label>
+      <label class="group" for="sel-pfeil"><span class="cap">Pfeil am Nordpol</span>
+        <select id="sel-pfeil">
+          <option value="ann" selected>Annäherung (senkrecht)</option>
+          <option value="lauf">Laufrichtung</option>
+          <option value="beide">beide</option>
+          <option value="aus">aus</option>
+        </select>
+      </label>
+      <label class="chk" for="chk-fl"><input id="chk-fl" type="checkbox">Feldlinien</label>
+      <label class="chk" for="chk-phi"><input id="chk-phi" type="checkbox">Fluss Φ</label>
+      <label class="group" for="sel-div"><span class="cap">Teilung</span>
+        <select id="sel-div">
+          <option value="30" selected>30°</option>
+          <option value="90">90°</option>
+          <option value="120">120° (Drehstrom-Vorbereitung)</option>
+        </select>
+      </label>
+      <button type="button" id="btn-fs">Vollbild</button>
+      <button type="button" id="btn-calc" aria-pressed="false">Berechnung</button>
+    </div>
+    <div class="hint">
+      Tastatur: <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> ±0,5° · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> ±15° · <kbd>Pos1</kbd> 0° · <kbd>F</kbd> Vollbild.
+      Ein Winkel lässt sich verlinken, z.&nbsp;B. <code>#a135</code> oder <code>#a37-5</code> für 37,5°.
+    </div>
+  </div>
+
+  <details class="notes" id="erkl">
+    <summary>Erklärung</summary>
+    <div class="erkl">
+      <p class="jetzt" id="erkl-jetzt"></p>
+      <h3>Worauf es ankommt</h3>
+      <p>Die Spule erzeugt nur dann eine Spannung, wenn sich der Magnet bewegt. Entscheidend ist, wie sich der <b>Nordpol</b> zur Spule bewegt:</p>
+      <ul>
+        <li>Der Nordpol bewegt sich <b>auf die Spule zu</b>: <i>u</i><sub>1</sub> ist <b>positiv</b>.</li>
+        <li>Der Nordpol bewegt sich <b>von der Spule weg</b>: <i>u</i><sub>1</sub> ist <b>negativ</b>.</li>
+        <li>Je direkter er auf die Spule zu- oder von ihr wegläuft, desto größer ist die Spannung.</li>
+      </ul>
+      <p>Der Südpol macht immer das Gegenteil: Kommt der Nordpol auf die Spule zu, entfernt sich der Südpol. Beides wirkt in dieselbe Richtung.</p>
+      <h3>Warum ist <i>u</i><sub>1</sub>&nbsp;=&nbsp;0&#8239;V, wenn ein Pol direkt vor der Spule steht?</h3>
+      <p>In diesem Moment läuft der Pol nur seitlich an der Spule vorbei. Er kommt ihr nicht näher und entfernt sich nicht. Deshalb entsteht keine Spannung, obwohl das Magnetfeld dort am stärksten ist. Auch ein Magnet, der still vor der Spule steht, erzeugt keine Spannung.</p>
+      <h3>Was der Pfeil am Nordpol und der Drehzeiger zeigen</h3>
+      <p>Der blaue Pfeil am Nordpol zeigt, wie stark sich der Nordpol gerade auf die Spule zu- oder von ihr wegbewegt. Zeigt er zur Spule, ist <i>u</i><sub>1</sub> positiv; zeigt er von ihr weg, ist <i>u</i><sub>1</sub> negativ. Vor einem Richtungswechsel wird er kürzer, verschwindet und wächst dann in die andere Richtung – genauso wie die Spannung.</p>
+      <p>Im Drehzeiger entspricht ihm die Gegenkathete: Der Spannungszeiger zeigt in die Laufrichtung des Nordpols, seine senkrechte Projektion ist der Teil dieser Bewegung, der auf die Spule zu oder von ihr weg gerichtet ist (Auswahl „beide“ zeigt das Dreieck am Magneten).<span class="nur-berechnung"> Deshalb gilt <i>u</i><sub>1</sub>&nbsp;=&nbsp;<i>û</i>&nbsp;·&nbsp;sin&nbsp;<i>α</i><sub>G</sub>.</span></p>
+    </div>
+  </details>
+</div>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const D = Math.PI / 180;
+
+/* ================= Parameterblock (Geometrie in SVG-Pixeln, Bühne 1920 × 1080) ================= */
+const CFG = {
+  uHat: 325,                                               // Scheitelwert û in V
+  alphaMax: 360,                                            // eine Periode; Ende der α-Achse in °
+  alphaStart: 60,                                           // Startwinkel der Seite in °
+  presets: [0, 30, 45, 60, 90, 120, 150, 180, 240, 270, 360],
+  gen: { cx: 330, cy: 345, rOut: 215, rIn: 145, magHalfL: 80, magHalfW: 26 },
+  dz:  { cx: 330, cy: 850, r: 185 },                        // r = Länge des Drehzeigers u1 = û
+  phiAmp: 130,                                              // Länge des Φ-Zeigers = Φ̂ (eigener Maßstab)
+  ld:  { x0: 760, y0: 850, kx: 2.9, xEnd: 1858 },           // kx in px je Grad
+  col: { u1: '#0070C0', phi: '#00B050', ink: '#1b2127', n: '#E2231A', s: '#0E8A7C', stator: '#d9dcdf' },
+  dashDot: '26 6 3 6',                                      // Strich-Punkt-Linie (Mittellinie)
+};
+
+/* ================= Physikalisches Modell (rein, ohne Darstellung) =================
+   Konzentrierte Spule oben im Ständer, Spulenachse senkrecht. Das Polrad dreht mathematisch
+   positiv, also im selben Drehsinn wie der Drehzeiger.
+   Bei α = 0 steht der Südpol vor der Spule, der Nordpol zeigt nach unten.
+     Fluss durch die Spule (nach oben gezählt):  Φ = Φ̂ · sin(α − 90°)
+     Spannung (Wickelsinn und Zählpfeil U1 → U2 so gewählt, dass u = +N · dΦ/dt):
+       u = N · Φ̂ · ω · sin α = û · sin α
+   Deutung ohne Induktionsgesetz: u ist proportional zur Geschwindigkeit, mit der der Nordpol
+   in Richtung Spulenachse läuft (Annäherungsregel). Daraus folgt:
+     Φ-Zeiger  bei α − 90° = Richtung des Nordpols
+     u-Zeiger  bei α       = Laufrichtung des Nordpols (Tangente, 90° vor dem Magneten)        */
+function model(alphaDeg) {
+  const a = alphaDeg * D;
+  return {
+    thetaN: alphaDeg - 90,   // Richtung des Nordpols in °, mathematisch positiv ab der Waagerechten
+    phi: Math.sin(a - Math.PI / 2),   // Φ / Φ̂ durch die Spule
+    u: Math.sin(a),          // u1 / û
+  };
+}
+
+/* ================= Zustand ================= */
+const S = { alpha: CFG.alphaStart, playing: false, rev: 12, proj: true, trace: false, arc: true, ro: true, phi: false, pfeil: 'ann', rad: false,   /* pfeil 'ann' als Standard: Festlegung der Lehrkraft, 12.11.2026 */ fl: false, div: '30',
+  calc: false,   /* Formel und Berechnung nur über den Knopf „Berechnung“: Lernende rechnen selbst (Lehrkraft, 12.11.2026) */
+  qr: true };
+
+/* ================= Hilfsfunktionen ================= */
+const $ = (s) => document.querySelector(s);
+const svg = $('#stage-svg');
+function el(tag, attrs = {}, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function txt(x, y, html, attrs = {}, parent = svg) {
+  const t = el('text', { x, y, ...attrs }, parent);
+  t.innerHTML = html;
+  return t;
+}
+const I = (s) => `<tspan class="i">${s}</tspan>`;                                 // kursiv
+const SUB = (s, size = 30, rest = '') => `<tspan dy="${size * 0.3}" font-size="${size * 0.7}">${s}</tspan>` + (rest ? `<tspan dy="${-size * 0.3}">${rest}</tspan>` : '');
+// Dach über einem Großbuchstaben (Scheitelwert): eigenes Zeichen ˆ, mittig gesetzt; rest folgt auf alter Grundlinie
+const HAT = (sym, fs, rest = '') => `<tspan class="i">${sym}</tspan><tspan font-style="normal" font-size="${(fs * 0.9).toFixed(1)}" dx="${(-0.5 * fs).toFixed(1)}" dy="${(-0.24 * fs).toFixed(1)}">ˆ</tspan>`
+  + (rest ? `<tspan dx="${(0.28 * fs).toFixed(1)}" dy="${(0.24 * fs).toFixed(1)}">${rest}</tspan>` : '');
+const PHI = I('Φ'), UHAT = I('û');
+const P = (cx, cy, R, deg) => [cx + R * Math.cos(deg * D), cy - R * Math.sin(deg * D)];   // math. Winkel → SVG
+const fmt = (x, nd) => {
+  let s = Math.abs(x).toFixed(nd).replace('.', ',');
+  if (x < 0 && Number(s.replace(',', '.')) !== 0) s = '−' + s;
+  return s;
+};
+const fmtDeg = (a) => { const r = Math.round(a * 100) / 100; return Number.isInteger(r) ? fmt(r, 0) : fmt(r, 2); };
+// Spannung nach Fachkonventionen: höchstens 2 Nachkommastellen, unter 1 V in mV
+const fmtV = (v) => (v === 0 ? '0 V' : Math.abs(v) < 1 ? `${fmt(v * 1000, 2)} mV` : `${fmt(v, 2)} V`);
+const UHAT_V = String(CFG.uHat).replace('.', ',') + ' V';
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const show = (e, on) => { e.style.display = on ? '' : 'none'; };
+function piFrac(deg) {                     // Vielfaches von π als Bruch, nur für Vielfache von 15°
+  const k = deg / 15;
+  if (Math.abs(k - Math.round(k)) > 1e-9) return null;
+  let n = Math.round(k), d = 12;
+  const g = (a, b) => (b ? g(b, a % b) : a);
+  const t = g(n, d); n /= t; d /= t;
+  if (n === 0) return null;
+  return { num: n === 1 ? 'π' : `${n}π`, den: d === 1 ? null : String(d) };
+}
+
+function arrowHead(x2, y2, ux, uy, L, W) {
+  const bx = x2 - ux * L, by = y2 - uy * L;
+  return `${x2},${y2} ${bx - uy * W},${by + ux * W} ${bx + uy * W},${by - ux * W}`;
+}
+function makeArrow(parent, color, sw, L, W) {
+  const g = el('g', {}, parent);
+  const line = el('line', { stroke: color, 'stroke-width': sw }, g);
+  const head = el('polygon', { fill: color }, g);
+  return {
+    g,
+    set(x1, y1, x2, y2) {
+      const dx = x2 - x1, dy = y2 - y1, raw = Math.hypot(dx, dy), len = raw || 1, ux = dx / len, uy = dy / len;
+      const Lc = Math.min(L, raw * 0.6), Wc = W * Lc / L;      // kurze Pfeile: Spitze mitverkleinern
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2 - ux * Math.max(Lc - 1, 0)); line.setAttribute('y2', y2 - uy * Math.max(Lc - 1, 0));
+      head.setAttribute('points', arrowHead(x2, y2, ux, uy, Lc, Wc));
+      g.style.visibility = raw < 1.5 ? 'hidden' : '';
+    },
+  };
+}
+function arcArrow(parent, cx, cy, R, a1, a2, color, sw) {   // Bogenpfeil mathematisch positiv von a1 nach a2
+  const HL = 16, aEnd = a2 - ((HL - 5) / R) / D;               // Bogen endet 1 px in der Spitze, unabhängig vom Radius
+  const [x1, y1] = P(cx, cy, R, a1), [x2, y2] = P(cx, cy, R, aEnd);
+  el('path', { d: `M ${x1} ${y1} A ${R} ${R} 0 0 0 ${x2} ${y2}`, fill: 'none', stroke: color, 'stroke-width': sw }, parent);
+  const [tx, ty] = P(cx, cy, R, a2);
+  const ux = -Math.sin(a2 * D), uy = -Math.cos(a2 * D);      // Tangente im Gegenuhrzeigersinn (SVG-Koordinaten)
+  el('polygon', { points: arrowHead(tx + ux * 4, ty + uy * 4, ux, uy, HL, 6), fill: color }, parent);
+}
+function fracGroup(parent, cls) {          // gestapelter Bruch, Inhalt per update()
+  const g = el('g', {}, parent);
+  const tn = el('text', { class: cls, 'text-anchor': 'middle' }, g);
+  const bar = el('line', { stroke: CFG.col.ink, 'stroke-width': 1.8 }, g);
+  const td = el('text', { class: cls, 'text-anchor': 'middle' }, g);
+  return {
+    g,
+    update(cx, yMid, num, den, fs) {
+      tn.textContent = num; td.textContent = den;
+      tn.setAttribute('x', cx); tn.setAttribute('y', yMid - fs * 0.28);
+      td.setAttribute('x', cx); td.setAttribute('y', yMid + fs * 0.92);
+      const w = Math.max(tn.getComputedTextLength() || 0, td.getComputedTextLength() || 0, fs * 0.6) + 8;
+      bar.setAttribute('x1', cx - w / 2); bar.setAttribute('x2', cx + w / 2);
+      bar.setAttribute('y1', yMid); bar.setAttribute('y2', yMid);
+      return w;
+    },
+  };
+}
+
+/* ================= Statische Zeichnung ================= */
+const { gen: G, dz: Z, ld: L, col: C } = CFG;
+const gBack = el('g', { id: 'back' });
+const gCurve = el('g', { id: 'curve' });
+const gDyn = el('g', { id: 'dyn' });
+const gLbl = el('g', { id: 'labels' });
+
+// Titel
+// Titel rechtsbündig; steht der QR-Code rechts oben, rückt der Titel links daneben (syncUI)
+const titel = [txt(1872, 180, 'Erzeugung von', { class: 't-main', 'text-anchor': 'end' }, gBack),
+               txt(1872, 256, 'Wechselspannung', { class: 't-main', 'text-anchor': 'end' }, gBack)];
+txt(G.cx, 44, 'Generatormodell', { class: 't-panel', 'text-anchor': 'middle' }, gBack);
+txt(Z.cx, 616, 'Drehzeiger', { class: 't-panel', 'text-anchor': 'middle' }, gBack);
+txt(1310, 616, 'Liniendiagramm', { class: 't-panel', 'text-anchor': 'middle' }, gBack);
+
+// --- Generatormodell ---
+const ring = (r) => `M ${G.cx - r} ${G.cy} a ${r} ${r} 0 1 0 ${2 * r} 0 a ${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
+el('path', { d: ring(G.rOut) + ' ' + ring(G.rIn), 'fill-rule': 'evenodd', fill: C.stator, stroke: C.ink, 'stroke-width': 2.5 }, gBack);
+el('line', { x1: G.cx, y1: 128, x2: G.cx, y2: G.cy + G.rOut + 20, stroke: C.ink, 'stroke-width': 1.3, 'stroke-dasharray': CFG.dashDot }, gBack);
+el('line', { x1: G.cx - G.rOut - 20, y1: G.cy, x2: G.cx + G.rOut + 20, y2: G.cy, stroke: C.ink, 'stroke-width': 1.3, 'stroke-dasharray': CFG.dashDot }, gBack);
+// Spule (Schaltzeichen Induktivität) im Ständer genau bei 90°: Spulenachse = senkrechte Mittellinie
+const xc = G.cx + 3.5, xa = xc, xb = 392, yK = 116;   // U1 direkt über der Spule   // xc: Wickellinie, Bögen nach links → Mitte bei G.cx
+el('path', {
+  d: `M ${xa} ${yK + 6} L ${xc} 134 a 7 7 0 0 0 0 14 a 7 7 0 0 0 0 14 a 7 7 0 0 0 0 14 a 7 7 0 0 0 0 14 L ${xc} 193 L ${xb} 193 L ${xb} ${yK + 6}`,
+  fill: 'none', stroke: C.ink, 'stroke-width': 3, 'stroke-linejoin': 'round',
+}, gBack);
+el('circle', { cx: xa, cy: yK, r: 6, fill: '#fff', stroke: C.ink, 'stroke-width': 2.5 }, gBack);
+el('circle', { cx: xb, cy: yK, r: 6, fill: '#fff', stroke: C.ink, 'stroke-width': 2.5 }, gBack);
+txt(xa - 12, yK + 9, 'U1', { class: 'lbl-s sans', 'text-anchor': 'end' }, gBack);    // Anschlussbezeichnung nach DIN EN 60445: U1, nicht U₁
+txt(xb + 12, yK + 9, 'U2', { class: 'lbl-s sans', 'text-anchor': 'start' }, gBack);
+const zp = makeArrow(gBack, C.u1, 3, 13, 5.5); zp.set(xa + 9, yK - 14, xb - 9, yK - 14);   // Zählpfeil u1 von U1 nach U2
+txt((xa + xb) / 2, yK - 36, I('u') + SUB('1'), { class: 'lbl c-u1 halo', 'text-anchor': 'middle' }, gBack);
+// Drehrichtung n (fest, mathematisch positiv)
+arcArrow(gBack, G.cx, G.cy, 115, 203, 250, C.ink, 2);
+{ const [x, y] = P(G.cx, G.cy, 131, 226); txt(x, y + 9, I('n'), { class: 'lbl', 'text-anchor': 'middle' }, gBack); }
+// Polrad (dynamisch gedreht)
+/* Feldlinien des Stabmagneten, schematisch geglättet (Festlegung der Lehrkraft, 11.11.2026: ohne Knicke am Eisenrand).
+   Berechnet mit feld2/stab_feld_glatt.py: 2D, Luftspalt und Eisen ohne Brechung, Außenrand des Ständers = Feldlinie
+   (Fluss bleibt im Ständer); Linien = Höhenlinien des Vektorpotenzials, gleicher Fluss je Linie.
+   Koordinaten relativ zur Läufermitte, Nordpol in +x. Glatter Ständerring → das Linienbild dreht starr mit dem Magneten. */
+const FL = {"lines": "M 80.6 8.7 L 87.2 10.8 L 93.6 13.8 L 98.7 16.9 L 104.2 21.2 L 109.1 26.1 L 112.8 30.9 L 116.4 36.8 L 118.9 42.3 L 120.7 48.0 L 122.0 54.9 L 122.4 60.8 L 122.1 67.8 L 121.0 74.7 L 119.1 81.5 L 116.7 88.0 L 113.2 95.2 L 104.9 107.7 L 94.1 119.4 L 81.7 129.5 L 67.2 138.4 L 51.7 145.4 L 34.6 150.7 L 17.8 153.7 L -0.1 154.8 L -18.1 153.7 L -34.8 150.6 L -52.0 145.3 L -67.4 138.3 L -81.9 129.4 L -94.3 119.3 L -105.0 107.5 L -113.3 95.0 L -116.8 87.8 L -119.2 81.2 L -121.0 74.5 L -122.1 67.6 L -122.4 60.6 L -121.9 54.6 L -120.6 47.8 L -118.8 42.1 L -116.3 36.6 L -112.7 30.7 L -109.0 26.0 L -104.0 21.0 L -98.5 16.8 L -93.4 13.7 L -87.0 10.8 L -80.4 8.6 M 80.6 5.2 L 89.4 6.9 L 98.1 9.5 L 106.4 12.8 L 114.4 17.0 L 121.8 22.0 L 127.8 27.2 L 133.1 33.2 L 137.0 39.0 L 140.1 45.3 L 142.6 52.9 L 143.8 59.8 L 144.2 67.7 L 143.5 75.7 L 142.0 83.5 L 139.7 91.2 L 136.3 99.5 L 132.1 107.4 L 126.6 115.8 L 121.1 123.0 L 114.4 130.4 L 107.2 137.3 L 99.5 143.6 L 91.4 149.5 L 82.0 155.2 L 63.1 164.3 L 52.8 168.1 L 42.2 171.2 L 21.6 175.1 L 10.6 176.1 L -0.3 176.4 L -11.3 176.1 L -22.3 175.0 L -42.9 171.0 L -62.8 164.4 L -81.7 155.4 L -91.1 149.6 L -99.3 143.8 L -107.0 137.5 L -114.2 130.6 L -120.9 123.2 L -126.5 116.1 L -131.9 107.7 L -136.1 99.8 L -139.6 91.5 L -142.2 82.9 L -143.6 75.0 L -144.2 67.0 L -143.7 59.1 L -142.4 52.2 L -139.8 44.7 L -136.7 38.4 L -132.7 32.7 L -127.3 26.8 L -121.3 21.6 L -114.6 17.1 L -106.7 12.9 L -98.4 9.6 L -89.7 7.0 L -80.9 5.2 M 80.6 1.7 L 95.6 2.8 L 109.4 4.6 L 123.2 7.1 L 134.8 10.0 L 145.2 13.7 L 153.3 17.5 L 160.1 21.8 L 166.1 27.0 L 171.1 33.3 L 174.8 40.3 L 177.1 47.9 L 178.3 55.8 L 178.3 64.8 L 177.1 74.7 L 174.7 84.4 L 171.1 94.8 L 166.1 105.7 L 160.2 116.2 L 152.9 126.9 L 144.8 137.1 L 135.9 146.5 L 125.6 156.0 L 115.4 164.0 L 103.8 171.8 L 92.5 178.3 L 79.9 184.5 L 67.9 189.3 L 54.6 193.6 L 42.0 196.8 L 28.2 199.3 L 14.3 200.8 L 0.3 201.3 L -13.7 200.8 L -27.6 199.3 L -41.4 196.9 L -54.0 193.8 L -67.4 189.5 L -79.4 184.7 L -92.0 178.6 L -103.3 172.1 L -114.9 164.3 L -125.2 156.3 L -135.5 146.9 L -144.4 137.5 L -152.6 127.4 L -160.0 116.6 L -165.9 106.2 L -170.9 95.3 L -174.6 85.0 L -176.9 75.3 L -178.3 65.4 L -178.3 56.4 L -177.3 48.5 L -175.0 40.8 L -171.4 33.7 L -166.5 27.4 L -160.5 22.1 L -153.8 17.8 L -145.7 13.9 L -135.4 10.2 L -123.8 7.2 L -111.0 4.8 L -96.1 2.9 L -81.1 1.8 M 80.6 -1.7 L 95.6 -2.8 L 109.4 -4.6 L 123.2 -7.1 L 134.8 -10.0 L 145.2 -13.7 L 153.3 -17.5 L 160.1 -21.8 L 166.1 -27.0 L 171.1 -33.3 L 174.8 -40.3 L 177.1 -47.9 L 178.3 -55.8 L 178.3 -64.8 L 177.1 -74.7 L 174.7 -84.4 L 171.1 -94.8 L 166.1 -105.7 L 160.2 -116.2 L 152.9 -126.9 L 144.8 -137.1 L 135.9 -146.5 L 125.6 -156.0 L 115.4 -164.0 L 103.8 -171.8 L 92.5 -178.3 L 79.9 -184.5 L 67.9 -189.3 L 54.6 -193.6 L 42.0 -196.8 L 28.2 -199.3 L 14.3 -200.8 L 0.3 -201.3 L -13.7 -200.8 L -27.6 -199.3 L -41.4 -196.9 L -54.0 -193.8 L -67.4 -189.5 L -79.4 -184.7 L -92.0 -178.6 L -103.3 -172.1 L -114.9 -164.3 L -125.2 -156.3 L -135.5 -146.9 L -144.4 -137.5 L -152.6 -127.4 L -160.0 -116.6 L -165.9 -106.2 L -170.9 -95.3 L -174.6 -85.0 L -176.9 -75.3 L -178.3 -65.4 L -178.3 -56.4 L -177.3 -48.5 L -175.0 -40.8 L -171.4 -33.7 L -166.5 -27.4 L -160.5 -22.1 L -153.8 -17.8 L -145.7 -13.9 L -135.4 -10.2 L -123.8 -7.2 L -111.0 -4.8 L -96.1 -2.9 L -81.1 -1.8 M 80.6 -5.2 L 89.4 -6.9 L 98.1 -9.5 L 106.4 -12.8 L 114.4 -17.0 L 121.8 -22.0 L 127.8 -27.2 L 133.1 -33.2 L 137.0 -39.0 L 140.1 -45.3 L 142.6 -52.9 L 143.8 -59.8 L 144.2 -67.7 L 143.5 -75.7 L 142.0 -83.5 L 139.7 -91.2 L 136.3 -99.5 L 132.1 -107.4 L 126.6 -115.8 L 121.1 -123.0 L 114.4 -130.4 L 107.2 -137.3 L 99.5 -143.6 L 91.4 -149.5 L 82.0 -155.2 L 63.1 -164.3 L 52.8 -168.1 L 42.2 -171.2 L 21.6 -175.1 L 10.6 -176.1 L -0.3 -176.4 L -11.3 -176.1 L -22.3 -175.0 L -42.9 -171.0 L -62.8 -164.4 L -81.7 -155.4 L -91.1 -149.6 L -99.3 -143.8 L -107.0 -137.5 L -114.2 -130.6 L -120.9 -123.2 L -126.5 -116.1 L -131.9 -107.7 L -136.1 -99.8 L -139.6 -91.5 L -142.2 -82.9 L -143.6 -75.0 L -144.2 -67.0 L -143.7 -59.1 L -142.4 -52.2 L -139.8 -44.7 L -136.7 -38.4 L -132.7 -32.7 L -127.3 -26.8 L -121.3 -21.6 L -114.6 -17.1 L -106.7 -12.9 L -98.4 -9.6 L -89.7 -7.0 L -80.9 -5.2 M 80.6 -8.7 L 87.2 -10.8 L 93.6 -13.8 L 98.7 -16.9 L 104.2 -21.2 L 109.1 -26.1 L 112.8 -30.9 L 116.4 -36.8 L 118.9 -42.3 L 120.7 -48.0 L 122.0 -54.9 L 122.4 -60.8 L 122.1 -67.8 L 121.0 -74.7 L 119.1 -81.5 L 116.7 -88.0 L 113.2 -95.2 L 104.9 -107.7 L 94.1 -119.4 L 81.7 -129.5 L 67.2 -138.4 L 51.7 -145.4 L 34.6 -150.7 L 17.8 -153.7 L -0.1 -154.8 L -18.1 -153.7 L -34.8 -150.6 L -52.0 -145.3 L -67.4 -138.3 L -81.9 -129.4 L -94.3 -119.3 L -105.0 -107.5 L -113.3 -95.0 L -116.8 -87.8 L -119.2 -81.2 L -121.0 -74.5 L -122.1 -67.6 L -122.4 -60.6 L -121.9 -54.6 L -120.6 -47.8 L -118.8 -42.1 L -116.3 -36.6 L -112.7 -30.7 L -109.0 -26.0 L -104.0 -21.0 L -98.5 -16.8 L -93.4 -13.7 L -87.0 -10.8 L -80.4 -8.6", "heads": "M -6.1 154.8 L 6.9 160.2 L 6.9 149.2 Z M -5.8 176.5 L 7.2 181.9 L 7.2 170.9 Z M -5.7 201.3 L 7.3 206.7 L 7.3 195.7 Z M -5.7 -201.3 L 7.3 -195.7 L 7.3 -206.7 Z M -5.8 -176.5 L 7.2 -170.9 L 7.2 -181.9 Z M -6.1 -154.8 L 6.9 -149.2 L 6.9 -160.2 Z"};
+const gField = el('g', { id: 'feldlinien' }, gDyn);
+const gFieldIron = el('g', {}, gField);
+el('path', { d: FL.lines, fill: 'none', stroke: C.phi, 'stroke-width': 2.2, 'stroke-linejoin': 'round' }, gFieldIron);
+el('path', { d: FL.heads, fill: C.phi }, gFieldIron);
+const rotor = el('g', { id: 'rotor' }, gDyn);
+el('rect', { x: G.cx, y: G.cy - G.magHalfW, width: G.magHalfL, height: 2 * G.magHalfW, fill: C.n }, rotor);
+el('rect', { x: G.cx - G.magHalfL, y: G.cy - G.magHalfW, width: G.magHalfL, height: 2 * G.magHalfW, fill: C.s }, rotor);
+el('rect', { x: G.cx - G.magHalfL, y: G.cy - G.magHalfW, width: 2 * G.magHalfL, height: 2 * G.magHalfW, fill: 'none', stroke: C.ink, 'stroke-width': 2 }, rotor);
+const letN = txt(0, 0, 'N', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gDyn);
+const letS = txt(0, 0, 'S', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gDyn);
+const vConn = el('line', { stroke: C.u1, 'stroke-width': 1.6, 'stroke-dasharray': '6 5' }, gDyn);
+const vArrow = makeArrow(gDyn, C.u1, 4, 16, 6);           // Laufrichtung des Nordpols, parallel zum Spannungszeiger
+const aArrow = makeArrow(gDyn, C.u1, 4, 18, 7);           // Annäherung: senkrechter Anteil der Laufrichtung, Länge ∝ u1 (wie die Gegenkathete)
+
+// --- Drehzeiger ---
+el('circle', { cx: Z.cx, cy: Z.cy, r: Z.r, fill: 'none', stroke: C.ink, 'stroke-width': 1.8 }, gBack);
+const phiCircle = el('circle', { cx: Z.cx, cy: Z.cy, r: CFG.phiAmp, fill: 'none', stroke: C.phi, 'stroke-width': 1.2, 'stroke-dasharray': '5 6' }, gBack);
+el('line', { x1: Z.cx - Z.r - 28, y1: Z.cy, x2: L.x0 - 46, y2: Z.cy, stroke: C.ink, 'stroke-width': 1.3, 'stroke-dasharray': CFG.dashDot }, gBack);
+el('line', { x1: Z.cx, y1: Z.cy - Z.r - 24, x2: Z.cx, y2: Z.cy + Z.r + 14, stroke: C.ink, 'stroke-width': 1.3, 'stroke-dasharray': CFG.dashDot }, gBack);
+for (let d = 0; d < 360; d += 30) {
+  const [x1, y1] = P(Z.cx, Z.cy, Z.r, d), [x2, y2] = P(Z.cx, Z.cy, Z.r + 9, d);
+  el('line', { x1, y1, x2, y2, stroke: C.ink, 'stroke-width': 1.6 }, gBack);
+}
+arcArrow(gBack, Z.cx, Z.cy, Z.r + 100, 124, 152, C.ink, 2);
+{ const [x, y] = P(Z.cx, Z.cy, Z.r + 126, 140); txt(x, y + 10, I('ω'), { class: 'lbl', 'text-anchor': 'middle' }, gBack); }
+
+// --- Liniendiagramm: Achsen ---
+const yTop = L.y0 - Z.r - 62, yBot = L.y0 + Z.r + 22;
+const ax = makeArrow(gBack, C.ink, 2.2, 20, 6.5); ax.set(L.x0 - 4, L.y0, L.xEnd, L.y0);
+const ay = makeArrow(gBack, C.ink, 2.2, 20, 6.5); ay.set(L.x0, yBot, L.x0, yTop);
+const yLbl = txt(L.x0 - 16, yTop + 14, '', { class: 'lbl', 'text-anchor': 'end' }, gBack);
+txt(L.xEnd + 8, L.y0 - 10, I('α') + SUB('G'), { class: 'lbl', 'text-anchor': 'start' }, gBack);   // Gradmaß
+const axB = txt(L.xEnd + 8, L.y0 + 36, I('α') + SUB('B'), { class: 'lbl', 'text-anchor': 'start' }, gBack);   // Bogenmaß
+txt(L.x0 - 12, L.y0 + 30, '0', { class: 'lbl-s halo', 'text-anchor': 'end' }, gLbl);   // unter der Achse: bei α = 0° und 180° liegt die Projektionslinie auf der Achse
+function yTick(y, html, parent) {
+  el('line', { x1: L.x0 - 9, y1: y, x2: L.x0 + 9, y2: y, stroke: C.ink, 'stroke-width': 2 }, parent);
+  txt(L.x0 - 16, y + 9, html, { class: 'lbl-s halo', 'text-anchor': 'end' }, parent);
+}
+yTick(L.y0 - Z.r, `${UHAT} = ${UHAT_V}`, gBack); yTick(L.y0 + Z.r, `−${UHAT} = −${UHAT_V}`, gBack);
+const gPhiTicks = el('g', {}, gBack);
+yTick(L.y0 - CFG.phiAmp, HAT('Φ', 25), gPhiTicks); yTick(L.y0 + CFG.phiAmp, '−' + HAT('Φ', 25), gPhiTicks);
+for (let d = 30; d <= CFG.alphaMax; d += 30) {
+  const x = L.x0 + L.kx * d;
+  el('line', { x1: x, y1: L.y0 - 7, x2: x, y2: L.y0 + 7, stroke: C.ink, 'stroke-width': 1.6 }, gBack);
+}
+const gAxisLbl = el('g', {}, gLbl);
+/* QR-Code zur Animation im Repo (Lehrkraft, 12.11.2026). Erzeugt mit Python qrcode, Fehlerkorrektur M.
+   Adresse ändern: QR neu erzeugen (Skript im Arbeitsordner), nicht von Hand. */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/erzeugung/", "n": 37, "d": "M0 0h7v1h-7zM10 0h2v1h-2zM13 0h1v1h-1zM18 0h2v1h-2zM25 0h2v1h-2zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM11 1h1v1h-1zM13 1h2v1h-2zM18 1h2v1h-2zM21 1h2v1h-2zM25 1h2v1h-2zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h7v1h-7zM18 2h5v1h-5zM26 2h1v1h-1zM28 2h1v1h-1zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM12 3h1v1h-1zM14 3h4v1h-4zM19 3h3v1h-3zM24 3h2v1h-2zM27 3h2v1h-2zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h1v1h-1zM11 4h2v1h-2zM19 4h7v1h-7zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h1v1h-1zM11 5h2v1h-2zM14 5h3v1h-3zM18 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM25 5h2v1h-2zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM8 7h1v1h-1zM10 7h3v1h-3zM19 7h1v1h-1zM22 7h2v1h-2zM27 7h2v1h-2zM0 8h1v1h-1zM6 8h1v1h-1zM8 8h4v1h-4zM15 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h5v1h-5zM29 8h2v1h-2zM33 8h3v1h-3zM0 9h1v1h-1zM2 9h1v1h-1zM4 9h1v1h-1zM9 9h2v1h-2zM12 9h3v1h-3zM20 9h1v1h-1zM22 9h2v1h-2zM25 9h1v1h-1zM27 9h1v1h-1zM29 9h1v1h-1zM31 9h5v1h-5zM4 10h3v1h-3zM9 10h2v1h-2zM12 10h1v1h-1zM14 10h1v1h-1zM20 10h3v1h-3zM24 10h1v1h-1zM27 10h2v1h-2zM35 10h2v1h-2zM1 11h2v1h-2zM5 11h1v1h-1zM8 11h2v1h-2zM13 11h4v1h-4zM18 11h1v1h-1zM22 11h3v1h-3zM26 11h1v1h-1zM29 11h1v1h-1zM32 11h2v1h-2zM36 11h1v1h-1zM0 12h1v1h-1zM3 12h1v1h-1zM6 12h1v1h-1zM10 12h1v1h-1zM12 12h2v1h-2zM16 12h1v1h-1zM19 12h2v1h-2zM24 12h1v1h-1zM27 12h2v1h-2zM30 12h2v1h-2zM33 12h1v1h-1zM36 12h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM9 13h1v1h-1zM11 13h3v1h-3zM15 13h3v1h-3zM19 13h2v1h-2zM23 13h1v1h-1zM26 13h2v1h-2zM31 13h1v1h-1zM33 13h1v1h-1zM2 14h1v1h-1zM4 14h1v1h-1zM6 14h4v1h-4zM11 14h2v1h-2zM15 14h1v1h-1zM17 14h1v1h-1zM20 14h1v1h-1zM22 14h1v1h-1zM26 14h3v1h-3zM30 14h4v1h-4zM35 14h2v1h-2zM0 15h1v1h-1zM2 15h3v1h-3zM9 15h4v1h-4zM15 15h4v1h-4zM20 15h1v1h-1zM24 15h1v1h-1zM27 15h3v1h-3zM31 15h1v1h-1zM33 15h3v1h-3zM0 16h2v1h-2zM3 16h1v1h-1zM6 16h2v1h-2zM9 16h1v1h-1zM11 16h1v1h-1zM14 16h3v1h-3zM19 16h1v1h-1zM22 16h2v1h-2zM25 16h3v1h-3zM29 16h2v1h-2zM32 16h1v1h-1zM34 16h3v1h-3zM2 17h2v1h-2zM5 17h1v1h-1zM9 17h3v1h-3zM13 17h1v1h-1zM18 17h1v1h-1zM20 17h4v1h-4zM27 17h2v1h-2zM31 17h1v1h-1zM33 17h3v1h-3zM1 18h2v1h-2zM5 18h3v1h-3zM11 18h1v1h-1zM13 18h3v1h-3zM18 18h1v1h-1zM20 18h1v1h-1zM23 18h3v1h-3zM27 18h3v1h-3zM33 18h1v1h-1zM36 18h1v1h-1zM1 19h2v1h-2zM11 19h4v1h-4zM19 19h2v1h-2zM23 19h2v1h-2zM30 19h1v1h-1zM36 19h1v1h-1zM0 20h2v1h-2zM6 20h8v1h-8zM15 20h3v1h-3zM19 20h1v1h-1zM22 20h1v1h-1zM24 20h5v1h-5zM30 20h1v1h-1zM32 20h3v1h-3zM2 21h2v1h-2zM5 21h1v1h-1zM7 21h1v1h-1zM12 21h4v1h-4zM19 21h1v1h-1zM23 21h1v1h-1zM25 21h3v1h-3zM32 21h1v1h-1zM34 21h1v1h-1zM0 22h1v1h-1zM5 22h2v1h-2zM8 22h2v1h-2zM11 22h3v1h-3zM15 22h2v1h-2zM18 22h1v1h-1zM21 22h2v1h-2zM24 22h10v1h-10zM35 22h2v1h-2zM2 23h3v1h-3zM9 23h1v1h-1zM11 23h2v1h-2zM14 23h1v1h-1zM16 23h1v1h-1zM19 23h1v1h-1zM22 23h2v1h-2zM27 23h1v1h-1zM29 23h5v1h-5zM35 23h2v1h-2zM0 24h1v1h-1zM5 24h2v1h-2zM8 24h1v1h-1zM12 24h2v1h-2zM15 24h6v1h-6zM27 24h1v1h-1zM30 24h2v1h-2zM35 24h2v1h-2zM0 25h4v1h-4zM5 25h1v1h-1zM7 25h5v1h-5zM13 25h2v1h-2zM16 25h1v1h-1zM23 25h1v1h-1zM25 25h1v1h-1zM27 25h2v1h-2zM31 25h1v1h-1zM33 25h2v1h-2zM0 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM11 26h1v1h-1zM13 26h2v1h-2zM20 26h3v1h-3zM27 26h3v1h-3zM31 26h1v1h-1zM34 26h3v1h-3zM0 27h1v1h-1zM2 27h1v1h-1zM5 27h1v1h-1zM11 27h1v1h-1zM14 27h2v1h-2zM19 27h1v1h-1zM22 27h1v1h-1zM26 27h11v1h-11zM0 28h1v1h-1zM2 28h2v1h-2zM6 28h2v1h-2zM9 28h4v1h-4zM17 28h1v1h-1zM19 28h2v1h-2zM22 28h1v1h-1zM24 28h9v1h-9zM34 28h1v1h-1zM8 29h1v1h-1zM10 29h1v1h-1zM12 29h1v1h-1zM14 29h8v1h-8zM23 29h2v1h-2zM26 29h3v1h-3zM32 29h1v1h-1zM0 30h7v1h-7zM9 30h1v1h-1zM12 30h1v1h-1zM14 30h3v1h-3zM19 30h2v1h-2zM23 30h2v1h-2zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM36 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM9 31h3v1h-3zM14 31h1v1h-1zM16 31h4v1h-4zM23 31h2v1h-2zM26 31h3v1h-3zM32 31h1v1h-1zM36 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM11 32h1v1h-1zM13 32h4v1h-4zM22 32h1v1h-1zM24 32h2v1h-2zM27 32h6v1h-6zM34 32h2v1h-2zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM11 33h1v1h-1zM14 33h1v1h-1zM16 33h5v1h-5zM22 33h2v1h-2zM26 33h2v1h-2zM29 33h2v1h-2zM33 33h2v1h-2zM36 33h1v1h-1zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM9 34h3v1h-3zM13 34h5v1h-5zM20 34h3v1h-3zM26 34h1v1h-1zM29 34h1v1h-1zM34 34h3v1h-3zM0 35h1v1h-1zM6 35h1v1h-1zM9 35h1v1h-1zM18 35h3v1h-3zM22 35h2v1h-2zM26 35h4v1h-4zM32 35h2v1h-2zM36 35h1v1h-1zM0 36h7v1h-7zM8 36h2v1h-2zM14 36h2v1h-2zM19 36h1v1h-1zM24 36h1v1h-1zM28 36h4v1h-4zM33 36h1v1h-1zM36 36h1v1h-1z"};
+const gQR = el('g', { id: 'qr' }, gBack);
+const QR_X0 = 1697;   // rechts oben (Lehrkraft, 12.11.2026)
+{ const m = 4.5, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
+  el('rect', { x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1 }, gQR);
+  el('path', { d: QR.d, fill: '#000', transform: `translate(${x0 + q} ${y0 + q}) scale(${m})`, 'shape-rendering': 'crispEdges' }, gQR);
+  txt(x0 + w / 2, y0 + w + 26, 'Am eigenen', { class: 'lbl-xs sans', 'text-anchor': 'middle' }, gQR);
+  txt(x0 + w / 2, y0 + w + 52, 'Gerät öffnen', { class: 'lbl-xs sans', 'text-anchor': 'middle' }, gQR); }
+const gDzLbl = el('g', {}, gLbl);
+
+const yU = (a) => L.y0 - Z.r * model(a).u;
+const yPhi = (a) => L.y0 - CFG.phiAmp * model(a).phi;
+function curvePath(f, a0, a1, step = 0.5) {
+  let d = '';
+  for (let a = a0; a <= a1 + 1e-9; a += step) d += (d ? ' L ' : 'M ') + (L.x0 + L.kx * a).toFixed(2) + ' ' + f(a).toFixed(2);
+  return d;
+}
+const curveStyle = (c) => ({ fill: 'none', stroke: c, 'stroke-width': 4, 'stroke-linejoin': 'round' });
+const phiFull = el('path', { d: curvePath(yPhi, 0, CFG.alphaMax), ...curveStyle(C.phi), 'stroke-width': 3.5 }, gCurve);
+const phiTrace = el('path', { d: '', ...curveStyle(C.phi), 'stroke-width': 3.5 }, gCurve);
+const uFull = el('path', { d: curvePath(yU, 0, CFG.alphaMax), ...curveStyle(C.u1) }, gCurve);
+const uTrace = el('path', { d: '', ...curveStyle(C.u1) }, gCurve);
+const uLbl = txt(L.x0 + L.kx * 104, yU(104) - 16, I('u') + SUB('1'), { class: 'lbl c-u1 halo', 'text-anchor': 'start' }, gLbl);
+const phiLbl = txt(L.x0 + L.kx * 172, yPhi(172) - 16, PHI, { class: 'lbl c-phi halo', 'text-anchor': 'start' }, gLbl);
+
+/* Teilungsabhängige Beschriftung.
+   Kollisionsregel: Jede Beschriftung wird mittig, rechts oder links des Teilstrichs versucht;
+   gewählt wird die erste Lage ohne Kurve und ohne Nachbarbeschriftung darin.               */
+function visibleCurves() { return S.phi ? [yU, yPhi] : [yU]; }
+function placeLabel(node, occ) {
+  const bb = node.getBBox();
+  const cands = [0, bb.width / 2 + 5, -(bb.width / 2 + 5)];
+  let best = 0, bestHits = Infinity;
+  for (const dx of cands) {
+    const x1 = bb.x + dx - 2, x2 = bb.x + bb.width + dx + 2;
+    if (occ.some(([a, b]) => x1 < b + 3 && x2 > a - 3)) continue;
+    let hits = 0;
+    for (let x = x1; x <= x2; x += 2) {
+      const a = (x - L.x0) / L.kx;
+      if (a < 0 || a > CFG.alphaMax) continue;
+      for (const f of visibleCurves()) { const y = f(a); if (y > bb.y - 4 && y < bb.y + bb.height + 4) hits++; }
+    }
+    if (hits < bestHits) { best = dx; bestHits = hits; }
+    if (hits === 0) break;
+  }
+  node.setAttribute('transform', `translate(${best} 0)`);
+  occ.push([bb.x + best, bb.x + bb.width + best]);
+}
+function buildDivisionLabels() {
+  gAxisLbl.replaceChildren(); gDzLbl.replaceChildren();
+  const step = Number(S.div), cls = step === 30 ? 'lbl-xs' : 'lbl-s', fs = step === 30 ? 22 : 25;
+  const occAbove = [], occBelow = [];
+  for (let d = step; d <= CFG.alphaMax; d += step) {
+    const x = L.x0 + L.kx * d;
+    el('line', { x1: x, y1: L.y0 - 12, x2: x, y2: L.y0 + 12, stroke: C.ink, 'stroke-width': 2.2 }, gAxisLbl);
+    placeLabel(txt(x, L.y0 - 18, `${d}°`, { class: cls + ' halo', 'text-anchor': 'middle' }, gAxisLbl), occAbove);
+    const pf = piFrac(d);
+    if (!pf || !S.rad) continue;
+    if (pf.den) { const fg = fracGroup(gAxisLbl, cls); fg.update(x, L.y0 + 48, pf.num, pf.den, fs); placeLabel(fg.g, occBelow); }
+    else placeLabel(txt(x, L.y0 + 42, pf.num, { class: cls + ' halo', 'text-anchor': 'middle' }, gAxisLbl), occBelow);
+  }
+  // Gradzahlen am Drehzeigerkreis; 0° und 180° unter, 90° und 270° neben der Mittellinie
+  const fixed = { 0: [Z.cx + Z.r + 12, Z.cy + 30, 'start'], 180: [Z.cx - Z.r - 12, Z.cy + 30, 'end'],
+                  90: [Z.cx + 10, Z.cy - Z.r - 14, 'start'], 270: [Z.cx + 10, Z.cy + Z.r + 34, 'start'] };
+  for (let d = 0; d < 360; d += step) {
+    let [x, y, anchor] = fixed[d] || [];
+    if (x === undefined) {
+      [x, y] = P(Z.cx, Z.cy, Z.r + 18, d);
+      anchor = Math.cos(d * D) > 0 ? 'start' : 'end';
+      y += Math.sin(d * D) > 0 ? 2 : 16;
+    }
+    txt(x, y, `${d}°`, { class: cls + ' halo', 'text-anchor': anchor }, gDzLbl);
+  }
+}
+
+/* ================= Dynamische Elemente ================= */
+const angleArc = el('path', { d: '', fill: 'none', stroke: C.ink, 'stroke-width': 1.6 }, gDyn);
+const angleLbl = txt(0, 0, I('α') + SUB('G'), { class: 'lbl halo', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gDyn);
+const lineStyle = (c, dash) => ({ stroke: c, 'stroke-width': dash ? 2 : 2.5, ...(dash ? { 'stroke-dasharray': '12 9' } : {}) });
+const projPhi = [el('line', lineStyle(C.phi)), el('line', lineStyle(C.phi, true)), el('line', lineStyle(C.phi))];
+const projU = [el('line', lineStyle(C.u1)), el('line', lineStyle(C.u1, true)), el('line', lineStyle(C.u1))];
+for (const e of [...projPhi, ...projU]) gDyn.appendChild(e);
+const gkU = makeArrow(gDyn, C.u1, 3, 22, 8);    // Gegenkathete im Zeigerbild = Momentanwert u1
+const ampU = makeArrow(gDyn, C.u1, 3, 22, 8);   // Momentanwert u1 im Liniendiagramm
+const gkPhi = makeArrow(gDyn, C.phi, 3, 22, 8);  // Gegenkathete des Φ-Zeigers
+const ampPhi = makeArrow(gDyn, C.phi, 3, 22, 8); // Momentanwert Φ im Liniendiagramm
+const phasorPhi = makeArrow(gDyn, C.phi, 5, 24, 8.5);
+const phasorPhiLbl = txt(0, 0, HAT('Φ', 30), { class: 'lbl c-phi halo', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gDyn);   // Φ-Zeiger mit Φ̂, wie û
+const phasorU = makeArrow(gDyn, C.u1, 6, 28, 10);
+/* Zeigerbeschriftung: in der Zeigermitte auf der Seite, die vom rechtwinkligen Dreieck (Zeiger, Gegenkathete, Achse)
+   abgewandt ist – sonst sieht das Formelzeichen aus wie die Beschriftung der Gegenkathete. Quadrant I und III: links
+   des Zeigers (+90°), Quadrant II und IV: rechts (−90°). */
+function segDist(px, py, x1, y1, x2, y2) {   // Abstand Punkt–Strecke
+  const dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / l2));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+function placePhasorLabel(lbl, ang, len, frac, off) {
+  const a = ((ang % 360) + 360) % 360, s = Math.sin(a * D), c = Math.cos(a * D);
+  const side = s * c >= 0 ? 90 : -90;
+  const [mx, my] = P(Z.cx, Z.cy, frac * len, a), [ox, oy] = P(0, 0, off, a + side);
+  lbl.setAttribute('x', mx + ox); lbl.setAttribute('y', my + oy);
+}
+const phasorULbl = txt(0, 0, UHAT, { class: 'lbl c-u1 halo', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gDyn);   // Drehzeiger mit û gekennzeichnet (Lehrkraft, 12.11.2026)
+const dotPhi = el('circle', { r: 8.5, fill: C.phi, stroke: '#fff', 'stroke-width': 2 }, gDyn);
+const dotU = el('circle', { r: 9.5, fill: C.u1, stroke: '#fff', 'stroke-width': 2 }, gDyn);
+show(dotU, false);   // Punkt entfällt: die Pfeilspitze des Momentanwerts sitzt auf der Kurve
+
+// Momentanwerte oben rechts
+const gRO = el('g', { id: 'readout' }, gLbl);
+const RX = 1000, RY = [330, 395, 465, 535];
+const ro1 = txt(RX, RY[0], '', { class: 'ro' }, gRO);
+const ro2 = txt(RX, RY[1], '', { class: 'ro' }, gRO);
+const ro2eq = txt(0, RY[1], '=', { class: 'ro' }, gRO);
+const ro2frac = fracGroup(gRO, 'ro');
+const ro3 = txt(RX, RY[2], '', { class: 'ro' }, gRO);
+const ro4 = txt(RX, RY[3], '', { class: 'ro' }, gRO);
+
+/* ================= Darstellung ================= */
+function setLine(e, x1, y1, x2, y2) { e.setAttribute('x1', x1); e.setAttribute('y1', y1); e.setAttribute('x2', x2); e.setAttribute('y2', y2); }
+function render() {
+  const a = S.alpha, m = model(a);
+  // Polrad
+  rotor.setAttribute('transform', `rotate(${-m.thetaN} ${G.cx} ${G.cy})`);
+  gField.setAttribute('transform', `translate(${G.cx} ${G.cy}) rotate(${-m.thetaN})`);
+  show(gFieldIron, S.fl);
+  const [nx, ny] = P(G.cx, G.cy, G.magHalfL / 2, m.thetaN), [sx, sy] = P(G.cx, G.cy, G.magHalfL / 2, m.thetaN + 180);
+  letN.setAttribute('x', nx); letN.setAttribute('y', ny);
+  letS.setAttribute('x', sx); letS.setAttribute('y', sy);
+  { const [bx, by] = P(G.cx, G.cy, G.magHalfL + 12, m.thetaN), ux = Math.cos((m.thetaN + 90) * D), uy = -Math.sin((m.thetaN + 90) * D);
+    const tx2 = bx + 62 * ux, ty2 = by + 62 * uy;
+    vArrow.set(bx, by, tx2, ty2); aArrow.set(bx, by, bx, ty2); setLine(vConn, bx, ty2, tx2, ty2);
+    show(vArrow.g, S.pfeil === 'lauf' || S.pfeil === 'beide'); show(aArrow.g, S.pfeil === 'ann' || S.pfeil === 'beide'); show(vConn, S.pfeil === 'beide'); }
+  // Drehzeiger u1 und Φ; Punkte im Liniendiagramm kommen aus dem Modell, nicht aus der Zeigergeometrie
+  const am = ((a % 360) + 360) % 360, xd = L.x0 + L.kx * a;
+  const [tx, ty] = P(Z.cx, Z.cy, Z.r, am);
+  phasorU.set(Z.cx, Z.cy, tx, ty);
+  placePhasorLabel(phasorULbl, am, Z.r, 0.62, 24);
+  const ydU = L.y0 - Z.r * m.u;
+  setLine(projU[1], tx, ty, xd, ydU);
+  gkU.set(tx, Z.cy, tx, ty);
+  ampU.set(xd, L.y0, xd, ydU);
+  dotU.setAttribute('cx', xd); dotU.setAttribute('cy', ydU);
+  const [fx, fy] = P(Z.cx, Z.cy, CFG.phiAmp, am - 90);
+  phasorPhi.set(Z.cx, Z.cy, fx, fy);
+  placePhasorLabel(phasorPhiLbl, am - 90, CFG.phiAmp, 0.8, 22); show(phasorPhiLbl, S.phi);
+  const ydF = L.y0 - CFG.phiAmp * m.phi;
+  setLine(projPhi[1], fx, fy, xd, ydF);
+  gkPhi.set(fx, Z.cy, fx, fy);
+  ampPhi.set(xd, L.y0, xd, ydF);
+  show(projU[0], false); show(projU[2], false);
+  for (const e of [projU[1], gkU.g, ampU.g]) show(e, S.proj);
+  show(projPhi[0], false); show(projPhi[2], false); show(dotPhi, false);   // wie bei u: Pfeile statt Linien, kein Punkt
+  for (const e of [projPhi[1], gkPhi.g, ampPhi.g]) show(e, S.proj && S.phi);
+  for (const e of [phasorPhi.g, phiCircle, gPhiTicks]) show(e, S.phi);
+  yLbl.innerHTML = S.phi ? `${I('u')}, ${PHI}` : I('u');
+  // Winkelbogen
+  const ra = 50;
+  if (S.arc && am >= 0.5) {
+    const [ex, ey] = P(Z.cx, Z.cy, ra, Math.min(am, 359.9));
+    angleArc.setAttribute('d', `M ${Z.cx + ra} ${Z.cy} A ${ra} ${ra} 0 ${am > 180 ? 1 : 0} 0 ${ex} ${ey}`);
+    /* α_G im Winkelbogen, aber frei von Zeigern, Gegenkatheten, Projektionslinien und Zeigerbeschriftungen:
+       Lagen in der Bogenmitte und daneben probieren, die erste freie nehmen. */
+    const segs = [[Z.cx, Z.cy, tx, ty]], pts = [[+phasorULbl.getAttribute('x'), +phasorULbl.getAttribute('y')]];
+    if (S.proj) segs.push([tx, Z.cy, tx, ty], [tx, ty, Z.cx + Z.r, ty]);
+    if (S.phi) {
+      segs.push([Z.cx, Z.cy, fx, fy]); pts.push([+phasorPhiLbl.getAttribute('x'), +phasorPhiLbl.getAttribute('y')]);
+      if (S.proj) segs.push([fx, Z.cy, fx, fy], [fx, fy, Z.cx + Z.r, fy]);
+    }
+    const clear = (x, y) => Math.min(...segs.map((q) => segDist(x, y, ...q) - 22), ...pts.map((q) => Math.hypot(x - q[0], y - q[1]) - 36));
+    let best = null, bestC = -Infinity;
+    suche: for (const r of [ra + 22, ra + 42]) for (const d of [0, 10, -10, 20, -20, 30, -30, 40, -40, 55, -55]) {
+      const t = am / 2 + d; if (t < 9 || t > am - 9) continue;
+      const [x, y] = P(Z.cx, Z.cy, r, t), c = clear(x, y);
+      if (c > bestC) { best = [x, y]; bestC = c; }
+      if (c > 0) break suche;   // erste freie Lage nehmen, nah am Bogen
+    }
+    if (best) { angleLbl.setAttribute('x', best[0]); angleLbl.setAttribute('y', best[1]); }
+    show(angleLbl, am >= 22 && !!best);
+  } else { angleArc.setAttribute('d', ''); show(angleLbl, false); }
+  // Kurven
+  show(uFull, !S.trace); show(phiFull, !S.trace && S.phi);
+  uTrace.setAttribute('d', S.trace ? curvePath(yU, 0, a) : '');
+  phiTrace.setAttribute('d', S.trace && S.phi ? curvePath(yPhi, 0, a) : '');
+  show(uLbl, !S.trace || a >= 115);
+  show(axB, S.rad);
+  show(phiLbl, S.phi && (!S.trace || a >= 185));
+  // Momentanwerte (Rundung nach Fachkonventionen: Grad glatt ohne, sonst 2 NK; rad, sin, cos 3 NK)
+  show(gRO, S.ro);
+  if (S.ro) {
+    let y = RY[0];
+    ro1.setAttribute('y', y);
+    ro1.innerHTML = `${I('α')}${SUB('G', 38, ' = ')}${fmtDeg(a)}°`;
+    show(ro2, S.rad); show(ro2eq, false); show(ro2frac.g, false);
+    if (S.rad) {
+      y += 65;
+      ro2.setAttribute('y', y); ro2eq.setAttribute('y', y);
+      ro2.innerHTML = `${I('α')}${SUB('B', 38, ' = ')}${fmt(a * D, 3)} rad`;
+      const pf = piFrac(a);
+      if (pf && pf.den) {
+        const x0 = RX + ro2.getComputedTextLength() + 10;
+        ro2eq.setAttribute('x', x0); show(ro2eq, true);
+        const w = ro2frac.update(0, 0, pf.num, pf.den, 32);
+        ro2frac.update(x0 + 30 + w / 2, y - 12, pf.num, pf.den, 32);
+        show(ro2frac.g, true);
+      } else if (pf) ro2.innerHTML += ` = ${pf.num}`;
+      y += 70;
+    } else y += 65;
+    const uv = Math.abs(m.u) < 0.0005 ? 0 : m.u, pv = Math.abs(m.phi) < 0.0005 ? 0 : m.phi;
+    show(ro3, S.calc);
+    ro3.setAttribute('y', y);
+    ro3.innerHTML = `${I('u')}${SUB('1', 38, ' = ')}${UHAT} · sin ${I('α')}${SUB('G', 38, ' = ')}${UHAT_V} · sin ${fmtDeg(a)}° = ${fmtV(CFG.uHat * uv)}`;
+    y += 70;
+    ro4.setAttribute('y', y);
+    ro4.innerHTML = `${PHI} = ${HAT('Φ', 38, ' · sin(')}${I('α')}${SUB('G', 38, ' − 90°) = ')}${fmt(pv, 3)} · ${HAT('Φ', 38)}`;
+    show(ro4, S.calc && S.phi);
+  }
+  if (erklBox.open) erklJetztEl.innerHTML = erklJetzt(a);
+  syncUI();
+}
+
+/* Erklärung zum aktuellen Winkel: Vorzeichen von u1 folgt daraus, ob der Nordpol auf die Spule zu- oder von ihr
+   wegläuft (Festlegung der Lehrkraft, 12.11.2026). Geometrie: Nordpol bei α_G − 90°, Laufrichtung bei α_G. */
+const erklBox = $('#erkl'), erklJetztEl = $('#erkl-jetzt');
+function erklJetzt(a) {
+  const am = ((a % 360) + 360) % 360, e = 0.25, near = (x) => Math.abs(am - x) < e || (x === 0 && am > 360 - e);
+  const uv = model(a).u, wert = fmtV(CFG.uHat * (Math.abs(uv) < 0.0005 ? 0 : uv)).replace(' ', '&#8239;');
+  let t;
+  if (near(0)) t = 'Der Nordpol ist am weitesten von der Spule entfernt und läuft gerade seitlich. Er kommt ihr weder näher, noch entfernt er sich';
+  else if (near(90)) t = 'Der Nordpol läuft genau auf die Spule zu. Die Spannung ist positiv und am größten';
+  else if (near(180)) t = 'Der Nordpol steht direkt vor der Spule und läuft seitlich vorbei. Er kommt ihr weder näher, noch entfernt er sich, obwohl das Feld hier am stärksten ist';
+  else if (near(270)) t = 'Der Nordpol läuft genau von der Spule weg. Die Spannung ist negativ und betragsmäßig am größten';
+  else if (am < 90) t = 'Der Nordpol läuft schräg auf die Spule zu, und zwar immer direkter. Die Spannung ist positiv und wächst';
+  else if (am < 180) t = 'Der Nordpol läuft noch auf die Spule zu, aber immer seitlicher. Die Spannung ist positiv und nimmt ab';
+  else if (am < 270) t = 'Der Nordpol läuft von der Spule weg, und zwar immer direkter. Die Spannung ist negativ, ihr Betrag wächst';
+  else t = 'Der Nordpol läuft noch von der Spule weg, aber immer seitlicher. Die Spannung ist negativ, ihr Betrag nimmt ab';
+  return `<b>Jetzt, bei <i>α</i><sub>G</sub>&nbsp;=&nbsp;${fmtDeg(a)}°:</b> ${t}${S.calc ? `: <i>u</i><sub>1</sub>&nbsp;=&nbsp;${wert}` : ''}.`;   // Wert nur mit „Berechnung“
+}
+erklBox.addEventListener('toggle', () => render());
+
+/* ================= Bedienung ================= */
+const btnPlay = $('#btn-play'), rng = $('#rng-alpha'), num = $('#num-alpha');
+function syncUI() {
+  const v = Math.round(S.alpha * 100) / 100;
+  rng.value = v;
+  if (document.activeElement !== num) num.value = v;
+  btnPlay.textContent = S.playing ? '❚❚ Pause' : '▶ Abspielen';
+  btnPlay.setAttribute('aria-pressed', String(S.playing));
+  const sp = $('#sel-pfeil'); if (sp && sp.value !== S.pfeil) sp.value = S.pfeil;
+  $('#btn-calc').setAttribute('aria-pressed', String(S.calc));
+  document.documentElement.classList.toggle('calc', S.calc);
+  // QR-Code nur auf großen Bildschirmen: am Handy ist die Animation ja schon offen
+  const qrSichtbar = S.qr && (window.innerWidth >= 800 || document.documentElement.classList.contains('export'));
+  show(gQR, qrSichtbar);
+  for (const t of titel) t.setAttribute('x', qrSichtbar ? QR_X0 - 60 : 1872);
+}
+function setAlpha(v, fromUser = true) {
+  if (!Number.isFinite(v)) return;
+  if (fromUser) S.playing = false;
+  S.alpha = clamp(v, 0, CFG.alphaMax);
+  render();
+  if (fromUser) writeHash();
+}
+function writeHash() {
+  try { history.replaceState(null, '', '#a' + String(Math.round(S.alpha * 100) / 100).replace('.', '-')); } catch (e) { /* Rahmen erlaubt es nicht */ }
+}
+function readStart() {
+  try {
+    const q = new URLSearchParams(location.search).get('alpha');
+    if (q !== null) return parseFloat(q.replace(',', '.'));
+    const h = /^#a(\d+)(?:-(\d+))?$/.exec(location.hash || '');
+    if (h) return parseFloat(h[1] + (h[2] ? '.' + h[2] : ''));
+  } catch (e) { /* ignorieren */ }
+  return CFG.alphaStart;
+}
+let last = null;
+function tick(ts) {
+  if (!S.playing) { last = null; return; }
+  if (last !== null) {
+    S.alpha += ((ts - last) / 1000) * 360 / S.rev;
+    if (S.alpha >= CFG.alphaMax) S.alpha -= CFG.alphaMax;   // Endlosschleife über eine Periode
+    render();
+  }
+  last = ts;
+  requestAnimationFrame(tick);
+}
+function togglePlay() {
+  S.playing = !S.playing;
+  if (S.playing && S.alpha >= CFG.alphaMax) S.alpha = 0;
+  syncUI();
+  if (S.playing) requestAnimationFrame(tick); else writeHash();
+}
+btnPlay.addEventListener('click', togglePlay);
+$('#sel-speed').addEventListener('change', (e) => { S.rev = Number(e.target.value); });
+rng.addEventListener('input', () => setAlpha(parseFloat(rng.value)));
+num.addEventListener('change', () => setAlpha(parseFloat(String(num.value).replace(',', '.'))));
+document.querySelectorAll('[data-step]').forEach((b) => b.addEventListener('click', () => setAlpha(S.alpha + Number(b.dataset.step))));
+const presetBox = $('#presets');
+for (const p of CFG.presets) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = `${p}°`;
+  b.addEventListener('click', () => setAlpha(p));
+  presetBox.appendChild(b);
+}
+for (const [id, key] of [['chk-proj', 'proj'], ['chk-trace', 'trace'], ['chk-arc', 'arc'], ['chk-ro', 'ro'], ['chk-qr', 'qr'], ['chk-rad', 'rad'], ['chk-fl', 'fl'], ['chk-phi', 'phi']]) {
+  $('#' + id).addEventListener('change', (e) => { S[key] = e.target.checked; if (key === 'phi' || key === 'rad') buildDivisionLabels(); render(); });
+}
+$('#sel-div').addEventListener('change', (e) => { S.div = e.target.value; buildDivisionLabels(); });
+$('#sel-pfeil').addEventListener('change', (e) => { S.pfeil = e.target.value; render(); });
+function toggleFullscreen() {
+  const st = $('#stage');
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else st.requestFullscreen?.().catch(() => {});
+  } catch (e) { /* Vollbild nicht verfügbar */ }
+}
+$('#btn-fs').addEventListener('click', toggleFullscreen);
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  const inField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if (e.key === ' ' && !inField && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); return; }
+  if (inField && t.type !== 'checkbox') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    e.preventDefault();
+    setAlpha(S.alpha + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 15 : 0.5));
+  } else if (e.key === 'Home') { e.preventDefault(); setAlpha(0); }
+  else if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
+});
+$('#btn-calc').addEventListener('click', () => { S.calc = !S.calc; render(); });
+window.addEventListener('resize', () => syncUI());
+window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S.alpha) setAlpha(v, false); });
+
+/* ================= Export-Schnittstelle (Videoexport per Skript) =================
+   ?export=1 blendet die Bedienung aus; weitere Schalter per URL, z. B. ?export=1&phi=1&trace=1&div=90 */
+const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
+if (params.has('export') || location.hash === '#export') document.documentElement.classList.add('export');
+for (const k of ['proj', 'trace', 'arc', 'ro', 'qr', 'calc', 'rad', 'fl', 'phi']) if (params.has(k)) { S[k] = params.get(k) !== '0'; const c = $('#chk-' + k); if (c) c.checked = S[k]; }
+if (params.has('div')) { S.div = params.get('div'); $('#sel-div').value = S.div; }
+if (params.has('pfeil')) { S.pfeil = params.get('pfeil'); $('#sel-pfeil').value = S.pfeil; }
+window.anim = {
+  model,
+  set(a) { S.playing = false; S.alpha = a; render(); return S.alpha; },
+  opt(key, val) { S[key] = val; if (key === 'div' || key === 'phi' || key === 'rad') buildDivisionLabels(); render(); },
+  get state() { return { ...S }; },
+};
+
+/* ================= Start ================= */
+S.alpha = clamp(readStart(), 0, CFG.alphaMax);
+buildDivisionLabels();
+render();
+})();
+</script>
+</body>
+</html>
