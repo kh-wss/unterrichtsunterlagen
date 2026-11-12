@@ -101,6 +101,12 @@ html.export,html.export body{background:#fff;padding:0}
 html.export .wrap{width:1920px;max-width:none;gap:0}
 html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
 html.export .card,html.export .hint-phone{display:none}
+/* Vorschau ?buehne=1 (Wunsch der Lehrkraft, 12.11.2026): nur die Bühne, randlos, füllt einen 16:9-Rahmen in
+   Moodle genau aus; Bedienleisten und Text entfallen. Ziehen mit der Maus und Pfeiltasten bleiben. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.buehne .wrap{width:100%;max-width:none;gap:0}
+html.buehne .stage{border:0;border-radius:0}
+html.buehne .card,html.buehne .hint-phone{display:none}
 </style>
 </head>
 <body>
@@ -1021,6 +1027,8 @@ function frame(ts) {
 try {
   const q = new URLSearchParams(location.search);
   if (q.has('export')) document.documentElement.classList.add('export');
+  if (q.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau: nur die Bühne
+  if (q.get('auto') === '1') S.startAuto = true;                                   // Automatik beim Öffnen
   for (const k of ['feld', 'diag', 'phi']) if (q.get(k) === '1') S[k] = true;
   for (const k of ['form', 'rech', 'werte']) if (q.get(k) === '0') S[k] = false;
   if (q.has('qr')) S.qr = q.get('qr') !== '0';                 // ?qr=1: QR-Code gleich sichtbar (Beamer-Link)
@@ -1046,6 +1054,7 @@ reset();
 document.querySelectorAll('[data-n]').forEach((o) => o.setAttribute('aria-pressed', String(Number(o.dataset.n) === S.N)));
 for (const k of ['feld', 'diag', 'phi', 'form', 'rech', 'werte']) $('chk-' + k).checked = S[k];
 baueSkala(); baueDiagAchsen(); baueNotizen(); layout();
+if (S.startAuto) { AKTIONEN.autoAn(); S.benutzt = false; }        // ?auto=1: läuft gleich los, Hinweis „ziehen“ bleibt
 draw(); refreshText(true); refreshVals();
 requestAnimationFrame(frame);
 })();
