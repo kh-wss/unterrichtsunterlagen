@@ -1,146 +1,205 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap');
+/* ==========================================================
+   Prüfungs-Uhr
+   ========================================================== */
+
+/* Schrift Inter, lokal eingebunden (keine Anfrage an fremde Server).
+   Copyright 2016 The Inter Project Authors, SIL Open Font License 1.1 – siehe fonts/LICENSE.txt.
+   Fehlt die Datei, greift die Systemschrift. */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('fonts/inter-latin-wght-normal.woff2') format('woff2');
+}
+
+:root {
+    color-scheme: dark;
+
+    --bg: #0f172a;
+    --bar-bg: #1e293b;
+    --border: #334155;
+    --border-strong: #475569;
+    --text: #e2e8f0;
+    --text-strong: #f8fafc;
+    --value: #cbd5e1;
+    --label: #94a3b8;
+    --muted: #64748b;
+    --accent: #3b82f6;
+    --ended: #f87171;
+
+    /* ----- Größen -----
+       Volle Größe ab ca. 1375 × 950 px Fensterfläche. In kleineren Fenstern (z. B. Beamer
+       mit 1280 × 800) schrumpfen Werte, Abstände und Uhr gemeinsam, sodass alles ohne
+       Scrollen sichtbar bleibt.
+
+       --fit: Höhe, die sich auf Werte, Abstände und Uhr verteilt = Fensterhöhe abzüglich
+       der festen Anteile (Innenabstände, Steuerung). Bei voller Größe belegen diese Teile
+       zusammen 758.4 px; daher die Brüche unten. */
+    --fit: calc(100vh - 12rem);
+
+    /* Die vier Werte: höchstens 7.75rem. Drei Spalten mit dreistelliger Dauer sind 10.3-mal so breit. */
+    --value-size: max(1.75rem, min(7.75rem, calc((100vw - 6rem) / 10.3), calc(var(--fit) * 124 / 758.4)));
+    --label-size: max(0.65rem, calc(var(--value-size) * 24 / 124));  /* 1.5rem bei voller Größe */
+    --value-gap: calc(var(--value-size) * 112 / 124);                 /* 7rem bei voller Größe */
+
+    --clock-size: max(3rem, min(18rem, 22vw, calc(var(--fit) * 288 / 758.4)));
+    --status-size: max(0.8rem, min(clamp(1.15rem, 1.8vw, 1.6rem), calc(var(--fit) * 25.6 / 758.4)));
+}
+
+/* ===== Grundlagen ===== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 
 html {
-    height: 100%;
-    margin: 0;
-    background-color: #0f172a; /* verhindert weißen Hintergrund bei Overflow */
+    background-color: var(--bg); /* auch beim Überscrollen dunkel */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 body {
-    font-family: 'Inter', sans-serif;
-    background-color: #0f172a;
-    color: #e2e8f0;
-    overflow: hidden;
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh; /* berücksichtigt dynamische Browser-UI auf Mobilgeräten */
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    height: 100dvh; /* berücksichtigt dynamische Browser-UI auf Mobilgeräten */
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 500;
+    line-height: 1.5;
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+p,
+h1 {
     margin: 0;
+}
+
+button,
+input {
+    font: inherit;
+    color: inherit;
+    margin: 0;
+}
+
+button {
+    cursor: pointer;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* ===== Info-Leiste (oben) ===== */
 .info-bar {
-    background: #1e293b;
-    border-bottom: 1px solid #334155;
+    background: var(--bar-bg);
+    border-bottom: 1px solid var(--border);
     padding: 1.5rem 3rem;
-    flex-shrink: 0; /* bleibt immer in voller Größe sichtbar */
+    flex-shrink: 0;
 }
 
 .info-bar-inner {
     max-width: 100rem;
     margin: 0 auto;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 1.5rem;
 }
 
+/* Anfang, Dauer, Verbleibende Zeit in einer Zeile – Geplantes Ende darunter */
 .info-group-row {
-    display: flex;
-    gap: 7rem;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    gap: var(--value-gap);
 }
 
 .info-label {
-    font-size: clamp(1rem, 1.6vw, 1.5rem);
+    font-size: var(--label-size);
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: #94a3b8;
+    color: var(--label);
     margin-bottom: 0.4rem;
+    white-space: nowrap;
 }
 
-/* Anfang, Dauer, Verbleibende Zeit, Geplantes Ende: ca. halb so groß wie die Hauptuhr */
 .info-value {
-    font-size: clamp(1.75rem, 9.5vw, 7.75rem);
-    font-weight: 600;
+    font-size: var(--value-size);
+    font-weight: 700;
     line-height: 1;
-    color: #cbd5e1;
+    color: var(--value);
+    white-space: nowrap;
     font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
 }
 
 .info-value.highlight {
-    color: #3b82f6;
+    color: var(--accent);
+}
+
+/* Prüfungszeit abgelaufen */
+.info-value[data-phase="ended"] {
+    color: var(--ended);
 }
 
 .unit-text {
-    font-size: 0.3em; /* skaliert relativ zur Größe des jeweiligen info-value */
-    font-weight: 400;
-    color: #64748b;
+    font-size: 0.3em; /* skaliert mit der Größe des Werts */
+    font-weight: 500;
+    color: var(--muted);
     margin-left: 0.25rem;
 }
 
 /* ===== Hauptfokus: Aktuelle Uhrzeit ===== */
 .clock-container {
     flex: 1;
-    min-height: 0; /* erlaubt Schrumpfen im Flex-Layout */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    overflow: hidden;
     padding: 0.5rem;
-    padding-top: clamp(1rem, 3vh, 2.5rem); /* steuert direkt den Abstand zur Info-Leiste */
-}
-
-.clock-display {
-    font-size: clamp(4rem, 22vw, 18rem);
-    font-weight: 500;
-    line-height: 1;
-    color: #f8fafc;
-    letter-spacing: -0.02em;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
+    padding-top: clamp(1rem, 3vh, 2.5rem); /* Abstand zur Info-Leiste */
+    /* Bei Zeilenhöhe 1 ragt der (leere) Schriftkegel der Ziffern unten über die Zeile hinaus;
+       ohne Beschnitt entstünde dadurch ein Scrollbalken, obwohl alles sichtbar ist. */
+    overflow: clip;
 }
 
 .status-text {
-    color: #64748b;
-    font-weight: 500;
+    color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.3em;
-    font-size: clamp(1.15rem, 1.8vw, 1.6rem);
+    font-size: var(--status-size);
     margin-bottom: 1rem;
     text-align: center;
 }
 
-/* ===== Formularelemente ===== */
-input[type="number"], input[type="time"] {
-    background: #0f172a;
-    border: 1px solid #334155;
-    color: white;
-    padding: 0.4rem;
-    border-radius: 0.3rem;
-    font-size: 0.9rem;
+.clock-display {
+    font-size: var(--clock-size);
+    line-height: 1;
+    color: var(--text-strong);
+    letter-spacing: -0.02em;
+    text-align: center;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
-/* ===== Buttons ===== */
-.btn-ok {
-    background: #334155;
-    border: 1px solid #475569;
-    color: white;
-    padding: 0.4rem 1rem;
-    border-radius: 0.3rem;
-    font-weight: 600;
-    transition: all 0.2s;
-}
-
-.btn-ok:hover {
-    background: #475569;
-}
-
-.btn-reset {
-    color: #64748b;
-    font-size: 0.8rem;
-    text-decoration: underline;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-}
-
-/* ===== Steuerung Sichtbarkeit ===== */
-#controls {
+/* ===== Steuerung ===== */
+.controls {
     opacity: 0.1;
     transition: opacity 0.4s;
     display: flex;
@@ -149,22 +208,109 @@ input[type="number"], input[type="time"] {
     flex-wrap: wrap;
 }
 
-#controls:hover {
+.controls:hover,
+.controls:focus-within {
     opacity: 1;
 }
 
-/* ===== Kleine Bildschirme ===== */
-@media (max-width: 640px) {
+/* Geräte ohne Maus (Tablet, Handy) kennen kein Überfahren */
+@media (hover: none) {
+    .controls {
+        opacity: 0.6;
+    }
+}
+
+.control-field {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--label);
+}
+
+input[type="number"],
+input[type="time"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: white;
+    padding: 0.4rem;
+    border-radius: 0.3rem;
+    font-size: 0.9rem;
+}
+
+input[type="number"] {
+    width: 5rem;
+}
+
+.btn-ok {
+    background: var(--border);
+    border: 1px solid var(--border-strong);
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 0.3rem;
+    font-weight: 700;
+    transition: background-color 0.2s;
+}
+
+.btn-ok:hover:not(:disabled) {
+    background: var(--border-strong);
+}
+
+.btn-ok:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.btn-reset {
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-decoration: underline;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.noscript-hint {
+    padding: 1rem;
+    text-align: center;
+}
+
+/* ===== QR-Code in der Ecke unten rechts =====
+   Der QR-Baustein reserviert sonst am Seitenende einen Leerstreifen. Diese Seite füllt das
+   Fenster genau aus; stattdessen bleibt die Uhr schmal genug, um nicht unter den Code zu geraten
+   (die Uhr ist 4.27-mal so breit wie ihre Schriftgröße, der Code belegt rechts bis zu 6.5rem). */
+html.kh-qr-an body.exam-clock::after {
+    display: none;
+}
+
+html.kh-qr-an .clock-display {
+    font-size: min(var(--clock-size), calc((100vw - 13rem) / 4.27));
+}
+
+/* ===== Schmale Fenster (Handy, Tablet hochkant): Werte in zwei Spalten ===== */
+@media (max-width: 860px) {
+    :root {
+        --value-size: clamp(1.75rem, min(13vw, 11vh), 6rem);
+        --label-size: 0.7rem;
+        --clock-size: clamp(3rem, min(22vw, 34vh), 12rem);
+        --status-size: clamp(0.9rem, 1.8vw, 1.6rem);
+    }
     .info-bar {
         padding: 1rem 1.5rem;
     }
     .info-group-row {
-        gap: 2rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem 1.5rem;
+        width: 100%;
     }
-    .info-value {
-        font-size: clamp(1.3rem, 8vw, 3.5rem);
+    .info-label {
+        letter-spacing: 0.08em;
     }
-    .clock-display {
-        font-size: clamp(4rem, 26vw, 12rem);
+    /* Hier reicht die Uhr über die ganze Breite: kein Platz für den kleinen QR-Code */
+    body.exam-clock #kh-qr:not(.gross) {
+        display: none;
+    }
+    html.kh-qr-an .clock-display {
+        font-size: var(--clock-size);
     }
 }
