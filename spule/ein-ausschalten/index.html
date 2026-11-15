@@ -171,7 +171,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
 /* ===== Nur diese Animation (nach dem Normblock) =====
    Festlegung der Lehrkraft, 12.11.2026: Layout nach der Norm (v3, Skill animation-erstellen, references/layout.md) –
    nichts über der Bühne, Titel oben rechts in der Bühne, Bedienleiste in drei Zeilen darunter.
-   Abweichung (Festlegung der Lehrkraft, 12.11.2026): Handy hochkant mit eigener Anordnung (Bühne 710 × 1040 statt 16:9),
+   Abweichung (Festlegung der Lehrkraft, 12.11.2026): Handy hochkant mit eigener Anordnung (Bühne 710 × 1100 statt 16:9),
    sonst wären Schrift und Teilchen hochkant nur 4–6 px groß. Sonst gilt die Norm. */
 :root{ --u:#0070C0; --i:#FF0000; --b:#00B050; --neg:#d46b00; }           /* Größenfarben nach fachkonventionen 6 */
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --u:#4aa6ea; --i:#ff5757; --b:#2fcf78; --neg:#ffa630; } }
@@ -233,6 +233,8 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       <label class="chk" for="chk-diode"><input id="chk-diode" type="checkbox">Freilaufdiode</label>
     </div>
     <div class="row">                                   <!-- Zeile 3 · Ansicht, rechts außen Vollbild -->
+      <label class="chk" for="chk-pot"><input id="chk-pot" type="checkbox" checked>Potenzial</label>
+      <label class="chk" for="chk-stau"><input id="chk-stau" type="checkbox" checked>Elektronenstau (fachlich falsch)</label>
       <label class="chk" for="chk-diag"><input id="chk-diag" type="checkbox">Diagramm</label>
       <label class="chk" for="chk-form"><input id="chk-form" type="checkbox" checked>Formeln</label>
       <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox" checked>Berechnung</label>
@@ -244,7 +246,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       <summary>Tastatur und Bedienung</summary>
       <div class="hint">Den Schalter in der Grafik anklicken oder antippen. Elektronen (−) bewegen sich zwischen den Atomrümpfen (+); grün: Magnetfeld, blau: Spannungen, rot: Strom.<br>
         <kbd>Leertaste</kbd>, <kbd>Bild↓</kbd> oder <kbd>→</kbd> schaltet · <kbd>D</kbd> Freilaufdiode · <kbd>M</kbd> Momentanwerte · <kbd>P</kbd> Pause · <kbd>R</kbd> Zurücksetzen · <kbd>F</kbd> Vollbild, <kbd>Esc</kbd> beendet es.<br>
-        Adresse: <code>?szenario=fehler</code>, <code>?diode=1</code>, <code>?diagramm=1</code>, <code>?werte=0</code>, <code>?qr=1</code> (im Artifact <code>#fehlerfall</code>, <code>#diode</code>, <code>#diagramm</code>, <code>#ohnewerte</code>, <code>#qr</code>).</div>
+        Adresse: <code>?szenario=fehler</code>, <code>?diode=1</code>, <code>?diagramm=1</code>, <code>?werte=0</code>, <code>?potenzial=0</code>, <code>?stau=0</code>, <code>?qr=1</code> (im Artifact <code>#fehlerfall</code>, <code>#diode</code>, <code>#diagramm</code>, <code>#ohnewerte</code>, <code>#ohnepotenzial</code>, <code>#ohnestau</code>, <code>#qr</code>).</div>
     </details>
   </div>
 
@@ -280,6 +282,10 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       <li>Der Lichtbogen erlischt im Modell, wenn der Strom null wird. Abreißen beim Mindeststrom und erneutes Zünden sind weggelassen.</li>
       <li>Fehlerfall: <i>U</i> = 220&#8239;V Gleichspannung an einem Schalter ohne Gleichstrom-Bemessung. Der Brandverlauf ist qualitativ. Für Spulen in Steuerstromkreisen gilt die Gebrauchskategorie DC-13 nach DIN EN 60947-5-1.</li>
       <li>Freilaufdiode mit <i>U</i><sub>F</sub> = 0,7&#8239;V.</li>
+      <li><b>Magnetfeldlinien:</b> skizziert, nicht maßstäblich. Innen wie bei einer dicht gewickelten Spule mit <i>l</i>/<i>d</i> = 2,5: Zu den Enden hin laufen die Linien auseinander, dort ist <i>B</i> nur etwa halb so groß wie in der Mitte (<i>B</i><sub>Ende</sub>/<i>B</i><sub>Mitte</sub> = 0,53). Außen ist der Raum stark gestaucht: Neben der Spule ist <i>B</i> real nur 2 bis 4&#8239;% von <i>B</i> innen, die Linien laufen viel weiter außen herum. Mehr Linien bedeuten mehr <i>B</i>; zählen lässt sich daran nichts.</li>
+      <li><b>Potenzial (Farbe der Leiter):</b> Potenzial <i>φ</i> gegen den Minuspol der Quelle; hohe Potenziale rötlich (rosa über rot bis dunkelrot), niedrige bläulich (hellblau bis dunkelblau), fast weiß bei <i>U</i>/2. Die Skala ist gestaucht: Bei 24&#8239;V sind die Farben noch zart, kräftig werden sie erst bei Spannungen weit darüber (beim Öffnen einige hundert Volt). Das Feld im Leiter erzeugen winzige Ladungen an der Oberfläche; die Elektronendichte im Draht ändert sich dabei nicht sichtbar (Δ<i>N</i>/<i>N</i> ≈ 2·10⁻¹⁴ bei 24 V und 1 m Draht).</li>
+      <li><b>R<sub>Cu</sub> als Verengung:</b> In Wirklichkeit ist der Widerstand über den ganzen Spulendraht verteilt. In der Engstelle fließt derselbe Strom durch einen kleineren Querschnitt, darum sind die Elektronen dort schneller (<i>I</i> = <i>n</i> · <i>e</i> · <i>A</i> · <i>v</i>); dort fällt das Potenzial ab.</li>
+      <li><b>Elektronenstau (zuschaltbar): fachlich falsche Veranschaulichung.</b> Die Ladung sammelt sich nicht im Draht, sondern als Oberflächenladung auf den Kontaktflächen: <i>Q</i> = <i>C</i><sub>p</sub> · <i>u</i><sub>S</sub> = 100&#8239;pF · 350&#8239;V = 35&#8239;nC ≈ 2·10¹¹ Elektronen – verschwindend wenig gegen etwa 8·10²² freie Elektronen in 1&#8239;m Draht mit 1&#8239;mm².</li>
       <li>Auf dem Handy hochkant ist die Schaltung schmaler angeordnet: Spannungspfeile links der Spule, Legende unter der Schaltung. Inhalt und Werte sind dieselben.</li>
     </ul>
   </details>
@@ -307,27 +313,28 @@ const TOUCH = matchMedia('(hover: none)').matches;
    Formelzeichen an Pfeilen ≥ 30, Momentanwerte ≥ 36 – hier auf 1250 umgerechnet: ≥ 14, ≥ 20, ≥ 24). */
 const LAYOUTS = {
   quer: {W: 1250, H: 703, YT: 130, YB: 610, XL: 170, XC: 830, XD: 1205, PIVX: 430, SRCY: 400, RBOXCY: 220, COILYT: 310,
-    XARR: 1005, armSide: 1, DIODEY: 330,
+    XARR: 1005, armSide: 1, DIODEY: 370, DIODE: {w: 72, h: 56},   // Diode mittig im Zweig, Symbol größer (Festlegung der Lehrkraft, 15.11.2026)
     U: {ax: 242, lx: 256, ly: 410, align: 'left'},
     uS: {ay: 22, max: 330, lx: 364, ly: 31, align: 'right', noteRight: false},
     i: {cx: 500},
     iD: {cy: 535, max: 116, lx: 1160, ly: 584, align: 'right'},
-    diodeLbl: {x: 1175, y: 322, lines: ['Freilauf-', 'diode'], align: 'right'},
+    diodeLbl: {x: 1157, y: 363, lines: ['Freilauf-', 'diode'], align: 'right'},
     hud: {x: 214, y: 210}, note: {x: 214, y: 292, maxW: 450}, legend: {x: 40, y: 672},
     place: {SW: 1920, SH: 1080, s: 1.3, ox: 12, oy: 140},
+    potScale: {x: 1268, y: 290, h: 300},          // rechte Spalte unter dem QR-Code
     surplus: {x: 624, y: 104, align: 'left'}, deficit: {x: 364, y: 104, align: 'right'},
     hint: {x: 632, y: 104, align: 'left'},
     fs: {eq: 28, sym: 28, pol: 26, lbl: 17, small: 18, hud: 24, badge: 17, legend: 17}},
   hoch: {W: 710, H: 826, YT: 200, YB: 790, XL: 70, XC: 470, XD: 662, PIVX: 180, SRCY: 690, RBOXCY: 330, COILYT: 430,
-    XARR: 300, armSide: -1, DIODEY: 250,
+    XARR: 300, armSide: -1, DIODEY: 495, DIODE: {w: 60, h: 46},   // schmaler: links liegt der Rahmen „reale Spule“
     U: {ax: 140, lx: 154, ly: 700, align: 'left'},
     uS: {ay: 72, max: 300, lx: 290, ly: 42, align: 'center', noteRight: true},
     i: {cx: 295},
     iD: {cy: 700, max: 110, lx: 617, ly: 762, align: 'right'},
-    diodeLbl: {x: 632, y: 254, lines: ['Freilaufdiode'], align: 'right'},
-    hud: null, note: {x: 20, y: 946, maxW: 670}, legend: {x: 20, y: 850, rows: true},
+    diodeLbl: {x: 701, y: 392, lines: ['Freilaufdiode'], align: 'center', rot: true},   // hochkant links kein Platz (Rahmen und Feldlinien): senkrecht am rechten Rand, von rechts lesbar
+    hud: null, note: {x: 20, y: 1004, maxW: 670}, legend: {x: 20, y: 850, rows: true}, potScale: null,
     // Abweichung von der Norm (Festlegung der Lehrkraft, 12.11.2026): eigene Bühnenform hochkant, Titel oben, Legende unten
-    place: {SW: 710, SH: 1040, s: 1, ox: 0, oy: 56},
+    place: {SW: 710, SH: 1100, s: 1, ox: 0, oy: 56},
     surplus: {x: 374, y: 172, align: 'left'}, deficit: {x: 92, y: 282, align: 'left', size: 19},
     hint: {x: 378, y: 150, align: 'left'},
     fs: {eq: 32, sym: 32, pol: 30, lbl: 21, small: 20, hud: 0, badge: 0, legend: 19}}
@@ -340,6 +347,11 @@ let PL = null;   // Lage der Schaltung in der Bühne: Bühne SW × SH, Maßstab 
 let W, H, YT, YB, XL, XC, XD, PIV, FACE_X, SRC, COIL, RBOX, HOUS, L1, XARR, YM, G, FS, DL = DIAGS.quer;
 let MAIN_UP, MAIN_LEN, COIL_PATH, DIODE_PATH, coilRuns = [], SEG = null, SP = 16, layoutName = '';
 let NET_COIL = null, sW0 = 0, sW1 = 0, ION_CACHE = [[], []], COIL_IONS = [];
+/* R_Cu als Verengung (Festlegung der Lehrkraft, 13.11.2026): Leiter schmaler (BWR statt BW), Übergänge über TP.
+   In der Engstelle fließt derselbe Strom durch einen kleineren Querschnitt: I = n · e · A · v → v um BW / BWR größer,
+   Abstand der Elektronen ebenso (gleiche Dichte n). Elektronen links, Atomrümpfe rechts in der Engstelle (je eine Spur). */
+const BWR = 20, TP = 14, LANE = 4.5, KR = BW / BWR;
+let RZ = null, COIL_SIG = null;
 
 function mkPath(pts) {
   let s = 0; const P = [];
@@ -375,7 +387,7 @@ function setLayout(name) {
   PIV = {x: g.PIVX, y: YT}; FACE_X = PIV.x + BLADE;
   SRC = {x: XL, y: g.SRCY, r: 44};
   COIL = {R: 46, E: 9, yt: g.COILYT, yb: g.COILYT + 230, N: 4};
-  RBOX = {cy: g.RBOXCY, w: 62, h: 90};
+  RBOX = {cy: g.RBOXCY, w: 62, h: 104};   // Rechteck R_Cu bleibt um die Verengung (Festlegung der Lehrkraft, 13.11.2026)
   HOUS = {x: PIV.x - 52, y: YT - 86, w: 236, h: 138};
   L1 = XC - FACE_X;                      // Weg vom Knoten oben bis zur Kontaktfläche
   XARR = g.XARR;                         // x der Spannungspfeile an R_Cu und L
@@ -408,8 +420,19 @@ function setLayout(name) {
   NET_COIL = {bottom: CP_.slice(iw0, iw0 + KJ), top: CP_.slice(iw1 - KJ + 1, iw1 + 1).reverse()};
   coilRuns[0].pts = coilRuns[0].pts.slice(KJ / 2);
   const lr = coilRuns[coilRuns.length - 1]; lr.pts = lr.pts.slice(0, lr.pts.length - KJ / 2);
+  // Verengung R_Cu auf der Zuleitung zwischen oberem Leiter und Wicklung: t0 … t1 Übergang, t1 … b1 eng, b1 … b0 Übergang
+  RZ = {t0: RBOX.cy - RBOX.h / 2 + 6, t1: RBOX.cy - RBOX.h / 2 + 6 + TP, b1: RBOX.cy + RBOX.h / 2 - 6 - TP, b0: RBOX.cy + RBOX.h / 2 - 6};   // ganz im Rechteck
+  // Elektronen der Wicklung gleichmäßig in σ verteilt; in der Engstelle ds/dσ = KR (schneller, weiter auseinander)
+  {
+    const Lc = COIL_PATH.len, sOfY = y => Lc - (y - YT);
+    const sa = sOfY(RZ.b0), sb = sOfY(RZ.b1), sc = sOfY(RZ.t1), sd = sOfY(RZ.t0);
+    const f = x => x < sa || x > sd ? 1 : x < sb ? 1 + (KR - 1) * (x - sa) / (sb - sa) : x <= sc ? KR : 1 + (KR - 1) * (sd - x) / (sd - sc);
+    const NT = Math.ceil(Lc), tab = new Float64Array(NT + 1);
+    for (let i = 1; i <= NT; i++) tab[i] = tab[i - 1] + Math.min(1, Lc - (i - 1)) / f(i - 0.5);
+    COIL_SIG = {Lc, NT, tab, total: tab[NT], sa, sb, sc, sd};
+  }
   const old = SEG;
-  SEG = {main: mkSeg(MAIN_LEN), coil: mkSeg(COIL_PATH.len), diode: mkSeg(DIODE_PATH.len)};
+  SEG = {main: mkSeg(MAIN_LEN), coil: mkSeg(COIL_SIG.total), diode: mkSeg(DIODE_PATH.len)};
   if (old) for (const k of ['main', 'coil', 'diode']) SEG[k].ph = old[k].ph / old[k].len * SEG[k].len;
   SP = SEG.main.sp;
   buildIons();
@@ -422,7 +445,8 @@ function setLayout(name) {
 function netLines() {
   const L = [
     [{x: PIV.x, y: YT}, {x: XL, y: YT}, {x: XL, y: YB}, {x: XC, y: YB}, ...NET_COIL.bottom],
-    [{x: FACE_X, y: YT}, {x: XC, y: YT}, ...NET_COIL.top]
+    [{x: FACE_X, y: YT}, {x: XC, y: YT}, {x: XC, y: RZ.t0}],
+    [{x: XC, y: RZ.b0}, ...NET_COIL.top]
   ];
   if (diodeOn) L.push([{x: XC, y: YT}, {x: XD, y: YT}, {x: XD, y: YB}, {x: XC, y: YB}]);
   return L;
@@ -462,14 +486,19 @@ function buildIons() {
   // ohne Diode: zwei Leiterzüge mit Ecken
   ION_CACHE[0] = [
     ...ionRows([{x: PIV.x - 16, y: YT}, {x: XL, y: YT}, {x: XL, y: YB}, {x: XC, y: YB}, {x: XC, y: yBot}], g, sp),
-    ...ionRows([{x: FACE_X + 24, y: YT}, {x: XC, y: YT}, {x: XC, y: yTop}], g, sp)
+    ...ionRows([{x: FACE_X + 24, y: YT}, {x: XC, y: YT}, {x: XC, y: RZ.t0 - 2}], g, sp),
+    ...ionRows([{x: XC, y: RZ.b0 + 2}, {x: XC, y: yTop}], g, sp)
   ];
   // mit Diode: äußerer Ring über die Diode, Zuleitungen der Spule als Abzweige (T-Stücke)
   ION_CACHE[1] = [
     ...ionRows([{x: PIV.x - 16, y: YT}, {x: XL, y: YT}, {x: XL, y: YB}, {x: XD, y: YB}, {x: XD, y: YT}, {x: FACE_X + 24, y: YT}], g, sp),
-    ...ionRows([{x: XC, y: YT + g + 9}, {x: XC, y: yTop}], g, sp),
+    ...ionRows([{x: XC, y: YT + g + 9}, {x: XC, y: RZ.t0 - 2}], g, sp),
+    ...ionRows([{x: XC, y: RZ.b0 + 2}, {x: XC, y: yTop}], g, sp),
     ...ionRows([{x: XC, y: YB - g - 9}, {x: XC, y: yBot}], g, sp)
   ];
+  const rz = [];
+  for (let y = RZ.t1 + 10; y < RZ.b1 - 4; y += 16 * KR) rz.push({x: XC + LANE, y});
+  ION_CACHE[0].push(...rz); ION_CACHE[1].push(...rz);
   // Wicklung: entlang der Schraubenlinie, abwechselnd links und rechts
   COIL_IONS = [];
   let side = 1;
@@ -477,6 +506,23 @@ function buildIons() {
     const q = at(COIL_PATH, d);
     COIL_IONS.push({x: q.x + q.nx * g * side, y: q.y + q.ny * g * side, back: q.back}); side = -side;
   }
+}
+// σ (gleichmäßiger Abstand der Elektronen) → Weg s auf der Wicklung, dazu die Spur in der Engstelle
+function sOfSigma(sg) {
+  const T_ = COIL_SIG.tab; let lo = 0, hi = COIL_SIG.NT;
+  if (sg <= 0) return 0; if (sg >= T_[hi]) return COIL_SIG.Lc;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (T_[m] <= sg) lo = m; else hi = m; }
+  return lo + (sg - T_[lo]) / ((T_[hi] - T_[lo]) || 1);
+}
+function laneOff(x) {
+  const {sa, sb, sc, sd} = COIL_SIG;
+  if (x <= sa || x >= sd) return 0;
+  const t = x < sb ? smooth(sa, sb, x) : x <= sc ? 1 : 1 - smooth(sc, sd, x);
+  return -LANE * t;
+}
+function coilPos(sg) {
+  const s = sOfSigma(sg), q = at(COIL_PATH, s), o = laneOff(s);
+  return {x: q.x + q.nx * o, y: q.y + q.ny * o, back: q.back};
 }
 function bladeIons() {
   const c = Math.cos(st.alpha), sn = Math.sin(st.alpha);
@@ -493,6 +539,9 @@ const K_SLOW = 1 / 16, K_ARC = 1 / 80;
 const V0 = 40, NPZ = 12, DZ = NPZ * 16, IGN_T = 1.0, BURN_T = 9;   // DZ: Länge des Staus bis zur Zündung (Bühnenpixel), unabhängig von der Anordnung
 
 let scenario = 'normal', P = null, diodeOn = false, tempo = 1, paused = false, showDiag = false, showForm = true;
+// Potenziale als Farbe der Leiter; Elektronenstau als zuschaltbare, fachlich falsche Veranschaulichung
+// (Festlegungen der Lehrkraft, 13.11.2026, zum Testen: Potenzial beim Öffnen an, Stau aus)
+let showPot = true, showStau = true;   // Stau beim Öffnen an (Festlegung der Lehrkraft, 13.11.2026, 09:09)
 // Formeln, Berechnung und Momentanwerte einzeln ausblendbar, beim Öffnen an (Festlegung der Lehrkraft, 12.11.2026, Animation I).
 // Ohne Momentanwerte zeigen die Beschriftungen in der Bühne nur das Formelzeichen; gegebene Werte (U = 24 V) bleiben.
 let showRech = true, showWerte = true;
@@ -810,9 +859,93 @@ function strokePts(pts, w, col, cap = 'round') {
   for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k].x, pts[k].y);
   ctx.lineWidth = w; ctx.strokeStyle = col; ctx.lineCap = cap; ctx.lineJoin = 'round'; ctx.stroke();
 }
-function band(pts, w, back, cap = 'butt') {
+function band(pts, w, back, cap = 'butt', fill = null) {
   strokePts(pts, w + 4, back ? rgba(T['cu-edge'], 0.45) : T['cu-edge'], 'butt');
-  strokePts(pts, w, back ? T['cu-back'] : T.cu, cap);
+  strokePts(pts, w, fill || (back ? T['cu-back'] : T.cu), cap);
+}
+/* Potenzial φ gegen den Minuspol der Quelle (Bezug 0 V) als Farbe der Leiterfläche
+   Festlegungen der Lehrkraft, 13.11.2026: „je größer das Potenzial, desto intensiver die Hintergrundfarbe“;
+   „hohe Potenziale rötlicher (rosa bis rot), niedrigere bläulicher (hellblau bis dunkelblau)“;
+   „vollen Farbumfang erst bei Spannungen ≫ 24 V ausschöpfen“.
+   Umsetzung: Abstand Δφ = φ − U/2 (Mitte der Quellenspannung fast weiß), gestaucht (logarithmisch):
+   t = sgn(Δφ) · ln(1 + |Δφ| / U0) / ln(1 + Umax / U0) mit U0 = 5 V, Umax = 400 V.
+   Normalfall: Pluspol (+24 V) zartes Rosa, Minuspol (0 V) zartes Hellblau (|t| ≈ 0,28); beim Öffnen −160 … −330 V
+   kräftiges Dunkelblau (|t| ≈ 0,8 … 0,96). Annahmen: Mitte bei U/2, U0 und Umax.
+   Neue Farbzuordnung – in fachkonventionen nachtragen; Rot kollidiert mit der Farbe des Stroms (FF0000), darum Karminrot. */
+// Rot endet so dunkel wie Blau (Helligkeit L* ≈ 26 an beiden Enden; Festlegung der Lehrkraft, 13.11.2026: „das Rot muss auch dunkler werden“)
+const POT_STUFEN = [[-1, '#163c84'], [-0.55, '#3f7fcf'], [-0.25, '#aed0f0'], [0, '#f3f1f4'], [0.25, '#f5bccb'], [0.55, '#e45a75'], [0.78, '#c0102c'], [1, '#7d0a1e']];
+const POT_U0 = 5, POT_UMAX = 400;
+function potT(phi) {
+  const d = phi - P.U / 2;
+  return Math.sign(d) * Math.min(1, Math.log(1 + Math.abs(d) / POT_U0) / Math.log(1 + POT_UMAX / POT_U0));
+}
+function potentials() { const A = P.U - st.uS; return {P: P.U, A, J: A - st.uR}; }
+function potCol(phi, back = false) {
+  const t = potT(phi);
+  let k = 0; while (k < POT_STUFEN.length - 2 && t > POT_STUFEN[k + 1][0]) k++;
+  const [t0, c0] = POT_STUFEN[k], [t1, c1] = POT_STUFEN[k + 1];
+  const A_ = hex2rgb(c0), B_ = hex2rgb(c1), u = (t - t0) / (t1 - t0);
+  let rgb = A_.map((v, i) => v + (B_[i] - v) * u);
+  if (back) rgb = rgb.map(v => v + (255 - v) * 0.55);   // Rückseite der Wicklung blasser
+  return `rgb(${rgb.map(Math.round).join(',')})`;
+}
+// Farbverlauf der Skala von φ = a bis φ = b (in Vielfachen von U) auf eine Strecke legen
+// Verlauf der Skala von t = a bis t = b (t wie in potT) auf eine Strecke legen
+function potGradient(x0, y0, x1, y1, a, b) {
+  const g = ctx.createLinearGradient(x0, y0, x1, y1);
+  for (let i = 0; i <= 24; i++) { const f = i / 24, t = a + (b - a) * f; g.addColorStop(f, potColT(t)); }
+  return g;
+}
+function potColT(t) {
+  let k = 0; while (k < POT_STUFEN.length - 2 && t > POT_STUFEN[k + 1][0]) k++;
+  const [t0, c0] = POT_STUFEN[k], [t1, c1] = POT_STUFEN[k + 1];
+  const A_ = hex2rgb(c0), B_ = hex2rgb(c1), u = (t - t0) / (t1 - t0);
+  return `rgb(${A_.map((v, i) => Math.round(v + (B_[i] - v) * u)).join(',')})`;
+}
+const potMarken = () => scenario === 'fault' ? [220, 110, 0, -130] : [24, 0, -50, -300];   // beschriftete Werte der Skala
+// Umriss der Verengung R_Cu; grow: Zugabe je Seite (Rand)
+function rzShape(grow, fill) {
+  const h0 = BW / 2 + grow, h1 = BWR / 2 + grow, {t0, t1, b1, b0} = RZ;
+  ctx.beginPath();
+  ctx.moveTo(XC - h0, t0); ctx.lineTo(XC - h1, t1); ctx.lineTo(XC - h1, b1); ctx.lineTo(XC - h0, b0);
+  ctx.lineTo(XC + h0, b0); ctx.lineTo(XC + h1, b1); ctx.lineTo(XC + h1, t1); ctx.lineTo(XC + h0, t0); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+}
+// Wicklung: Potenzial fällt längs des Drahts linear von φ_J (oben) auf 0 (unten) → Verlauf in y
+function coilFill(ph, back) {
+  const g = ctx.createLinearGradient(0, COIL.yb + COIL.E, 0, COIL.yt + COIL.E);
+  g.addColorStop(0, potCol(0, back)); g.addColorStop(1, potCol(ph.J, back));
+  return g;
+}
+// feste Leitungen: erst alle Ränder, dann die Flächen – einfarbig Kupfer oder nach Potenzial
+function drawNet() {
+  const lines = netLines();
+  for (const pts of lines) strokePts(pts, BW + 4, T['cu-edge'], 'butt');
+  rzShape(2, T['cu-edge']);
+  if (!showPot) { for (const pts of lines) strokePts(pts, BW, T.cu, 'butt'); rzShape(0, T.cu); return; }
+  const ph = potentials(), DY = G.DIODEY;
+  const parts = [
+    [[{x: PIV.x, y: YT}, {x: XL, y: YT}, {x: XL, y: SRC.y}], ph.P],
+    [[{x: XL, y: SRC.y}, {x: XL, y: YB}, {x: XC, y: YB}, ...NET_COIL.bottom], 0],
+    [[{x: FACE_X, y: YT}, {x: XC, y: YT}, {x: XC, y: RZ.t0}], ph.A],
+    [[{x: XC, y: RZ.b0}, ...NET_COIL.top], ph.J]
+  ];
+  if (diodeOn) parts.push([[{x: XC, y: YT}, {x: XD, y: YT}, {x: XD, y: DY}], ph.A], [[{x: XD, y: DY}, {x: XD, y: YB}, {x: XC, y: YB}], 0]);
+  for (const [pts, phi] of parts) strokePts(pts, BW, potCol(phi), 'butt');
+  const g = ctx.createLinearGradient(0, RZ.t1, 0, RZ.b1);
+  g.addColorStop(0, potCol(ph.A)); g.addColorStop(1, potCol(ph.J));
+  rzShape(0, g);
+}
+// Farbskala des Potenzials: quer rechts neben der Schaltung, hochkant als Zeile in der Legende
+function drawPotScale() {
+  if (!showPot || !G.potScale) return;
+  const {x, y, h} = G.potScale, w = 22, f = FS.lbl;
+  const g = potGradient(0, y, 0, y + h, 1, -1);
+  sym(x, y - 34, 'φ', '', T.fg, FS.sym - 2); txt(x + 22, y - 34, '(Bezug: −Pol)', T.muted, f, 500);
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h); ctx.strokeStyle = T.muted; ctx.lineWidth = 1; ctx.strokeRect(x, y, w, h);
+  const lbl = (yy, s) => { ctx.strokeStyle = T.muted; ctx.beginPath(); ctx.moveTo(x + w, yy); ctx.lineTo(x + w + 6, yy); ctx.stroke(); txt(x + w + 10, yy + f * 0.35, s, T.fg, f, 600); };
+  for (const v of potMarken()) lbl(y + h * (1 - potT(v)) / 2, (v > 0 ? '+' : v < 0 ? '−' : '') + fmtG(Math.abs(v), 'V'));
+  txt(x, y + h + f + 14, 'Skala gestaucht', T.muted, f - 1, 500, 'left', true);
 }
 // mehrere Polylinien als ein Leiter: erst alle Ränder, dann alle Füllungen → Ecken und Abzweige ohne Naht
 function bandGroup(lines) {
@@ -891,9 +1024,19 @@ function qArrow(o) {
 /* ================= Feldlinien ================= */
 const NLEV = 6; // Feldlinien je Seite bei vollem Strom
 const FIELD_SETS = Array.from({length: NLEV + 1}, (_, n) => Array.from({length: n}, (_, k) => 4 + (k + 0.5) * 36 / n));
+// Feldbild B, Stufe Q (skizziert nach Rechnung), Prüfung nach feldbilder-darstellen 15.11.2026:
+// innen wie bei einer dicht gewickelten Spule (l/d = 2,5): Linien laufen zu den Enden auseinander, r(z) = a·√(B(0)/B(z))
+// (Fluss je Linie bleibt gleich; B_Ende/B_Mitte = 0,53, Aufweitung 1,37); geprüft gegen die Flussfunktion psi = r·A_phi.
+// außen gestaucht: Rückkehrradius real 3,4 R … > 60 R, gezeichnet logarithmisch 72 … 137 (Abstand wächst nach außen).
+const FAN_MAX = 43;                                   // äußere Linien bleiben in der Stirnfläche (real treten sie seitlich aus)
+function bAchse(z) { const h = (COIL.yb - COIL.yt) / 2, R = COIL.R; return (h + z) / Math.hypot(h + z, R) + (h - z) / Math.hypot(h - z, R); }
+function fanR(a, z) {
+  const m = FAN_MAX - a, x = a * (Math.sqrt(bAchse(0) / bAchse(z)) - 1);
+  return a + m * Math.tanh(x / m);
+}
 function loopGeo(a, side) {
-  const h = 62 - 1.0 * a, w = 100 - 1.6 * a;
-  return {xa: XC + side * a, xo: XC + side * (COIL.R + w), h};
+  const h = 62 - 1.0 * a, hz = (COIL.yb - COIL.yt) / 2, re = fanR(a, hz), sl = (re - fanR(a, hz - 2)) / 2;
+  return {xa: XC + side * re, xo: XC + side * (72 + 39 * Math.log(37 / a)), h, sl: side * sl};
 }
 function fieldWeights(ratio) {
   const lam = NLEV * clamp(ratio, 0, 1), n = Math.floor(lam), fr = lam - n;
@@ -911,8 +1054,8 @@ function bez(p0, p1, p2, p3, t) {
 function loopCtrl(g) {
   const yt = COIL.yt, yb = COIL.yb;
   return {
-    c1: [{x: g.xa, y: yt}, {x: g.xa, y: yt - 1.3 * g.h}, {x: g.xo, y: yt - 1.3 * g.h}, {x: g.xo, y: YM}],
-    c2: [{x: g.xo, y: YM}, {x: g.xo, y: yb + 1.3 * g.h}, {x: g.xa, y: yb + 1.3 * g.h}, {x: g.xa, y: yb}]
+    c1: [{x: g.xa, y: yt}, {x: g.xa + g.sl * 1.3 * g.h, y: yt - 1.3 * g.h}, {x: g.xo, y: yt - 1.3 * g.h}, {x: g.xo, y: YM}],
+    c2: [{x: g.xo, y: YM}, {x: g.xo, y: yb + 1.3 * g.h}, {x: g.xa + g.sl * 1.3 * g.h, y: yb + 1.3 * g.h}, {x: g.xa, y: yb}]
   };
 }
 // Pfeilspitze an (x, y) in Richtung (dx, dy)
@@ -942,9 +1085,13 @@ function drawFieldInterior(ws) {
   ctx.lineWidth = 2.2;
   for (const [n, w] of ws) {
     for (const a of FIELD_SETS[n]) for (const side of [1, -1]) {
-      const x = XC + side * a;
       ctx.strokeStyle = rgba(T.b, 0.95 * w);
-      ctx.beginPath(); ctx.moveTo(x, COIL.yb); ctx.lineTo(x, COIL.yt); ctx.stroke();
+      ctx.beginPath();
+      for (let k = 0; k <= 46; k++) {
+        const y = COIL.yb - (COIL.yb - COIL.yt) * k / 46, x = XC + side * fanR(a, YM - y);
+        if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      }
+      ctx.stroke();
     }
   }
 }
@@ -953,7 +1100,8 @@ function drawFieldInteriorArrows(ws) {
   const pitch = (COIL.yb - COIL.yt) / COIL.N, y0 = COIL.yb + COIL.E - 1.5 * pitch;
   for (const [n, w] of ws) {
     FIELD_SETS[n].forEach((a, k) => { for (const side of [1, -1]) {
-      chevron(XC + side * a, y0 - (k % 3) * pitch, 0, -1, rgba(T.b, w));
+      const y = y0 - (k % 3) * pitch, z = YM - y;
+      chevron(XC + side * fanR(a, z), y, side * (fanR(a, z + 1) - fanR(a, z)), -1, rgba(T.b, w));
     } });
   }
 }
@@ -1008,7 +1156,8 @@ function drawScene() {
   const ws = fieldWeights(st.iL / P.I0);
 
   // Rahmen reale Spule
-  const fx = XC - 154, fy = RBOX.cy - RBOX.h / 2 - 13, fw = 312, fh = COIL.yb + 58 - fy;
+  // Rahmen ±150 statt ±154: hochkant hat die größere Diode so Abstand (15.11.2026)
+  const fx = XC - 150, fy = RBOX.cy - RBOX.h / 2 - 13, fw = 300, fh = COIL.yb + 58 - fy;
   ctx.save(); ctx.setLineDash([8, 6]); ctx.strokeStyle = T.muted; ctx.lineWidth = 1.8;
   ctx.strokeRect(fx, fy, fw, fh); ctx.restore();
   txt(fx + 8, fy + FS.small + 6, 'reale Spule', T.muted, FS.small, 600);
@@ -1029,9 +1178,11 @@ function drawScene() {
   ctx.fillStyle = T.panel; ctx.beginPath(); ctx.arc(SRC.x, SRC.y, SRC.r, 0, Math.PI * 2); ctx.fill();
 
   // Wicklung hinten mit ihren Teilchen
-  for (const r of coilRuns) if (r.back) band(r.pts, BW, true, 'round');
+  const PH = showPot ? potentials() : null;
+  const cfB = PH ? coilFill(PH, true) : null, cfF = PH ? coilFill(PH, false) : null;
+  for (const r of coilRuns) if (r.back) band(r.pts, BW, true, 'round', cfB);
   const cs = SEG.coil, coilE = [];
-  for (let j = 0; j < cs.n; j++) coilE.push(at(COIL_PATH, streamS(cs, j)));
+  for (let j = 0; j < cs.n; j++) coilE.push(coilPos(streamS(cs, j)));
   for (const q of COIL_IONS) if (q.back) sprite(SPR.ion, q.x, q.y, 0.4);
   for (const p of coilE) if (p.back) sprite(SPR.el, p.x, p.y, 0.4);
 
@@ -1039,9 +1190,9 @@ function drawScene() {
   drawFieldInterior(ws);
 
   // Leiter vorn: feste Leitungen als ein Stück (saubere Ecken und Abzweige), dann Wicklung vorn, dann Schaltklinge
-  bandGroup(netLines());
-  for (const r of coilRuns) if (!r.back) band(r.pts, BW, false, 'round');
-  band([down.P[0], down.P[1]], BW - 4, false);
+  drawNet();
+  for (const r of coilRuns) if (!r.back) band(r.pts, BW, false, 'round', cfF);
+  band([down.P[0], down.P[1]], BW - 4, false, 'butt', PH ? potCol(PH.P) : null);
 
   // Kontakte (Silber), darauf der Ruß; die Teilchen bleiben darüber sichtbar, solange Strom fließt
   drawPads(tip);
@@ -1058,8 +1209,9 @@ function drawScene() {
   // Elektronen Hauptkreis
   const arc = arcing ? arcPath() : null;
   let D = st.D, Pn = pileCount(D), Lp = pileLen(Pn);
+  if (!showStau) { D = 0; Pn = 0; Lp = 0; }      // ohne Stau: Ladung sitzt unsichtbar klein auf den Kontaktflächen
   const useArcMask = st.phase === 'arc' || st.phase === 'ignite';
-  const ignSet = st.phase === 'ignite' && st.ign ? st.ign.set : null;
+  const ignSet = showStau && st.phase === 'ignite' && st.ign ? st.ign.set : null;
   if (ignSet) { D = st.ign.Dnew; Lp = st.ign.LpNew; }
   const onArc = [];
   for (let j = 0; j < ms.n; j++) {
@@ -1070,10 +1222,13 @@ function drawScene() {
       if (m === 1) continue;
       if (m === 2) { onArc.push(arcPoint(arc, (s - (L1 - W2)) / (2 * W2))); continue; }
     }
-    const p = atMain(s); sprite(SPR.el, p.x, p.y);
+    const p = atMain(s);
+    // ohne Stau: Elektronen tauchen an der Kontaktfläche ab bzw. an der Klinge auf (weich ein- und ausblenden)
+    const fade = openVis && !showStau && !useArcMask ? clamp((Math.abs(s - L1) - 8) / 14, 0, 1) : 1;
+    sprite(SPR.el, p.x, p.y, fade);
   }
-  // Stau am festen Kontakt
-  if (openVis) {
+  // Stau am festen Kontakt (zuschaltbar, fachlich falsche Veranschaulichung)
+  if (openVis && showStau) {
     if (st.phase === 'ignite' && st.ign) {
       for (let k2 = 0; k2 < st.ign.Pnew; k2++) { const q = pileSlotPos(k2); sprite(SPR.el, q.x, q.y); }
       const fadeA = 1 - clamp(st.ignT / 0.5, 0, 1);
@@ -1092,7 +1247,7 @@ function drawScene() {
   txt(SRC.x + 30, SRC.y - SRC.r - 8, '+', T.fg, FS.pol, 700);
   txt(SRC.x + 30, SRC.y + SRC.r + FS.pol, '−', T.fg, FS.pol, 700);
   ctx.strokeStyle = T.fg; ctx.lineWidth = 2.6;
-  ctx.strokeRect(XC - RBOX.w / 2, RBOX.cy - RBOX.h / 2, RBOX.w, RBOX.h);
+  ctx.strokeRect(XC - RBOX.w / 2, RBOX.cy - RBOX.h / 2, RBOX.w, RBOX.h);   // Schaltzeichen R um die Verengung
   if (diodeOn) drawDiode();
   // Drehpunkt
   ctx.fillStyle = T.pad; ctx.strokeStyle = T['pad-edge']; ctx.lineWidth = 1.5;
@@ -1119,7 +1274,11 @@ function drawScene() {
   // Beschriftung der Bauteile
   sym(XC - COIL.R - 24, COIL.yt + 8, 'L', '', T.fg, FS.sym, 'right');
   sym(XC - RBOX.w / 2 - 10, RBOX.cy + 9, 'R', 'Cu', T.fg, FS.sym - 2, 'right');
-  if (diodeOn) G.diodeLbl.lines.forEach((l, k) => txt(G.diodeLbl.x, G.diodeLbl.y + k * (FS.lbl + 3), l, T.fg, FS.lbl, 600, G.diodeLbl.align));
+  if (diodeOn) {
+    const D = G.diodeLbl;
+    if (D.rot) { ctx.save(); ctx.translate(D.x, D.y); ctx.rotate(-Math.PI / 2); txt(0, 0, D.lines.join(''), T.fg, FS.lbl, 600, D.align); ctx.restore(); }
+    else D.lines.forEach((l, k) => txt(D.x, D.y + k * (FS.lbl + 3), l, T.fg, FS.lbl, 600, D.align));
+  }
 
   // Zählpfeile
   drawArrows();
@@ -1129,6 +1288,7 @@ function drawScene() {
 
   // Legende und Anzeige
   drawLegend();
+  drawPotScale();
   drawHud();
 
   if (st.flash > 0) { ctx.fillStyle = rgba('#ffffff', 0.55 * st.flash); ctx.fillRect(0, 0, W, H); }
@@ -1218,8 +1378,8 @@ function sootOver(tip) {
   for (const p of FX.drops) { ctx.fillStyle = rgba('#ff9a2a', clamp(p.life, 0.2, 1)); ctx.beginPath(); ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2); ctx.fill(); }
 }
 function drawDiode() {
-  const cy = G.DIODEY, w = 46, h = 36;
-  ctx.fillStyle = rgba(T.panel, 0.55); ctx.strokeStyle = T.fg; ctx.lineWidth = 2.6;
+  const cy = G.DIODEY, {w, h} = G.DIODE;
+  ctx.fillStyle = rgba(T.panel, 0.55); ctx.strokeStyle = T.fg; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(XD - w / 2, cy + h / 2); ctx.lineTo(XD + w / 2, cy + h / 2); ctx.lineTo(XD, cy - h / 2); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(XD - w / 2, cy - h / 2); ctx.lineTo(XD + w / 2, cy - h / 2); ctx.stroke();
 }
@@ -1334,7 +1494,21 @@ function drawLegend() {
   x += sym(x, y, 'B', '', T.b, f + 3) + gap;
   if (rows) { x = G.legend.x; y += lh; }
   arrowLine(x + 30, y - 5, x, y - 5, T.i, 2.8, 11, 5.5); x += 40;
-  if (rows) { txt(x, y, 'Strompfeil: technische Stromrichtung', T.muted, f, 500); txt(x, y + lh, '(Elektronen fließen entgegengesetzt)', T.muted, f, 500); }
+  if (rows) {
+    txt(x, y, 'Strompfeil: technische Stromrichtung', T.muted, f, 500); txt(x, y + lh, '(Elektronen fließen entgegengesetzt)', T.muted, f, 500);
+    if (showPot) {                                   // Potenzial-Skala als vierte Zeile
+      x = G.legend.x; y += 2 * lh;
+      x += sym(x, y, 'φ', '', T.fg, f + 3) + 8;
+      x += txt(x, y, '(Bezug: −Pol)', T.muted, f, 500) + 14;
+      const bw = 330, g = potGradient(x, 0, x + bw, 0, -1, 1);
+      ctx.fillStyle = g; ctx.fillRect(x, y - f * 0.8, bw, f); ctx.strokeStyle = T.muted; ctx.lineWidth = 1; ctx.strokeRect(x, y - f * 0.8, bw, f);
+      for (const v of potMarken()) {
+        const xx = x + bw * (1 + potT(v)) / 2;
+        ctx.beginPath(); ctx.moveTo(xx, y + f * 0.2); ctx.lineTo(xx, y + f * 0.2 + 5); ctx.stroke();
+        txt(xx, y + f * 0.2 + 5 + f - 2, (v > 0 ? '+' : v < 0 ? '−' : '') + fmtG(Math.abs(v), 'V'), T.fg, f - 3, 600, 'center');
+      }
+    }
+  }
   else txt(x, y, 'Strompfeil: technische Stromrichtung (Elektronen fließen entgegengesetzt)', T.muted, f, 500);
 }
 function stageNote() {
@@ -1420,14 +1594,16 @@ function phaseInfo() {
                Z(v('W'), `${fr('1', '2')} · ${v('L')} · ${v('I')}<sup>2</sup>`, `${fr('1', '2')} · ${fmtG(L, 'H')} · (${fmt(I0, 'A')})<sup>2</sup> = ${fmt(W0, 'J')}`)]
       };
     case 'open1': return {
-      title: 'Ausschalten: Elektronen stauen sich', badge: `${slowPlain(CP * UZ * V0 / (P.I0 * DZ))} · t = ${fmt(st.tR, 's')} nach dem Öffnen`,
-      text: `Der Schalter öffnet. Die Spule hält den Strom aufrecht (Lenz). Die Elektronen fließen weiter. Vor dem Schalter stauen sie sich: Elektronenüberschuss (−). Hinter dem Schalter fehlen sie: Elektronenmangel (+). Dadurch steigt die Spannung ${v('u', 'S')} am Schalter sehr schnell an. ${v('u', 'L')} kehrt die Richtung um.`,
+      title: showStau ? 'Ausschalten: Elektronen stauen sich' : 'Ausschalten: Spannung am Schalter steigt', badge: `${slowPlain(CP * UZ * V0 / (P.I0 * DZ))} · t = ${fmt(st.tR, 's')} nach dem Öffnen`,
+      text: showStau
+        ? `Der Schalter öffnet. Die Spule hält den Strom aufrecht (Lenz). Die Elektronen fließen weiter. Vor dem Schalter stauen sie sich: Elektronenüberschuss (−). Hinter dem Schalter fehlen sie: Elektronenmangel (+). Dadurch steigt die Spannung ${v('u', 'S')} am Schalter sehr schnell an. ${v('u', 'L')} kehrt die Richtung um. <span class="c">(Der Stau im Draht ist eine fachlich falsche Veranschaulichung, siehe „Modell und Vereinfachungen“.)</span>`
+        : `Der Schalter öffnet. Die Spule hält den Strom aufrecht (Lenz). Die Elektronen fließen weiter und laden die Kontaktflächen auf wie einen Kondensator: vor dem Schalter Elektronenüberschuss (−), dahinter Elektronenmangel (+). Diese Ladung sitzt an der Oberfläche und ist winzig – zu sehen ist sie an der Farbe: Das Potenzial rechts vom Schalter fällt stark ins Negative. Dadurch steigt ${v('u', 'S')} sehr schnell an. ${v('u', 'L')} kehrt die Richtung um.`,
       form: [`${v('u', 'L')} = ${v('L')} · ${fr('d' + v('i'), 'd' + v('t'))} &lt; 0 &nbsp;&nbsp; ${v('u', 'S')} = ${v('U')} − ${v('u', 'R')} − ${v('u', 'L')}`,
              Z(`ohne Durchschlag: ${v('û', 'S')}`, `${v('I')} · √(${fr(v('L'), v('C', 'p'))})`, `${fmt(I0, 'A')} · √(${fr(fmtG(L, 'H'), fmtG(CP, 'F', 'p'))}) = ${fmt(I0 * Math.sqrt(L / CP), 'V')}`, {op: '≈', kom: `(${v('C', 'p')} angenommen)`})]
     };
     case 'ignite': return {
       title: 'Durchschlag: Lichtbogen zündet', badge: `${slowPlain(1e-9)} · Augenblick des Durchschlags`,
-      text: `Die Spannung ist so groß, dass die Luft zwischen den Kontakten leitend wird. Ein Lichtbogen zündet. Die gestauten Elektronen springen über den Spalt. ${v('u', 'S')} fällt auf die Lichtbogenspannung.`,
+      text: `Die Spannung ist so groß, dass die Luft zwischen den Kontakten leitend wird. Ein Lichtbogen zündet. ${showStau ? 'Die gestauten Elektronen springen' : 'Die Elektronen fließen'} über den Spalt. ${v('u', 'S')} fällt auf die Lichtbogenspannung.`,
       form: [{a: `Zündspannung (Annahme): ${v('U', 'Z')} ≈ ${fmtG(UZ, 'V')} bei ${v('d')} ≈ 10&#8239;µm`},
              {a: `<span class="c">Vergleich Paschen-Minimum in Luft bei 1 bar: 327&#8239;V bei 7,5&#8239;µm</span>`}]
     };
@@ -1489,7 +1665,7 @@ function drawDiagram() {
   const Y = val => pt + ph / 2 - val / (2 * U) * (ph / 2);
   // Phasenbänder
   const colOf = {on: T['ph-on'], open1: T['ph-open'], ignite: T['ph-open'], arc: T['ph-arc'], free: T['ph-free']};
-  const nameOf = {on: 'Ein · 1 : 16', open1: 'Stau · ≈ 1 : 10⁸', ignite: 'Zündung', arc: scenario === 'fault' ? 'Lichtbogen · Echtzeit' : 'Lichtbogen · 1 : 80', free: 'Freilauf · 1 : 16'};
+  const nameOf = {on: 'Ein · 1 : 16', open1: 'Öffnen · ≈ 1 : 10⁸', ignite: 'Zündung', arc: scenario === 'fault' ? 'Lichtbogen · Echtzeit' : 'Lichtbogen · 1 : 80', free: 'Freilauf · 1 : 16'};
   let runStart = null, runPh = null;
   const flush = (tEnd) => {
     if (runPh && colOf[runPh]) {
@@ -1557,7 +1733,7 @@ function drawDiagram() {
 
 /* ================= Oberfläche ================= */
 const html = document.documentElement;
-const ui = {sw: $('bSwitch'), diode: $('chk-diode'), diagB: $('chk-diag'), formB: $('chk-form'), rechB: $('chk-rech'), werteB: $('chk-werte'), werte: $('werte'), info: $('info'), pause: $('bPause'), reset: $('bReset'), fs: $('bFull'),
+const ui = {sw: $('bSwitch'), potB: $('chk-pot'), stauB: $('chk-stau'), diode: $('chk-diode'), diagB: $('chk-diag'), formB: $('chk-form'), rechB: $('chk-rech'), werteB: $('chk-werte'), werte: $('werte'), info: $('info'), pause: $('bPause'), reset: $('bReset'), fs: $('bFull'),
   title: $('pTitle'), badge: $('pBadge'), text: $('pText'), form: $('pForm'), vals: $('vals'), note: $('scNote'), msg: $('msg'), diagCard: $('diagCard'),
   controls: $('controls'), vbEnde: $('vb-ende')};
 let lastUi = 0, lastTitle = '';
@@ -1599,6 +1775,8 @@ function refreshUI(force) {
 function setPressed(btn, on) { btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
 function setChk(el, on) { el.checked = !!on; }    // Kästchen der Bedienleiste (Norm: .chk)
 function setDiode(on) { diodeOn = !!on; setChk(ui.diode, diodeOn); refreshUI(true); }
+function setPot(on) { showPot = !!on; setChk(ui.potB, showPot); drawScene(); }
+function setStau(on) { showStau = !!on; setChk(ui.stauB, showStau); refreshUI(true); drawScene(); }
 function setDiag(on) { showDiag = !!on; setChk(ui.diagB, showDiag); ui.diagCard.hidden = !showDiag; fit(); }
 function setForm(on) { showForm = !!on; setChk(ui.formB, showForm); refreshUI(true); }
 function setRech(on) { showRech = !!on; setChk(ui.rechB, showRech); refreshUI(true); }
@@ -1616,6 +1794,8 @@ function setTempo(t) {
 }
 ui.sw.addEventListener('click', () => { userToggle(); keepAwake(); });
 ui.diode.addEventListener('change', e => setDiode(e.target.checked));
+ui.potB.addEventListener('change', e => setPot(e.target.checked));
+ui.stauB.addEventListener('change', e => setStau(e.target.checked));
 ui.diagB.addEventListener('change', e => setDiag(e.target.checked));
 ui.formB.addEventListener('change', e => setForm(e.target.checked));
 ui.rechB.addEventListener('change', e => setRech(e.target.checked));
@@ -1810,7 +1990,7 @@ window.anim = {
   get state() {
     const {flyers, ign, hover, ...rest} = st;     // hover: Mauszeiger über dem Schalter – Bedienung, kein Zustand
     return {...rest, szenario: scenario === 'fault' ? 'fehler' : 'normal', diode: diodeOn, U: P.U, R: P.R, L: P.L, tau: P.tau, I0: P.I0,
-      anordnung: layoutName, tempo, pause: paused, formeln: showForm, berechnung: showRech, momentanwerte: showWerte, qr: qrAn};
+      anordnung: layoutName, tempo, pause: paused, potenzial: showPot, stau: showStau, formeln: showForm, berechnung: showRech, momentanwerte: showWerte, qr: qrAn};
   },
   opt(key, val) {
     switch (key) {
@@ -1818,6 +1998,8 @@ window.anim = {
       case 'diode': setDiode(val); break;
       case 'diag': case 'diagramm': setDiag(val); break;   // Norm: das zuschaltbare Diagramm heißt 'diag'
       case 'formeln': setForm(val); break;
+      case 'potenzial': setPot(val); break;
+      case 'stau': setStau(val); break;
       case 'berechnung': setRech(val); break;
       case 'momentanwerte': setWerte(val); break;
       case 'tempo': setTempo(+val); break;
@@ -1862,6 +2044,8 @@ if (has('qr', 'qr')) qrAn = true;                 // QR-Code gleich sichtbar (Be
 if (Q.get('formeln') === '0' || HASH.includes('ohneformeln')) { showForm = false; setChk(ui.formB, false); }
 if (Q.get('berechnung') === '0' || HASH.includes('ohneberechnung')) { showRech = false; setChk(ui.rechB, false); }
 if (Q.get('werte') === '0' || HASH.includes('ohnewerte')) { showWerte = false; setChk(ui.werteB, false); }
+if (Q.get('potenzial') === '0' || HASH.includes('ohnepotenzial')) { showPot = false; setChk(ui.potB, false); }
+if (Q.get('stau') === '0' || HASH.includes('ohnestau')) { showStau = false; setChk(ui.stauB, false); }
 fit();
 requestAnimationFrame(frame);
 })();
