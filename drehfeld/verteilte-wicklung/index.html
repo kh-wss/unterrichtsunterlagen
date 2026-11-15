@@ -982,6 +982,7 @@ window.anim = {
   model,                                                       // reine Physik, zum Nachrechnen: model(ωt, q)
   nuten,                                                       // Lage der Nuten für eine Nutenzahl
   set(x) { S.playing = false; S.x = clamp(x, CFG.x.min, CFG.x.max); render(); return S.x; },
+  pause(an = true) { S.playing = !an; syncUI(); if (S.playing) requestAnimationFrame(tick); return !S.playing; },   // Ablauf anhalten (true) oder starten
   opt(key, val) {
     if (key === 'q') { setQ(Number(val)); return; }
     S[key] = val; const c = $('#chk-' + key); if (c) c.checked = !!val; render();
@@ -999,6 +1000,10 @@ S.x = clamp(readStart(), CFG.x.min, CFG.x.max);
 selQ.value = String(S.q);
 baueStaender(S.q);
 render();
+/* Festlegung der Lehrkraft, 15.11.2026: Die Animation läuft beim Öffnen. Ausnahmen: Export (?export=1), ?auto=0 und ein
+   Wert im Link (#a…): Dann zeigt die Seite genau diesen Zustand, so wie sie ihn beim Anhalten in die Adresse schreibt. */
+const mitWert = (() => { try { return new RegExp('^#' + CFG.x.hash + '\\d').test(location.hash || ''); } catch (e) { return false; } })();
+if (!params.has('export') && params.get('auto') !== '0' && !mitWert) togglePlay();
 })();
 </script>
 </body>
