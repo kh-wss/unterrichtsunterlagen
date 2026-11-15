@@ -250,7 +250,7 @@ html.vollbild #stage-svg,html.buehne #stage-svg{cursor:pointer}   /* dort heißt
     </div>
     <details class="keys">
       <summary>Tastatur und Verlinken</summary>
-      <div class="hint"><kbd>Leertaste</kbd> abspielen, anhalten, nach einer Phase fortsetzen · <kbd>→</kbd> ein Schritt weiter · <kbd>←</kbd> ein Schritt zurück · <kbd>Pos1</kbd> zurücksetzen · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden. Im Vollbild führt auch ein Klick in die Bühne einen Schritt weiter. Jeder Schritt lässt sich verlinken: <code>#s14</code> am Ende der Adresse öffnet Schritt 14; <code>?auto=1</code> startet den Ablauf beim Öffnen.</div>
+      <div class="hint"><kbd>Leertaste</kbd> abspielen und anhalten · <kbd>→</kbd> ein Schritt weiter · <kbd>←</kbd> ein Schritt zurück · <kbd>Pos1</kbd> zurücksetzen · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden. Im Vollbild führt auch ein Klick in die Bühne einen Schritt weiter. Jeder Schritt lässt sich verlinken: <code>#s14</code> am Ende der Adresse öffnet Schritt 14; <code>?auto=1</code> startet den Ablauf beim Öffnen.</div>
     </details>
   </div>
 
@@ -299,8 +299,11 @@ const HTML = document.documentElement;
    – Der Mittelwert der Leistung heißt nur „P“ (nicht „P_eff“ wie auf dem Arbeitsblatt).
    – Die Animation dient der Nachbereitung, nicht dem Unterricht. Automatik: alles erscheint nacheinander.
      Von Hand: ein Klick zeigt die Rechnung, der nächste Klick trägt den Wert in das Liniendiagramm ein.
-   – Der automatische Ablauf hält nach jeder Phase an.
-   – Gleichspannung fest U = 6 V; einstellbar ist nur der Scheitelwert û der Wechselspannung. */
+   – Der automatische Ablauf hält nach jeder Phase an. → ersetzt am 15.11.2026: „Abspielen“ läuft ohne Halt durch alle fünf Phasen.
+   – Gleichspannung fest U = 6 V; einstellbar ist nur der Scheitelwert û der Wechselspannung.
+   Festlegungen vom 15.11.2026:
+   – Die eingetragenen Punkte der Leistung liegen über dem Spannungspfeil (sonst verdeckt der Pfeil z. B. den Punkt 1 W bei u = 2 V).
+   – Alle Tempostufen laufen doppelt so schnell wie im ersten Stand (tempoBasis). */
 const CFG = {
   U: 6,                       // Gleichspannung an E1 in V (Arbeitsblatt)
   R: 4,                       // Widerstand jeder Lampe in Ω (Arbeitsblatt: R_E1 = R_E2 = 4 Ω)
@@ -310,7 +313,8 @@ const CFG = {
   fang: 0.03,                 // der Regler rastet in diesem Abstand (in V) bei û = √2 · U ein
   plot: { xL: 150, xR: 1110, wT: 700, y0: 815, s: 20, oben: 21, unten: -10 },   // Diagramme: Achsenlage, Breite einer Periode, px je V bzw. W
   pfeil: 18.3,                // Länge der Spannungspfeile an den Quellen in px je V
-  lesen: { fest: 2.0, jeZeichen: 0.055 },   // Automatik: Lesezeit je Schritt in s (fest + je Zeichen des Textes)
+  lesen: { fest: 2.0, jeZeichen: 0.055 },   // Automatik: Lesezeit je Schritt in s Animationszeit (fest + je Zeichen des Textes)
+  tempoBasis: 2,              // Animationszeit je Sekunde bei Tempo 1×; die Stufen 0,5× · 1× · 2× vervielfachen diesen Wert
   flaeche: { hell: 0.22, kraeftig: 0.52 },  // Deckkraft der Leistungsfläche: unter dem Mittelwert / Spitzen
   col: { u: '#0070C0', p: '#00B050', ink: '#1b2127', hilf: '#8a949e', licht: '#ffd23f' },
 };
@@ -333,7 +337,7 @@ const hell = (P) => Math.min(1.3, Math.pow(Math.max(P, 0) / P_DC, 1.5));
 
 /* ================= 3 Zustand ================= */
 const S = { playing: false, auto: false, tempo: 1, uhFrei: null, erkl: true, rech: true, qr: false, gehalten: false };   // Anzeige und Bedienung; gehalten: nur für die Prüfung (anim.pause)
-const st = { k: 0, from: 0, prog: 1, trans: false, wait: 0, halt: false };                              // Ablauf
+const st = { k: 0, from: 0, prog: 1, trans: false, wait: 0 };                              // Ablauf
 
 /* ================= 4 Hilfen ================= */
 function el(tag, attrs = {}, parent = svg) {
@@ -557,18 +561,17 @@ const uhErlaubt = () => !st.trans && (st.k <= IDX.erhoehen || st.k >= IDX.rest);
 function ankunft() {
   st.trans = false; st.prog = 1; st.from = st.k;
   const ende = st.k === LETZTER;
-  if (S.auto && !ende && SCHRITTE[st.k + 1].phase === SCHRITTE[st.k].phase) { st.wait = lesezeit(st.k); return; }
-  if (S.auto && !ende) st.halt = true;                           // Festlegung 14.11.2026: Stopp nach jeder Phase
+  if (S.auto && !ende) { st.wait = lesezeit(st.k); return; }      // Festlegung 15.11.2026: auch über die Phasengrenzen hinweg ohne Halt
   if (ende) S.auto = false;
   S.playing = false; st.wait = 0;
 }
 function starte(k) {
-  st.from = st.k; st.k = k; st.prog = 0; st.halt = false; st.wait = 0; S.uhFrei = null;
+  st.from = st.k; st.k = k; st.prog = 0; st.wait = 0; S.uhFrei = null;
   st.trans = SCHRITTE[k].dur > 0;
   if (!st.trans) ankunft();
 }
 function springe(k) {
-  st.k = st.from = clamp(Math.round(k), 0, LETZTER); st.prog = 1; st.trans = false; st.wait = 0; st.halt = false;
+  st.k = st.from = clamp(Math.round(k), 0, LETZTER); st.prog = 1; st.trans = false; st.wait = 0;
   S.playing = false; S.uhFrei = null;
 }
 /* Ein Zeitschritt. dt ist Animationszeit in s. */
@@ -578,14 +581,14 @@ function step(dt) {
 }
 /* Eingriffe von außen: Jeder hat einen Namen und ist über anim.act(name) erreichbar. */
 const AKTIONEN = {
-  play() {                                                       // Hauptknopf und Leertaste: abspielen, anhalten, fortsetzen
+  play() {                                                       // Hauptknopf und Leertaste: abspielen (ohne Halt bis zum Merke-Kasten), anhalten, fortsetzen
     if (S.playing) { S.playing = false; return; }
     if (st.k === LETZTER && !st.trans) springe(0);
-    S.auto = true; S.playing = true; st.halt = false;
+    S.auto = true; S.playing = true;
     if (!st.trans && st.wait <= 0) starte(st.k + 1);
   },
   weiter() {                                                     // ein Schritt weiter; ein laufender Übergang wird erst beendet
-    S.auto = false; st.halt = false; st.wait = 0;
+    S.auto = false; st.wait = 0;
     if (st.trans) { ankunft(); S.playing = false; }
     else if (st.k < LETZTER) { starte(st.k + 1); S.playing = st.trans; }
   },
@@ -595,7 +598,7 @@ const AKTIONEN = {
 for (let p = 1; p <= 5; p++) AKTIONEN['phase' + p] = () => { S.auto = false; springe(SCHRITTE.findIndex((s) => s.phase === p)); };
 function setUh(v) {
   if (!uhErlaubt() || !isFinite(v)) return false;
-  S.auto = false; S.playing = false; st.wait = 0; st.halt = false;
+  S.auto = false; S.playing = false; st.wait = 0;
   v = clamp(v, 0, CFG.uhMax);
   if (Math.abs(v - UH_N) <= CFG.fang) v = UH_N;
   S.uhFrei = Math.abs(v - KF[st.k].uh) < 1e-9 ? null : v;
@@ -610,7 +613,8 @@ el('stop', { offset: 0, 'stop-color': C.licht, 'stop-opacity': 0.95 }, grad);
 el('stop', { offset: 0.42, 'stop-color': C.licht, 'stop-opacity': 0.5 }, grad);
 el('stop', { offset: 1, 'stop-color': C.licht, 'stop-opacity': 0 }, grad);
 const gGlow = el('g', { id: 'gluehen-ebene' }), gBack = el('g', { id: 'back' }), gArea = el('g', { id: 'flaechen' }), gLines = el('g', { id: 'linien' }),
-  gCurves = el('g', { id: 'kurven' }), gDots = el('g', { id: 'punkte' }), gCur = el('g', { id: 'zeitmarke' }), gLbl = el('g', { id: 'labels' }),
+  gCurves = el('g', { id: 'kurven' }), gCur = el('g', { id: 'zeitmarke' }), gDots = el('g', { id: 'punkte' }), gCurT = el('g', { id: 'zeitmarke-werte' }),   // Reihenfolge = Stapelung: Punkte über dem Spannungspfeil
+  gLbl = el('g', { id: 'labels' }),
   gCalc = el('g', { id: 'rechnung' }), gBlase = el('g', { id: 'blase' }), gNav = el('g', { id: 'nav' });
 const titel = txt(1872, 120, 'Effektivwert', { class: 't-main', 'text-anchor': 'end' }, gBack);   // Norm: oben rechts, neben dem QR-Code
 
@@ -716,8 +720,8 @@ const lUeff = txt(XR(90), 0, '', { class: 'lbl c-u halo', 'text-anchor': 'middle
 const hiV = el('line', { stroke: C.hilf, 'stroke-width': 2.5, 'stroke-dasharray': '8 7' }, gCur);
 const hiH = el('line', { stroke: C.p, 'stroke-width': 2.5, 'stroke-dasharray': '8 7' }, gCur);
 const pfCur = pfeil(gCur, C.u, 6);
-const lCurU = txt(0, 0, '', { class: 'lbl c-u halo' }, gCur);
-const lCurP = txt(0, 0, '', { class: 'lbl c-p halo' }, gCur);
+const lCurU = txt(0, 0, '', { class: 'lbl c-u halo' }, gCurT);
+const lCurP = txt(0, 0, '', { class: 'lbl c-p halo' }, gCurT);
 
 // Rechnung (Wechselspannung): Feld oben rechts über dem Diagramm
 const CP = { x: 1115, y: 152, w: 490, h: 180 };
@@ -853,7 +857,7 @@ function draw() {
   });
 
   // --- Zeitmarke mit Momentanwert
-  zeig(gCur, v.curOn);
+  zeig(gCur, v.curOn); zeig(gCurT, v.curOn);
   if (v.curOn >= 0.01) {
     const q = model(v.uh, v.cur), x = XR(v.cur), yu = Y(q.u), yp = Y(q.p);
     pfCur.set(x, PL.y0, x, yu);
@@ -971,7 +975,7 @@ function draw() {
 
   // --- Bedienung nachführen
   const amEnde = st.k === LETZTER && !st.trans;
-  setze($('bAct'), 'html', S.playing ? '⏸ Pause' : amEnde ? '↺ Von vorn' : (st.halt || st.trans || st.wait > 0) ? '▶ Weiter' : '▶ Abspielen');
+  setze($('bAct'), 'html', S.playing ? '⏸ Pause' : amEnde ? '↺ Von vorn' : (st.trans || st.wait > 0) ? '▶ Weiter' : '▶ Abspielen');
   setze($('lblSchritt'), 'html', `${st.k + 1} / ${SCHRITTE.length}`);
   $('bZur').disabled = st.k === 0 && !st.trans; $('bVor').disabled = amEnde;
   knZur.classList.toggle('aus', st.k === 0 && !st.trans); knVor.classList.toggle('aus', amEnde);
@@ -987,7 +991,7 @@ function draw() {
 /* ================= 8 Zeit ================= */
 let last = null, hashAlt = '';
 function frame(ts) {
-  if (last !== null && S.playing && !S.gehalten) step(Math.min((ts - last) / 1000, 0.05) * S.tempo);   // Sprünge nach Tab-Wechsel begrenzen
+  if (last !== null && S.playing && !S.gehalten) step(Math.min((ts - last) / 1000, 0.05) * S.tempo * CFG.tempoBasis);   // Sprünge nach Tab-Wechsel begrenzen
   last = ts;
   draw();
   if (!S.playing && !st.trans) writeHash();
@@ -1075,7 +1079,7 @@ window.anim = {
   vollbild(an = true) { setVollbild(!!an); return HTML.classList.contains('vollbild'); },         // Normblock 10
   get state() {
     const v = sicht(), m = model(v.uh);
-    return { k: st.k, id: SCHRITTE[st.k].id, phase: SCHRITTE[st.k].phase, trans: st.trans, prog: st.prog, halt: st.halt, auto: S.auto, playing: S.playing,
+    return { k: st.k, id: SCHRITTE[st.k].id, phase: SCHRITTE[st.k].phase, trans: st.trans, prog: st.prog, wartet: st.wait > 0, auto: S.auto, playing: S.playing,
       tempo: S.tempo, erkl: S.erkl, rech: S.rech, qr: S.qr, frei: v.frei, uh: v.uh, pd: m.pd, P: m.P, U: m.U, Pdc: m.Pdc, hell2: hell(m.P),
       gleich: Math.abs(m.P / m.Pdc - 1) < 0.005, pk: v.pk, cur: v.cur, k1: v.k1, k2: v.k2, punkte: sichtbarePunkte, blase: { ...blase }, uhErlaubt: uhErlaubt() };
   },
