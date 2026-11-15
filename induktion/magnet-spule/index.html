@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Spannungsinduktion</title>
-<meta name="description" content="Ein Stabmagnet wird in eine Spule hinein- und herausbewegt; ein Spannungsmesser mit Nullpunkt in der Mitte zeigt die induzierte Spannung. Magnet mit der Maus ziehen oder automatisch hin und her bewegen lassen.">
+<meta name="description" content="Ein Stabmagnet wird in eine Spule hinein- und herausbewegt; ein Spannungsmesser mit Nullpunkt in der Mitte zeigt die induzierte Spannung. Magnet mit Maus oder Finger ziehen oder automatisch hin und her bewegen lassen.">
 <style>
 /* LAYOUT-NORM:begin v3 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
    Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
@@ -747,7 +747,11 @@ const lPhi = txt(PH.x, PH.y - 34, '', { class: 'ro c-phi halo', 'text-anchor': '
 const gHinweis = el('g', { 'pointer-events': 'none' }, gLbl);
 const hPfeil = el('path', { fill: 'none', stroke: '#3d4650', 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, gHinweis);
 const hMaus = el('polygon', { points: '0,0 0,34 9,26 15,40 22,37 16,24 28,24', fill: '#fff', stroke: '#1b2127', 'stroke-width': 3, 'stroke-linejoin': 'round' }, gHinweis);
-const hText = txt(0, 0, 'Magnet mit der Maus ziehen', { class: 'lbl-s sans halo', 'text-anchor': 'middle', 'font-weight': 600 }, gHinweis);
+/* Touch (14.11.2026, Rückmeldung der Lehrkraft: „am Smartphone kann ich den Magneten nicht zuverlässig fassen“):
+   Hauptzeiger Finger → Hinweis „mit dem Finger“; irgendein Finger-Zeiger → Greiffläche mindestens 48 × 48 CSS-px. */
+const mq = (q) => { try { return matchMedia(q).matches; } catch (e) { return false; } };
+const FINGER = mq('(pointer: coarse)'), TOUCH = FINGER || mq('(any-pointer: coarse)');
+const hText = txt(0, 0, FINGER ? 'Magnet mit dem Finger ziehen' : 'Magnet mit der Maus ziehen', { class: 'lbl-s sans halo', 'text-anchor': 'middle', 'font-weight': 600 }, gHinweis);
 
 /* ================= 6 Dynamische Elemente ================= */
 // Feldlinien des Polmodells, einmal berechnet (Magnet-Koordinaten: z längs, ρ quer, Nordpol bei +l_P/2).
@@ -812,7 +816,9 @@ const feldPfade = [];
 
 // Magnet: zwei Hälften (Quader), drehbar um die senkrechte Achse durch die Magnetmitte
 const MAGF = [];   // Flächen werden je Bild neu gesetzt
-const magHit = el('rect', { class: 'grab', fill: 'transparent', tabindex: 0, role: 'slider', 'aria-label': 'Magnet: mit der Maus ziehen oder Pfeiltasten', 'aria-valuemin': CFG.xMin, 'aria-valuemax': CFG.xMax }, gLbl);
+let PX_JE_CSS = 1;  // Bühnenpixel je CSS-Pixel – für die Mindestgröße der Greiffläche bei Touch
+function messeBuehne() { const w = svg.getBoundingClientRect().width; if (w > 0) PX_JE_CSS = 1920 / w; }
+const magHit = el('rect', { class: 'grab', fill: 'transparent', tabindex: 0, role: 'slider', 'aria-label': 'Magnet: ziehen oder Pfeiltasten', 'aria-valuemin': CFG.xMin, 'aria-valuemax': CFG.xMax }, gLbl);
 const magFrame = el('rect', { class: 'grab-frame', fill: 'none', stroke: '#6b747c', 'stroke-width': 2.5, 'stroke-dasharray': '10 7', 'pointer-events': 'none', rx: 12 }, gLbl);
 const REDUZIERT = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
 const polTxt = [0, 1].map(() => txt(0, 0, '', { class: 'pol', 'text-anchor': 'middle', 'pointer-events': 'none' }, gMag));
@@ -860,7 +866,11 @@ function zeichneMagnet() {
     gMag.appendChild(t);
   });
   const pad = 18;
-  for (const r of [magHit, magFrame]) { r.setAttribute('x', xmin - pad); r.setAttribute('y', ymin - pad); r.setAttribute('width', xmax - xmin + 2 * pad); r.setAttribute('height', ymax - ymin + 2 * pad); }
+  const rahmen = (r, px, py) => { r.setAttribute('x', xmin - px); r.setAttribute('y', ymin - py); r.setAttribute('width', xmax - xmin + 2 * px); r.setAttribute('height', ymax - ymin + 2 * py); };
+  rahmen(magFrame, pad, pad);
+  // Greiffläche bei Touch: mindestens 48 CSS-px (Material Design: Touch-Ziel 48 × 48 dp), höchstens 170 Bühnenpixel Rand
+  const minB = TOUCH ? 48 * PX_JE_CSS : 0;
+  rahmen(magHit, Math.min(170, Math.max(pad, (minB - (xmax - xmin)) / 2)), Math.min(170, Math.max(pad, (minB - (ymax - ymin)) / 2)));
   return { xmin, xmax, ymin, ymax };
 }
 
@@ -1041,7 +1051,7 @@ function baueNotizen() {
     `<b>Zählpfeile:</b> <i class="m">u</i><sub>i</sub> von Anschluss 1 nach 2, <i class="m">Φ</i> nach rechts positiv. Damit gilt <i class="m">u</i><sub>i</sub> = <i class="m">N</i> · Δ<i class="m">Φ</i>/Δ<i class="m">t</i> (Verbraucherzählpfeilsystem). Mit Erzeugerzählpfeil steht dort −<i class="m">N</i> · Δ<i class="m">Φ</i>/Δ<i class="m">t</i> (Lenz’sche Regel); die Physik ist dieselbe. Anschluss 1 liegt am Plus des Spannungsmessers: Nordpol hinein → Ausschlag nach rechts.`,
     `<b>Spannungsmesser:</b> Nullpunkt in der Mitte, ideal hochohmig (es fließt kein Strom, der Magnet wird nicht gebremst) und nicht träge: Der Zeiger zeigt sofort den Momentanwert. Ein echtes Drehspulgerät läuft nach und zeigt bei schnellen Stößen weniger. Ab ${Math.round(CFG.anschlag * 100)}&#8239;% des Messbereichs schlägt der Zeiger an.`,
     `<b>Automatik:</b> Die Magnetmitte bewegt sich kosinusförmig zwischen ${g(CFG.xAus, 'mm')} und ${g(CFG.xEin, 'mm')} (Spulenmitte = 0) mit der Periodendauer <i class="m">T</i> = 4&#8239;s, 2&#8239;s oder 1&#8239;s. Die Bewegung ist sinusförmig, die Spannung nicht: Sie ist am größten, wenn der Pol durch die Wicklung läuft.`,
-    `<b>Ziehen mit der Maus:</b> Der Magnet folgt der Maus mit <i class="m">τ</i> = ${g(CFG.tauMaus, 's')}, die Geschwindigkeit wird mit <i class="m">τ</i> = ${g(CFG.tauV, 's')} geglättet, weil Mausereignisse unregelmäßig kommen. Pfeiltasten bewegen mit ${g(CFG.vTaste / 1000, 'm/s')} (mit Umschalttaste dreimal so schnell).`,
+    `<b>Ziehen mit Maus oder Finger:</b> Der Magnet folgt dem Zeiger mit <i class="m">τ</i> = ${g(CFG.tauMaus, 's')}, die Geschwindigkeit wird mit <i class="m">τ</i> = ${g(CFG.tauV, 's')} geglättet, weil Zeigerereignisse unregelmäßig kommen. Pfeiltasten bewegen mit ${g(CFG.vTaste / 1000, 'm/s')} (mit Umschalttaste dreimal so schnell).`,
     `<b>Umdrehen:</b> Der Magnet wird erst bis ${g(CFG.xAus, 'mm')} herausgezogen und dann gedreht. Beim Drehen gilt näherungsweise <i class="m">Ψ</i> = <i class="m">Ψ</i><sub>0</sub> · cos <i class="m">φ</i><sub>M</sub>.`,
     `<b>Feldlinien</b> sind aus dem Polmodell berechnet, nicht skizziert: Jede Linie trägt denselben Fluss. Gezeigt ist die Schnittebene durch die Achse; im Magneten sind die Linien verdeckt.`,
     `<b>Zählpfeil <i class="m">u</i><sub>i</sub>:</b> Länge ∝ Wert; der Abstand der Buchsen entspricht etwa dem Messbereich, längere Pfeile sind gekürzt. Der Bewegungspfeil <i class="m">v</i> zeigt in Bewegungsrichtung.`,
@@ -1113,6 +1123,12 @@ magHit.addEventListener('pointermove', (ev) => { if (drag.aktiv && ev.pointerId 
 const loslassen = (ev) => { if (drag.aktiv && ev.pointerId === drag.id) { drag.aktiv = false; drag.ziel = st.x; magHit.classList.remove('aktiv'); } };
 magHit.addEventListener('pointerup', loslassen);
 magHit.addEventListener('pointercancel', loslassen);
+/* Touch: Ohne das übernimmt der Browser nach wenigen Pixeln die Wischgeste (Blättern, Zurück-Geste) und bricht das
+   Ziehen mit pointercancel ab – touch-action:none wirkt auf SVG-Elementen nicht zuverlässig (nachgestellt in
+   Chromium, 14.11.2026). Blättern bleibt überall sonst möglich, auch auf der Bühne. */
+magHit.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+magHit.addEventListener('touchmove', (e) => { if (drag.aktiv) e.preventDefault(); }, { passive: false });
+try { new ResizeObserver(() => { messeBuehne(); draw(); }).observe(svg); } catch (e) { window.addEventListener('resize', messeBuehne); }
 // Tastatur: Pfeiltasten bewegen den Magneten, Leertaste startet/stoppt die Automatik
 document.addEventListener('keydown', (e) => {
   const tag = e.target && e.target.tagName;
@@ -1167,6 +1183,7 @@ window.anim = {
 };
 
 /* ================= 10 Start ================= */
+messeBuehne();
 reset();
 document.querySelectorAll('[data-n]').forEach((o) => o.setAttribute('aria-pressed', String(Number(o.dataset.n) === S.N)));
 for (const k of ['feld', 'diag', 'phi', 'form', 'rech', 'werte']) $('chk-' + k).checked = S[k];
