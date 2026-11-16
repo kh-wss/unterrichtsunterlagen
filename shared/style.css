@@ -1,7 +1,7 @@
 /* =========================================================
    Gemeinsames Stylesheet – Unterrichtsmaterialien
    Referenzieren mit:
-   <link rel="stylesheet" href="/unterrichtsmaterialien/shared/style.css">
+   <link rel="stylesheet" href="../../shared/style.css">
    (Pfad ggf. anpassen, je nach Tiefe der Seite)
    ========================================================= */
 
@@ -17,8 +17,9 @@
   --accent-warm: #f0a868;  /* Bauteil-Amber, für Badges */
   --accent-warm-soft: rgba(240, 168, 104, 0.14);
   --radius: 6px;
-  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+  /* Systemschriften: nichts wird von fremden Servern geladen (Datenschutz) */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 * {

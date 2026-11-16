@@ -1,99 +1,82 @@
-# Unterrichtsmaterialien
+# Unterrichtsmaterialien Elektrotechnik
 
-Sammlung von HTML-Seiten (Werkzeuge, Animationen, Informationsseiten) zum
-Hosten über GitHub Pages und zur Einbindung in Moodle.
+Interaktive Animationen, Infoseiten und Werkzeuge für den Unterricht – gehostet
+über GitHub Pages, zum Ansehen im Browser, am Beamer und zum Einbetten in Moodle.
+
+**Übersicht:** <https://kh-wss.github.io/unterrichtsunterlagen/>
+
+Die Übersicht ist der Link, den man weitergibt. Sie führt zu allen Seiten und
+liefert zu jeder Seite den fertigen Moodle-Einbettungscode.
 
 ## Struktur
 
 ```
-unterrichtsmaterialien/
-├── index.html                                  ← Übersichtsseite (Portal)
-├── shared/
-│   └── style.css                               ← gemeinsames Stylesheet
-├── tools/
-│   └── pruefungstimer/
-│       └── index.html
-├── lf2-schutzorgane/
-│   └── ls-schalter-auslosecharakteristik/
-│       └── index.html
-└── lf5-kompensation/
-    └── animation/
-        └── index.html
+unterrichtsunterlagen/
+├── index.html                      ← Übersicht (Inhalt wird automatisch erzeugt)
+├── uebersicht.json                 ← Sachgebiete, Reihenfolge, Ausnahmen der Übersicht
+├── .github/
+│   ├── scripts/uebersicht.py       ← erzeugt die Übersicht
+│   └── workflows/uebersicht.yml    ← baut und veröffentlicht bei jeder Änderung auf main
+├── shared/style.css                ← Stylesheet der älteren Seiten (LF2, LF5)
+├── <thema>/<seite>/index.html      ← je Seite ein Ordner, z. B. wechselspannung/erzeugung/
+└── tools/pruefungstimer/           ← Werkzeuge
 ```
 
-Jede Unterseite liegt in einem eigenen Ordner als `index.html`, dadurch
-ergeben sich saubere URLs ohne Dateiendung, z. B.:
+Jede Seite liegt als `index.html` in einem eigenen Ordner; daraus ergeben sich
+Adressen ohne Dateiendung, z. B.
+`https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/erzeugung/`.
 
-```
-https://DEIN-USERNAME.github.io/unterrichtsmaterialien/lf5-kompensation/animation/
-```
+## Übersicht – wie sie entsteht
 
-## 1. Hochladen auf GitHub
+Bei jeder Änderung auf `main` läuft die GitHub Action „Übersicht erzeugen und
+veröffentlichen“. Sie
 
-1. Neues Repository auf github.com anlegen, Name z. B. `unterrichtsmaterialien`
-   (öffentlich, damit GitHub Pages auf dem Free-Plan funktioniert).
-2. Auf der Repo-Seite: **Add file → Upload files**.
-3. Den kompletten entpackten Ordner `unterrichtsmaterialien` (also dessen
-   Inhalt, nicht den Ordner selbst) per Drag & Drop in das Upload-Fenster
-   ziehen. Moderne Browser übertragen dabei die Unterordnerstruktur mit.
-   Falls das nicht funktioniert: einzelne Unterordner nacheinander hochladen.
-4. Commit-Nachricht eingeben (z. B. "Initiale Struktur") und committen.
+1. sucht alle Seiten `<ordner>/<unterordner>/index.html`,
+2. liest Titel (`<title>`) und Beschreibung (`<meta name="description">`),
+3. ordnet jede Seite über ihren ersten Ordner einem Sachgebiet zu
+   (`uebersicht.json` → `sachgebiete`),
+4. schreibt die Karten samt Moodle-Einbettungscode in `index.html` zwischen
+   `<!-- UEBERSICHT:ANFANG -->` und `<!-- UEBERSICHT:ENDE -->` und
+5. veröffentlicht die Seite auf GitHub Pages.
 
-## 2. GitHub Pages aktivieren
+**Neue Seite:** Ordner mit `index.html` anlegen, `<title>` und
+`<meta name="description">` setzen – fertig. Liegt der Ordner in einem neuen
+Thema (z. B. `kondensator/`), das Thema in `uebersicht.json` einem Sachgebiet
+zuordnen; sonst erscheint die Seite unter „Weitere“.
 
-1. Im Repository: **Settings → Pages**.
-2. Unter "Build and deployment": Branch `main`, Ordner `/ (root)` auswählen.
-3. Speichern. Nach ein bis zwei Minuten ist die Seite erreichbar unter:
-   `https://DEIN-USERNAME.github.io/unterrichtsmaterialien/`
+**`uebersicht.json`:**
 
-## 3. Neue Seite hinzufügen
+| Eintrag | Wirkung |
+|---|---|
+| `sachgebiete` | Abschnitte der Übersicht in dieser Reihenfolge, je mit den Themenordnern; „Werkzeuge“ steht immer am Ende |
+| `seiten` | Angaben je Seite, die von der Seite selbst abweichen: `titel`, `text`, `art` (Animation, Infoseite, Werkzeug), `reihenfolge` |
+| `ausblenden` | Seiten, die (noch) nicht in der Übersicht erscheinen sollen, z. B. Platzhalter; erreichbar bleiben sie trotzdem |
 
-1. Neuen Unterordner mit sprechendem Namen anlegen, z. B.
-   `lf3-irgendwas/neues-thema/`.
-2. Darin eine `index.html` ablegen. Im `<head>` das gemeinsame Stylesheet
-   einbinden – Pfadtiefe beachten:
+**Lokal ansehen oder prüfen:**
 
-   ```html
-   <link rel="stylesheet" href="../../shared/style.css">
-   ```
-
-   (Bei zwei Ordnerebenen unter dem Root sind das zwei `../`.)
-
-3. Für die Navigation einen Rück-Link einbauen:
-
-   ```html
-   <a class="back-link" href="../../">&larr; Zur Übersicht</a>
-   ```
-
-4. In `index.html` (Root) im passenden Abschnitt eine neue Karte ergänzen:
-
-   ```html
-   <a class="card" href="./lf3-irgendwas/neues-thema/">
-     <div class="card-top">
-       <span class="card-title">Titel der Seite</span>
-       <span class="badge">LF3</span>
-     </div>
-     <p class="card-desc">Kurze Beschreibung.</p>
-   </a>
-   ```
-
-5. Neue Dateien hochladen (Upload files oder, falls eingerichtet, `git push`).
-
-## 4. Einbindung in Moodle
-
-Statt den HTML-/CSS-Code direkt in den Moodle-Editor einzufügen (wird oft
-gefiltert), die GitHub-Pages-URL per iframe einbetten:
-
-```html
-<iframe src="https://DEIN-USERNAME.github.io/unterrichtsmaterialien/tools/pruefungstimer/"
-        width="100%" height="600" style="border:none;"></iframe>
+```bash
+python3 .github/scripts/uebersicht.py            # index.html neu erzeugen
+python3 .github/scripts/uebersicht.py --pruefen  # nur prüfen, Hinweise ausgeben
 ```
 
-Höhe (`height`) je nach Inhalt anpassen.
+### Einmalige Einstellung
 
-## Gemeinsames Stylesheet
+Damit die Action veröffentlichen darf: **Settings → Pages → „Build and
+deployment“ → Source: „GitHub Actions“**. (Vorher war „Deploy from a branch“
+eingestellt; damit würde die Übersicht nur beim nächsten Merge, aber nicht
+automatisch aktualisiert.)
 
-`shared/style.css` enthält Farben, Schriften und Komponenten (Karten,
-Badges, Platzhalter-Hinweis etc.) als CSS-Variablen im `:root`-Block.
-Anpassungen dort wirken sich auf alle Seiten aus, die das Stylesheet
-einbinden.
+## Einbindung in Moodle
+
+Die Seiten nicht in eine Moodle-Textseite kopieren (Moodle entfernt Skripte),
+sondern von GitHub Pages einbetten. Den Code gibt es auf der Übersicht unter
+„Moodle-Einbettung“: Überschrift, kleine Vorschau nur mit der Bühne
+(`?buehne=1`, Rahmen 560 × 315 px mit fester Höhe, weil Moodle beim Speichern
+eine Höhe aus `aspect-ratio` verliert) und Link auf die volle Seite. Seiten ohne
+Vorschau-Ansicht bekommen Überschrift und Link. In Moodle im Texteditor auf die
+HTML-Ansicht umschalten und den Code einfügen.
+
+## Datenschutz
+
+Keine Seite lädt etwas von fremden Servern: Schriften sind Systemschriften oder
+liegen im Repo (`tools/pruefungstimer/fonts/`).

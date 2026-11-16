@@ -1,0 +1,39 @@
+{
+  "_hinweis": "Steuert die Übersichtsseite index.html. Jede Seite <ordner>/<unterordner>/index.html erscheint von selbst. Hier stehen nur: Sachgebiete (Zuordnung über den ersten Ordner, Reihenfolge wie in der Liste), Angaben je Seite, die von der Seite selbst abweichen (titel, text, art, reihenfolge), und ausgeblendete Seiten. Ohne Eintrag gilt: Titel aus <title>, Text aus <meta name=\"description\">, Art „Animation“, Seiten ohne passendes Sachgebiet unter „Weitere“.",
+
+  "adresse": "https://kh-wss.github.io/unterrichtsunterlagen/",
+
+  "sachgebiete": [
+    { "name": "Magnetismus & Induktion",  "ordner": ["induktion", "spule"] },
+    { "name": "Wechselspannung",          "ordner": ["wechselspannung"] },
+    { "name": "Leistung & Kompensation",  "ordner": ["leistung", "lf5-kompensation"] },
+    { "name": "Drehstrom",                "ordner": ["drehfeld"] },
+    { "name": "Schutzorgane",             "ordner": ["lf2-schutzorgane"] },
+    { "name": "Werkzeuge",                "ordner": ["tools"], "art": "Werkzeug" }
+  ],
+
+  "seiten": {
+    "induktion/magnet-spule/":     { "reihenfolge": 1 },
+    "spule/ein-ausschalten/":      { "reihenfolge": 2 },
+
+    "wechselspannung/erzeugung/":  { "reihenfolge": 1,
+      "text": "Generatormodell: Ein Stabmagnet dreht sich als Polrad vor einer Spule. Drehzeiger und Liniendiagramm zeigen, wie die Sinusspannung u = û · sin α entsteht; der Winkel lässt sich auch direkt einstellen." },
+    "wechselspannung/effektivwert/": { "reihenfolge": 2 },
+
+    "leistung/wirk-blind-schein/": { "reihenfolge": 1 },
+    "lf5-kompensation/animation/": { "reihenfolge": 2, "titel": "Blindleistungskompensation",
+      "text": "Animierte Darstellung der Blindleistungskompensation im Drehstromnetz." },
+
+    "lf2-schutzorgane/ls-schalter-auslosecharakteristik/": { "titel": "LS-Schalter: Auslösecharakteristiken", "art": "Infoseite",
+      "text": "Auslösecharakteristiken von Leitungsschutzschaltern (B, C, D) – Auslösebereiche, Anwendungsfälle und Diagramme." },
+
+    "tools/pruefungstimer/": {
+      "text": "Uhr für Klassenarbeiten und Prüfungen: Anfang, Dauer, verbleibende Zeit und geplantes Ende – groß für den Beamer." }
+  },
+
+  "_ausblenden_hinweis": "Seiten, die (noch) nicht in der Übersicht erscheinen sollen, z. B. Platzhalter ohne Inhalt. Die Seite bleibt unter ihrer Adresse erreichbar.",
+  "ausblenden": [
+    "lf2-schutzorgane/ls-schalter-auslosecharakteristik/",
+    "lf5-kompensation/animation/"
+  ]
+}
