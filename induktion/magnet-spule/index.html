@@ -197,7 +197,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
   <div class="stage" id="stage">
     <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
       <title id="svg-title">Spannungsinduktion: Magnet und Spule</title>
-      <desc id="svg-desc">Ein Stabmagnet bewegt sich in eine Spule hinein und wieder heraus. Die Spule ist an einen Spannungsmesser mit Nullpunkt in der Mitte angeschlossen. Bewegt sich der Magnet hinein, schlägt der Zeiger zur einen Seite aus, beim Herausziehen zur anderen. Steht der Magnet still, zeigt der Spannungsmesser null.</desc>
+      <desc id="svg-desc">Ein Stabmagnet bewegt sich in eine Spule hinein und wieder heraus. Die Spule ist an einen Spannungsmesser mit Nullpunkt in der Mitte angeschlossen. Bewegt sich der Magnet hinein, schlägt der Zeiger zur einen Seite aus, beim Herausziehen zur anderen. Steht der Magnet still, zeigt der Spannungsmesser null. Man kann den Magneten fast durch die Spule schieben: Tritt er auf der anderen Seite aus, schlägt der Zeiger zur anderen Seite aus.</desc>
     </svg>
   </div>
 
@@ -299,7 +299,8 @@ const CFG = {
   // Bewegung
   xAus: -140,              // Magnetmitte „draußen“ in mm (Spulenmitte = 0): Nordpolfläche 60 mm vor der Spule
   xEin: 0,                 // Magnetmitte „drinnen“: Mitte der Spule
-  xMin: -170, xMax: 0,     // Bereich beim Ziehen
+  xMin: -160, xMax: 70,    // Bereich beim Ziehen. Festlegung der Lehrkraft, 16.11.2026: Anschlag weiter hinten, der Magnet
+                           // lässt sich fast durchschieben (Südpolfläche bei x_max noch 10 mm in der Wicklung)
   T: 2,                    // Periodendauer der Automatik in s beim Öffnen (umschaltbar 4 / 2 / 1)
   vTaste: 120,             // Geschwindigkeit mit Pfeiltasten in mm/s (mit Umschalttaste ×3)
   tauMaus: 0.03,           // Magnet folgt der Maus mit dieser Zeitkonstante in s (gegen Ruckeln)
@@ -316,7 +317,7 @@ const CFG = {
   tDiag: 8,                // Zeitachse in s (läuft wie ein Oszilloskop durch)
   phiAchse: 50e-6,         // Φ-Achse ± in Wb
   // Bühne
-  X0: 800, Y0: 480,        // Bildpunkt der Spulenmitte (das Diagramm steht als Karte unter der Bedienleiste, layout.md 5)
+  X0: 720, Y0: 480,        // Bildpunkt der Spulenmitte (16.11.2026 von 800 nach links: Platz zum Durchschieben) (das Diagramm steht als Karte unter der Bedienleiste, layout.md 5)
   s: 3.6,                  // Maßstab in px je mm (rechts oben bleibt Platz für den QR-Code)
   cam: { alpha: 25, beta: 14 },   // Blickrichtung: von links vorn (Azimut), leicht von oben (Höhe), in Grad
   col: { u: '#0070C0', phi: '#00B050', ink: '#1b2127', nord: '#E2231A', sued: '#0E8A7C',
@@ -414,6 +415,7 @@ const orient = () => (Math.cos(st.phiM * D) >= 0 ? 1 : -1);   // +1: Nordpol zur
 function startAutoPhase() {                   // Automatik setzt dort ein, wo der Magnet gerade ist (ohne Sprung)
   const f = Math.min(Math.max((st.x - CFG.xAus) / (CFG.xEin - CFG.xAus), 0), 1);
   if (st.x < CFG.xAus) { st.job = { x0: st.x, x1: CFG.xAus, dur: Math.max(0.3, (CFG.xAus - st.x) / 150), t: 0, dann: 'auto' }; return; }
+  if (st.x > CFG.xEin) { st.job = { x0: st.x, x1: CFG.xEin, dur: Math.max(0.3, (st.x - CFG.xEin) / 150), t: 0, dann: 'autoEin' }; return; }
   st.tA = S.T / (2 * Math.PI) * Math.acos(1 - 2 * f);
 }
 /* Ein Zeitschritt dt in s (Echtzeit, keine Zeitlupe). Bildschleife und anim.advance rufen dieselbe Funktion. */
@@ -437,6 +439,7 @@ function step(dt) {
       if (j.art === 'dreh') st.phiM = ((Math.round(st.phiM / 180) * 180) % 360 + 360) % 360;
       if (dann === 'dreh') st.job = { art: 'dreh', p0: st.phiM, p1: st.phiM + 180, dur: CFG.tFlip, t: 0 };
       else if (dann === 'auto') { S.auto = true; st.tA = 0; }
+      else if (dann === 'autoEin') { S.auto = true; st.tA = S.T / 2; }   // Umkehrpunkt in der Spulenmitte
     }
   } else if (S.auto) {                                  // Automatik: x_M = x_aus + (x_ein − x_aus) · (1 − cos ωt)/2
     st.tA += dt;
@@ -728,7 +731,9 @@ const fzx = CAM.r[2] * CFG.s * 14, fzy = -CAM.u[2] * CFG.s * 14;          // Ste
 
 // Beschriftungen
 const lB = txt(0, 0, I('B'), { class: 'lbl c-phi halo', 'text-anchor': 'middle' }, gLbl);   // Formelzeichen an einer Feldlinie
-const tSpule = txt(CFG.X0 + 110, CFG.Y0 - CFG.s * CFG.rS - 58, '', { class: 'lbl halo', 'text-anchor': 'start' }, gLbl);
+// Angaben zur Spule links unter dem Sockel (16.11.2026: rechts der Spule läuft der Magnet beim Durchschieben durch)
+const SPL = (() => { const a = P3([SO.x0, SO.y0, SO.z1]); return { x: a[0] - 150, y: a[1] + 30 }; })();
+const tSpule = txt(SPL.x, SPL.y, '', { class: 'lbl halo', 'text-anchor': 'middle' }, gLbl);
 const tVereinf = txt(60, 1046, '', { class: 'lbl-s sans muted halo' }, gTop);               // Zusatzbeschriftung am Rand (layout.md 3)
 const tTitel = txt(1872, 120, 'Spannungsinduktion', { class: 't-main', 'text-anchor': 'end' }, gTop);   // Norm: oben rechts, neben dem QR-Code
 
@@ -784,8 +789,8 @@ const lU = txt(ZP.x + 40, ZP.y + 76, '', { class: 'ro c-u halo', 'text-anchor': 
 // Bewegungspfeil v über dem Magneten (neutral, kein Zählpfeil: zeigt in Bewegungsrichtung)
 const pV = makeArrow(gPfeile, C.grau, 5, 26, 11);
 const lV = txt(0, 0, '', { class: 'ro halo', 'text-anchor': 'middle' }, gLbl);
-// Fluss Φ: Zählpfeil auf der Achse rechts der Spule (zählt nach rechts positiv)
-const PH = (() => { const a = P3([CFG.lS / 2 + 45, 0, 0]); return { x: a[0], y: a[1] }; })();
+// Fluss Φ: Zählpfeil parallel zur Achse (zählt nach rechts positiv), unter der Angabe zur Spule
+const PH = { x: SPL.x, y: SPL.y + 92 };
 const pPhi = zaehlpfeil(gPfeile, C.phi, PH.x, PH.y, AXn[0], AXn[1], 150);
 const lPhi = txt(PH.x, PH.y - 34, '', { class: 'ro c-phi halo', 'text-anchor': 'middle' }, gLbl);
 // Hinweis „Magnet ziehen“: Doppelpfeil längs der Achse über dem Magneten, Mauszeiger, Text; dazu gestrichelter
@@ -1019,8 +1024,7 @@ function draw() {
     hPfeil.setAttribute('d', `M ${a1[0]} ${a1[1]} L ${a2[0]} ${a2[1]} ${spitze(a2, 1)} ${spitze(a1, -1)}`);
     const wackeln = !S.benutzt && !REDUZIERT ? Math.sin(performance.now() / 1000 * 2 * Math.PI / 1.8) * 60 : 0;
     hMaus.setAttribute('transform', `translate(${(xv + AXn[0] * wackeln - 4).toFixed(1)} ${(yv + AXn[1] * wackeln + 4).toFixed(1)})`);
-    const tw = hText.getComputedTextLength() || 330;               // Text endet links vor „Spule, N = …“
-    hText.setAttribute('x', Math.min(xv, CFG.X0 + 110 - 28 - tw / 2)); hText.setAttribute('y', yv - 24);
+    hText.setAttribute('x', xv); hText.setAttribute('y', yv - 24);
   }
   // Fluss Φ
   for (const e of [pPhi.g, lPhi]) e.style.display = S.phi ? '' : 'none';
@@ -1040,6 +1044,7 @@ const bruch = (z, n) => `<span class="fr"><span>${z}</span><span>${n}</span></sp
 function zustand() {
   if (st.job && st.job.art === 'dreh') return 'dreh';
   if (st.ruheSeit > 0.3) return 'ruhe';
+  if (st.x > 0.5) return st.v > 0 ? 'durch' : 'zurueck';    // jenseits der Spulenmitte (Fluss dort am größten)
   return st.v > 0 ? 'hinein' : 'heraus';
 }
 const TEXTE = {
@@ -1049,6 +1054,10 @@ const TEXTE = {
     'Das Magnetfeld in der Spule wird stärker. Dadurch wird eine Spannung induziert (erzeugt). Je schneller sich der Magnet bewegt, desto größer ist die Spannung.' + (pol === 'Südpol' ? ' Der Zeiger schlägt andersherum aus als beim Nordpol.' : '')],
   heraus: (pol, drin) => [drin ? `Der ${pol} bewegt sich aus der Spule heraus` : `Der ${pol} entfernt sich von der Spule`,
     'Das Magnetfeld in der Spule wird schwächer. Die Spannung hat jetzt die umgekehrte Richtung: Der Zeiger schlägt zur anderen Seite aus.'],
+  durch: (pol) => [`Der ${pol} tritt auf der anderen Seite aus`,
+    'Der Magnet bewegt sich in dieselbe Richtung weiter, aber das Magnetfeld in der Spule wird jetzt schwächer. Deshalb kehrt sich die Spannung um: Der Zeiger schlägt zur anderen Seite aus. Entscheidend ist nicht die Bewegungsrichtung, sondern ob das Magnetfeld in der Spule stärker oder schwächer wird.'],
+  zurueck: () => ['Der Magnet wird in die Spule zurückgeschoben',
+    'Das Magnetfeld in der Spule wird wieder stärker. Der Zeiger schlägt deshalb zur selben Seite aus wie beim Hineinschieben, obwohl sich der Magnet jetzt in die Gegenrichtung bewegt.'],
   dreh: () => ['Der Magnet wird umgedreht', 'Danach zeigt der andere Pol zur Spule. Auch beim Drehen ändert sich das Magnetfeld in der Spule ein wenig. Der Zeiger zuckt deshalb kurz.'],
 };
 let textSchl = '';
@@ -1092,7 +1101,7 @@ function baueNotizen() {
     `<b>Zählpfeile:</b> <i class="m">u</i><sub>i</sub> von Anschluss 1 nach 2, <i class="m">Φ</i> nach rechts positiv. Damit gilt <i class="m">u</i><sub>i</sub> = <i class="m">N</i> · Δ<i class="m">Φ</i>/Δ<i class="m">t</i> (Verbraucherzählpfeilsystem). Mit Erzeugerzählpfeil steht dort −<i class="m">N</i> · Δ<i class="m">Φ</i>/Δ<i class="m">t</i> (Lenz’sche Regel); die Physik ist dieselbe. Anschluss 1 liegt am Plus des Spannungsmessers: Nordpol hinein → Ausschlag nach rechts.`,
     `<b>Spannungsmesser:</b> Nullpunkt in der Mitte, ideal hochohmig (es fließt kein Strom, der Magnet wird nicht gebremst) und nicht träge: Der Zeiger zeigt sofort den Momentanwert. Ein echtes Drehspulgerät läuft nach und zeigt bei schnellen Stößen weniger. Ab ${Math.round(CFG.anschlag * 100)}&#8239;% des Messbereichs schlägt der Zeiger an.`,
     `<b>Automatik:</b> Die Magnetmitte bewegt sich kosinusförmig zwischen ${g(CFG.xAus, 'mm')} und ${g(CFG.xEin, 'mm')} (Spulenmitte = 0) mit der Periodendauer <i class="m">T</i> = 4&#8239;s, 2&#8239;s oder 1&#8239;s. Die Bewegung ist sinusförmig, die Spannung nicht: Sie ist am größten, wenn der Pol durch die Wicklung läuft.`,
-    `<b>Ziehen mit Maus oder Finger:</b> Der Magnet folgt dem Zeiger mit <i class="m">τ</i> = ${g(CFG.tauMaus, 's')}, die Geschwindigkeit wird mit <i class="m">τ</i> = ${g(CFG.tauV, 's')} geglättet, weil Zeigerereignisse unregelmäßig kommen. Pfeiltasten bewegen mit ${g(CFG.vTaste / 1000, 'm/s')} (mit Umschalttaste dreimal so schnell).`,
+    `<b>Ziehen mit Maus oder Finger:</b> Der Magnet folgt dem Zeiger mit <i class="m">τ</i> = ${g(CFG.tauMaus, 's')}, die Geschwindigkeit wird mit <i class="m">τ</i> = ${g(CFG.tauV, 's')} geglättet, weil Zeigerereignisse unregelmäßig kommen. Pfeiltasten bewegen mit ${g(CFG.vTaste / 1000, 'm/s')} (mit Umschalttaste dreimal so schnell). Der Magnet lässt sich von ${g(CFG.xMin, 'mm')} bis ${g(CFG.xMax, 'mm')} schieben (Spulenmitte = 0), also fast durch die Spule: Jenseits der Mitte nimmt der Fluss beim Weiterschieben wieder ab, die Spannung kehrt sich um, obwohl sich die Bewegungsrichtung nicht ändert.`,
     `<b>Umdrehen:</b> Der Magnet wird erst bis ${g(CFG.xAus, 'mm')} herausgezogen und dann gedreht. Beim Drehen gilt näherungsweise <i class="m">Ψ</i> = <i class="m">Ψ</i><sub>0</sub> · cos <i class="m">φ</i><sub>M</sub>.`,
     `<b>Feldlinien der Flussdichte <i class="m">B</i></b> sind aus demselben Modell berechnet, nicht skizziert: Zwischen zwei Nachbarlinien liegt jeweils derselbe Fluss, ein Fünftel des Flusses im Magneten. Die Linien sind geschlossen: Im Magneten laufen sie vom Süd- zum Nordpol und sind dort verdeckt. Gezeigt ist die Schnittebene durch die Achse. In ihr ist der Linienabstand kein Maß für <i class="m">B</i>: Jede Linie steht für einen Ring, deshalb liegen die Linien nahe der Achse weiter auseinander, obwohl <i class="m">B</i> dort groß ist. Am Bildrand laufen die Linien aus, sie gehen weiter.`,
     `<b>Zählpfeil <i class="m">u</i><sub>i</sub>:</b> Länge ∝ Wert; der Abstand der Buchsen entspricht etwa dem Messbereich, längere Pfeile sind gekürzt. Der Bewegungspfeil <i class="m">v</i> zeigt in Bewegungsrichtung.`,
@@ -1107,7 +1116,8 @@ const AKTIONEN = {
   umdrehen() {
     if (st.job && st.job.art === 'dreh') return;
     S.auto = false; drag.aktiv = false; S.benutzt = true;
-    if (st.x > CFG.xAus + 0.5) st.job = { x0: st.x, x1: CFG.xAus, dur: CFG.tFlipRaus, t: 0, dann: 'dreh' };
+    // Dauer wächst mit dem Weg: aus der durchgeschobenen Lage nicht schneller als aus der Spulenmitte (kein Anschlag)
+    if (st.x > CFG.xAus + 0.5) st.job = { x0: st.x, x1: CFG.xAus, dur: CFG.tFlipRaus * Math.max(1, (st.x - CFG.xAus) / (CFG.xEin - CFG.xAus)), t: 0, dann: 'dreh' };
     else st.job = { art: 'dreh', p0: st.phiM, p1: st.phiM + 180, dur: CFG.tFlip, t: 0 };
   },
   reset,
