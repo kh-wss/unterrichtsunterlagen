@@ -97,6 +97,14 @@ html.export,html.export body{background:#fff;padding:0}
 html.export .wrap{width:1920px;max-width:none;gap:0}
 html.export .stage{width:1920px;height:1080px;border:0;border-radius:0;overflow:hidden}
 html.export .controls,html.export .notes,html.export .erkl,html.export .tip{display:none}
+/* Vorschau ?buehne=1 (Moodle-Einbettung und Übersicht): nur die Bühne, randlos – füllt einen
+   16:9-Rahmen genau aus. Klicken und Tasten in der Bühne bleiben; Bedienleiste und Texte entfallen.
+   Nachgerüstet 16.11.2026 wie in den übrigen Animationen (Layout-Norm, Normblock 8). */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.buehne .wrap{width:100%;max-width:none;gap:0}
+html.buehne .stage{border:0;border-radius:0;overflow:hidden}
+html.buehne .stage svg{min-width:0}
+html.buehne .wrap>:not(.stage){display:none}
 </style>
 </head>
 <body>
@@ -973,6 +981,7 @@ window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S
    scripts/pruefen.py und scripts/video.py steuern die Seite nur hierüber. */
 const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
 if (params.has('export')) document.documentElement.classList.add('export');
+if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne
 for (const k of SCHALTER) { if (params.has(k)) S[k] = params.get(k) !== '0'; $('#chk-' + k).checked = S[k]; }
 if (params.has('qr')) S.qr = params.get('qr') !== '0';   // ?qr=1: QR-Code gleich zeigen (Beamer, Export)
 if (params.has('q') && CFG.q.werte.includes(Number(params.get('q')))) S.q = Number(params.get('q'));   // z. B. ?q=1
