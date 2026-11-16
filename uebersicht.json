@@ -6,8 +6,8 @@
   "sachgebiete": [
     { "name": "Magnetismus & Induktion",  "ordner": ["induktion", "spule"] },
     { "name": "Wechselspannung",          "ordner": ["wechselspannung"] },
+    { "name": "Leistung & Leistungsdreieck", "ordner": ["leistung", "lf5-kompensation"] },
     { "name": "Dreiphasenwechselspannung", "ordner": ["dreiphasenwechselspannung"] },
-    { "name": "Leistung & Kompensation",  "ordner": ["leistung", "lf5-kompensation"] },
     { "name": "Antriebstechnik",          "ordner": ["drehfeld"] },
     { "name": "Schutzorgane",             "ordner": ["lf2-schutzorgane"] },
     { "name": "Werkzeuge",                "ordner": ["tools"], "art": "Werkzeug" }
