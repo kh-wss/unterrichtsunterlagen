@@ -170,6 +170,16 @@ def html_block(adresse, abschnitte, stand_text):
                 tipp = ('In Moodle im Texteditor auf die HTML-Ansicht umschalten und den Code einfügen. '
                         'Diese Seite hat keine Vorschau-Ansicht – der Code bettet Überschrift und Link ein.')
             z.append('<article class="karte">')
+            # Kleine Vorschau wie in Moodle: dieselbe Ansicht ?buehne=1, relativ verlinkt (läuft auch lokal).
+            # Adresse in data-src: Das Skript in index.html lädt nur sichtbare Vorschauen und entlädt
+            # sie beim Wegscrollen – sonst laufen alle Animationen gleichzeitig (Last am Schul-Laptop).
+            if s['vorschau']:
+                z.append(f'<div class="vorschau"><iframe data-src="./{e(s["rel"])}?buehne=1" '
+                         f'title="Vorschau – {e(s["titel"])}"></iframe></div>')
+            else:
+                z.append('<div class="vorschau leer"><span>Keine Vorschau-Ansicht –<br>'
+                         'in Moodle erscheinen nur Überschrift und Link.</span></div>')
+            z.append('<div class="inhalt">')
             z.append(f'<span class="art">{e(s["art"])}</span>')
             z.append(f'<h3><a href="./{e(s["rel"])}">{e(s["titel"])}</a></h3>')
             z.append(f'<p class="text">{e(s["text"])}</p>')
@@ -178,6 +188,7 @@ def html_block(adresse, abschnitte, stand_text):
             z.append(f'<button type="button" class="knopf" data-einbettung="{k}" '
                      f'data-titel="{e(s["titel"])}" data-hinweis="{e(tipp)}">Moodle-Einbettung</button>')
             z.append(f'<textarea id="{k}" hidden>{e(code, quote=False)}</textarea>')
+            z.append('</div>')
             z.append('</div>')
             z.append('</article>')
         z.append('</div>')

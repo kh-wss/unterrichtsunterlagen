@@ -35,9 +35,14 @@ veröffentlichen“. Sie
 2. liest Titel (`<title>`) und Beschreibung (`<meta name="description">`),
 3. ordnet jede Seite über ihren ersten Ordner einem Sachgebiet zu
    (`uebersicht.json` → `sachgebiete`),
-4. schreibt die Karten samt Moodle-Einbettungscode in `index.html` zwischen
+4. schreibt die Karten (untereinander, je mit kleiner Vorschau wie in Moodle,
+   `?buehne=1`) samt Moodle-Einbettungscode in `index.html` zwischen
    `<!-- UEBERSICHT:ANFANG -->` und `<!-- UEBERSICHT:ENDE -->` und
 5. veröffentlicht die Seite auf GitHub Pages.
+
+Die Vorschauen laden erst, wenn sie ins Bild kommen, und werden beim
+Wegscrollen wieder entladen – so laufen nie alle Animationen gleichzeitig.
+Seiten ohne Vorschau-Ansicht zeigen statt der Vorschau einen Hinweis.
 
 **Neue Seite:** Ordner mit `index.html` anlegen, `<title>` und
 `<meta name="description">` setzen – fertig. Liegt der Ordner in einem neuen

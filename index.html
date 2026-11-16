@@ -40,14 +40,20 @@ nav.sachgebiete a{display:inline-block;padding:.25rem .7rem;border:1px solid var
 nav.sachgebiete a:hover{background:var(--btn-hover)}
 section{margin-top:2.25rem;scroll-margin-top:1rem}
 section h2{font-size:1.15rem;margin:0 0 .75rem;padding-bottom:.35rem;border-bottom:1px solid var(--rule)}
-.karten{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem}
-.karte{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:1rem 1rem .85rem}
+.karten{display:flex;flex-direction:column;gap:.9rem}
+/* Karte: links die kleine Vorschau (wie in Moodle, 16:9), rechts Titel, Text, Knöpfe; am Handy untereinander */
+.karte{display:grid;grid-template-columns:320px 1fr;gap:1.1rem;align-items:start;background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:.9rem}
+.karte .inhalt{display:flex;flex-direction:column;min-width:0;align-self:stretch}
+.vorschau{aspect-ratio:16/9;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:#ffffff}
+.vorschau iframe{display:block;width:100%;height:100%;border:0}
+.vorschau.leer{display:flex;align-items:center;justify-content:center;text-align:center;padding:1rem;background:var(--page);color:var(--muted);font-size:.85rem;line-height:1.4}
+@media (max-width:640px){.karte{grid-template-columns:1fr;gap:.8rem}}
 .karte .art{align-self:flex-start;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:4px;padding:.05rem .4rem;margin-bottom:.5rem}
 .karte h3{font-size:1.05rem;line-height:1.3;margin:0 0 .4rem}
 .karte h3 a{color:var(--fg);text-decoration:none}
 .karte h3 a:hover{text-decoration:underline}
-.karte p.text{margin:0 0 .8rem;color:var(--muted);font-size:.93rem;flex:1}
-.karte .aktionen{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.5rem;border-top:1px solid var(--rule);padding-top:.7rem}
+.karte p.text{margin:0 0 .8rem;color:var(--muted);font-size:.93rem}
+.karte .aktionen{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.5rem;margin-top:auto}
 .knopf{display:inline-block;font:inherit;font-size:.9rem;padding:.3rem .75rem;border-radius:6px;border:1px solid var(--rule);background:var(--btn);color:var(--fg);text-decoration:none;cursor:pointer}
 .knopf:hover{background:var(--btn-hover)}
 .knopf.haupt{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
@@ -80,6 +86,8 @@ footer a{color:var(--muted)}
 <h2 id="e-magnetismus-induktion-h">Magnetismus &amp; Induktion</h2>
 <div class="karten">
 <article class="karte">
+<div class="vorschau"><iframe data-src="./induktion/magnet-spule/?buehne=1" title="Vorschau – Spannungsinduktion"></iframe></div>
+<div class="inhalt">
 <span class="art">Animation</span>
 <h3><a href="./induktion/magnet-spule/">Spannungsinduktion</a></h3>
 <p class="text">Ein Stabmagnet wird in eine Spule hinein- und herausbewegt; ein Spannungsmesser mit Nullpunkt in der Mitte zeigt die induzierte Spannung. Magnet mit Maus oder Finger ziehen oder automatisch hin und her bewegen lassen.</p>
@@ -92,8 +100,11 @@ footer a{color:var(--muted)}
   loading="lazy" title="Vorschau – Spannungsinduktion"&gt;&lt;/iframe&gt;&lt;/div&gt;
 &lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/induktion/magnet-spule/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
 </div>
+</div>
 </article>
 <article class="karte">
+<div class="vorschau"><iframe data-src="./spule/ein-ausschalten/?buehne=1" title="Vorschau – Spule ein- und ausschalten"></iframe></div>
+<div class="inhalt">
 <span class="art">Animation</span>
 <h3><a href="./spule/ein-ausschalten/">Spule ein- und ausschalten</a></h3>
 <p class="text">Interaktive Animation zur Selbstinduktion: Spule an Gleichspannung ein- und ausschalten, mit Elektronen, Magnetfeld, Spannungs- und Strompfeilen, Lichtbogen und Freilaufdiode.</p>
@@ -106,6 +117,7 @@ footer a{color:var(--muted)}
   loading="lazy" title="Vorschau – Spule ein- und ausschalten"&gt;&lt;/iframe&gt;&lt;/div&gt;
 &lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/spule/ein-ausschalten/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
 </div>
+</div>
 </article>
 </div>
 </section>
@@ -114,6 +126,8 @@ footer a{color:var(--muted)}
 <h2 id="e-wechselspannung-h">Wechselspannung</h2>
 <div class="karten">
 <article class="karte">
+<div class="vorschau"><iframe data-src="./wechselspannung/erzeugung/?buehne=1" title="Vorschau – Erzeugung von Wechselspannung"></iframe></div>
+<div class="inhalt">
 <span class="art">Animation</span>
 <h3><a href="./wechselspannung/erzeugung/">Erzeugung von Wechselspannung</a></h3>
 <p class="text">Generatormodell: Ein Stabmagnet dreht sich als Polrad vor einer Spule. Drehzeiger und Liniendiagramm zeigen, wie die Sinusspannung u = û · sin α entsteht; der Winkel lässt sich auch direkt einstellen.</p>
@@ -126,8 +140,11 @@ footer a{color:var(--muted)}
   loading="lazy" title="Vorschau – Erzeugung von Wechselspannung"&gt;&lt;/iframe&gt;&lt;/div&gt;
 &lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/erzeugung/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
 </div>
+</div>
 </article>
 <article class="karte">
+<div class="vorschau"><iframe data-src="./wechselspannung/effektivwert/?buehne=1" title="Vorschau – Effektivwert – gleiche Leistung bei Gleich- und Wechselspannung"></iframe></div>
+<div class="inhalt">
 <span class="art">Animation</span>
 <h3><a href="./wechselspannung/effektivwert/">Effektivwert – gleiche Leistung bei Gleich- und Wechselspannung</a></h3>
 <p class="text">Animation zum Effektivwert: Zwei gleiche Lampen an Gleichspannung und an Wechselspannung. Schritt für Schritt entsteht die Leistungskurve p = u²/R; die Spitzen der Leistungsfläche klappen in die Täler und zeigen den Mittelwert P = p̂/2.</p>
@@ -140,6 +157,7 @@ footer a{color:var(--muted)}
   loading="lazy" title="Vorschau – Effektivwert – gleiche Leistung bei Gleich- und Wechselspannung"&gt;&lt;/iframe&gt;&lt;/div&gt;
 &lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/effektivwert/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
 </div>
+</div>
 </article>
 </div>
 </section>
@@ -148,6 +166,8 @@ footer a{color:var(--muted)}
 <h2 id="e-leistung-kompensation-h">Leistung &amp; Kompensation</h2>
 <div class="karten">
 <article class="karte">
+<div class="vorschau"><iframe data-src="./leistung/wirk-blind-schein/?buehne=1" title="Vorschau – Wirk-, Blind- und Scheinleistung"></iframe></div>
+<div class="inhalt">
 <span class="art">Animation</span>
 <h3><a href="./leistung/wirk-blind-schein/">Wirk-, Blind- und Scheinleistung</a></h3>
 <p class="text">Interaktive Animation: Spannung, Strom und Momentanleistung bei einstellbarer Phasenverschiebung, Wirk-, Blind- und Scheinleistung als Flächen, als Zerlegung und im Leistungsdreieck.</p>
@@ -160,6 +180,7 @@ footer a{color:var(--muted)}
   loading="lazy" title="Vorschau – Wirk-, Blind- und Scheinleistung"&gt;&lt;/iframe&gt;&lt;/div&gt;
 &lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/leistung/wirk-blind-schein/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
 </div>
+</div>
 </article>
 </div>
 </section>
@@ -168,6 +189,8 @@ footer a{color:var(--muted)}
 <h2 id="e-drehstrom-h">Drehstrom</h2>
 <div class="karten">
 <article class="karte">
+<div class="vorschau leer"><span>Keine Vorschau-Ansicht –<br>in Moodle erscheinen nur Überschrift und Link.</span></div>
+<div class="inhalt">
 <span class="art">Animation</span>
 <h3><a href="./drehfeld/verteilte-wicklung/">Drehfeld mit verteilter Wicklung</a></h3>
 <p class="text">Ständer mit verteilter Drehstromwicklung in Nuten: Die Ströme ändern sich, Nordpol und Südpol laufen am Ständer um, das resultierende Magnetfeld dreht sich.</p>
@@ -177,6 +200,7 @@ footer a{color:var(--muted)}
 <textarea id="e-drehfeld-verteilte-wicklung" hidden>&lt;h3 dir="ltr" style="text-align: left;"&gt;&lt;strong&gt;Drehfeld mit verteilter Wicklung&lt;/strong&gt;&lt;/h3&gt;
 &lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/drehfeld/verteilte-wicklung/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
 </div>
+</div>
 </article>
 </div>
 </section>
@@ -185,6 +209,8 @@ footer a{color:var(--muted)}
 <h2 id="e-werkzeuge-h">Werkzeuge</h2>
 <div class="karten">
 <article class="karte">
+<div class="vorschau leer"><span>Keine Vorschau-Ansicht –<br>in Moodle erscheinen nur Überschrift und Link.</span></div>
+<div class="inhalt">
 <span class="art">Werkzeug</span>
 <h3><a href="./tools/pruefungstimer/">Prüfungs-Uhr</a></h3>
 <p class="text">Uhr für Klassenarbeiten und Prüfungen: Anfang, Dauer, verbleibende Zeit und geplantes Ende – groß für den Beamer.</p>
@@ -193,6 +219,7 @@ footer a{color:var(--muted)}
 <button type="button" class="knopf" data-einbettung="e-tools-pruefungstimer" data-titel="Prüfungs-Uhr" data-hinweis="In Moodle im Texteditor auf die HTML-Ansicht umschalten und den Code einfügen. Diese Seite hat keine Vorschau-Ansicht – der Code bettet Überschrift und Link ein.">Moodle-Einbettung</button>
 <textarea id="e-tools-pruefungstimer" hidden>&lt;h3 dir="ltr" style="text-align: left;"&gt;&lt;strong&gt;Prüfungs-Uhr&lt;/strong&gt;&lt;/h3&gt;
 &lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/tools/pruefungstimer/" target="_blank"&gt;Werkzeug in neuem Fenster öffnen&lt;/a&gt;&lt;/p&gt;</textarea>
+</div>
 </div>
 </article>
 </div>
@@ -212,6 +239,23 @@ footer a{color:var(--muted)}
   </div>
 </dialog>
 <script>
+/* Vorschauen nur laden, solange sie im Bild sind: Beim Wegscrollen wird die Seite entladen,
+   damit nicht alle Animationen gleichzeitig laufen. Ohne IntersectionObserver alle laden. */
+(function () {
+  var rahmen = document.querySelectorAll('.vorschau iframe[data-src]');
+  if (!('IntersectionObserver' in window)) {
+    rahmen.forEach(function (f) { f.src = f.getAttribute('data-src'); });
+    return;
+  }
+  var io = new IntersectionObserver(function (eintraege) {
+    eintraege.forEach(function (e) {
+      var f = e.target, ziel = f.getAttribute('data-src');
+      if (e.isIntersecting) { if (f.getAttribute('src') !== ziel) f.src = ziel; }
+      else if (f.hasAttribute('src')) { f.src = 'about:blank'; f.removeAttribute('src'); }
+    });
+  }, { rootMargin: '150px 0px' });
+  rahmen.forEach(function (f) { io.observe(f); });
+})();
 /* Moodle-Einbettung: Fenster mit dem Code der Karte; Kopieren mit Rückfall auf Markieren */
 (function () {
   var dlg = document.getElementById('einbettung');
