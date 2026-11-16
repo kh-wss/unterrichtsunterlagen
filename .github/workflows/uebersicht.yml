@@ -1,0 +1,44 @@
+# Baut bei jeder Änderung auf main die Übersicht (index.html) neu und veröffentlicht
+# die Seite auf GitHub Pages. Voraussetzung (einmalig): Settings → Pages →
+# „Build and deployment“ → Source: „GitHub Actions“.
+name: Übersicht erzeugen und veröffentlichen
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  bauen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository holen
+        uses: actions/checkout@v5
+      - name: Übersicht erzeugen
+        run: python3 .github/scripts/uebersicht.py
+      - name: Pages vorbereiten
+        uses: actions/configure-pages@v5
+      - name: Seite hochladen
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+
+  veroeffentlichen:
+    needs: bauen
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Auf GitHub Pages veröffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,87 +1,241 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Unterrichtsmaterialien</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./shared/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>Unterrichtsmaterialien Elektrotechnik</title>
+<meta name="description" content="Interaktive Animationen und Werkzeuge für den Elektrotechnik-Unterricht – im Browser, am Beamer und zum Einbetten in Moodle.">
+<!--
+  Übersichtsseite. Der Teil zwischen UEBERSICHT:ANFANG und UEBERSICHT:ENDE wird
+  automatisch erzeugt (.github/scripts/uebersicht.py, gesteuert über uebersicht.json)
+  und bei jeder Änderung auf main neu gebaut – dort nicht von Hand ändern.
+  Kopf, Aussehen und Skript außerhalb der Marken dürfen geändert werden.
+-->
+<style>
+:root{
+  /* Farben und Schrift wie in den Animationen (hell, dunkel nach Geräteeinstellung) */
+  --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
+  --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
+  --link:#0b5cad;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+    --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+    --link:#8cc4ea;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--page);color:var(--fg);font-family:var(--font-ui);line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--link)}
+.seite{max-width:960px;margin:0 auto;padding:2rem 1.25rem 3rem}
+header h1{font-size:1.75rem;line-height:1.2;margin:0 0 .5rem}
+header p{margin:0;color:var(--muted);max-width:44rem}
+nav.sachgebiete{display:flex;flex-wrap:wrap;gap:.4rem;margin:1.25rem 0 0;padding:0;list-style:none}
+nav.sachgebiete a{display:inline-block;padding:.25rem .7rem;border:1px solid var(--rule);border-radius:999px;background:var(--panel);color:var(--fg);text-decoration:none;font-size:.9rem}
+nav.sachgebiete a:hover{background:var(--btn-hover)}
+section{margin-top:2.25rem;scroll-margin-top:1rem}
+section h2{font-size:1.15rem;margin:0 0 .75rem;padding-bottom:.35rem;border-bottom:1px solid var(--rule)}
+.karten{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem}
+.karte{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:1rem 1rem .85rem}
+.karte .art{align-self:flex-start;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:4px;padding:.05rem .4rem;margin-bottom:.5rem}
+.karte h3{font-size:1.05rem;line-height:1.3;margin:0 0 .4rem}
+.karte h3 a{color:var(--fg);text-decoration:none}
+.karte h3 a:hover{text-decoration:underline}
+.karte p.text{margin:0 0 .8rem;color:var(--muted);font-size:.93rem;flex:1}
+.karte .aktionen{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.5rem;border-top:1px solid var(--rule);padding-top:.7rem}
+.knopf{display:inline-block;font:inherit;font-size:.9rem;padding:.3rem .75rem;border-radius:6px;border:1px solid var(--rule);background:var(--btn);color:var(--fg);text-decoration:none;cursor:pointer}
+.knopf:hover{background:var(--btn-hover)}
+.knopf.haupt{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.knopf.haupt:hover{opacity:.9}
+.knopf:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+dialog.einbettung{width:min(680px,calc(100vw - 2rem));max-height:calc(100vh - 2rem);border:1px solid var(--rule);border-radius:10px;padding:1.1rem 1.2rem 1rem;background:var(--panel);color:var(--fg)}
+dialog.einbettung::backdrop{background:rgba(0,0,0,.45)}
+dialog.einbettung h2{font-size:1.1rem;margin:0 0 .35rem}
+dialog.einbettung p{margin:0 0 .6rem;font-size:.9rem;color:var(--muted)}
+dialog.einbettung textarea{width:100%;height:9.5rem;resize:vertical;font-family:var(--font-mono);font-size:.8rem;line-height:1.4;color:var(--fg);background:var(--page);border:1px solid var(--rule);border-radius:6px;padding:.5rem}
+dialog.einbettung .zeile{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.6rem}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--rule);color:var(--muted);font-size:.85rem}
+footer a{color:var(--muted)}
+@media (max-width:480px){.seite{padding:1.25rem .9rem 2rem} header h1{font-size:1.45rem}}
+</style>
 </head>
 <body>
-  <div class="page">
+<div class="seite">
 
-    <header class="page-header">
-      <span class="eyebrow">Materialübersicht</span>
-      <h1>Unterrichtsmaterialien</h1>
-      <p>
-        Sammlung interaktiver Webseiten, Animationen und Werkzeuge für den Unterricht.
-        Diese Übersicht verlinkt direkt auf die einzelnen Materialien – die Links können
-        unverändert in Moodle eingebettet werden (z. B. per iframe).
-      </p>
-    </header>
+<header>
+  <h1>Unterrichtsmaterialien Elektrotechnik</h1>
+  <p>Interaktive Animationen und Werkzeuge für den Unterricht. Alles läuft direkt im Browser – am Beamer,
+     am Laptop und am Handy. Über „Moodle-Einbettung“ gibt es zu jeder Seite den fertigen Code für einen Moodle-Kurs.</p>
+</header>
 
-    <!-- ============ Allgemeine Werkzeuge ============ -->
-    <section class="section">
-      <h2 class="section-title">Werkzeuge</h2>
-      <div class="card-grid">
+<!-- UEBERSICHT:ANFANG -->
+<nav class="sachgebiete" aria-label="Sachgebiete"><a href="#e-magnetismus-induktion">Magnetismus &amp; Induktion</a> <a href="#e-wechselspannung">Wechselspannung</a> <a href="#e-leistung-kompensation">Leistung &amp; Kompensation</a> <a href="#e-drehstrom">Drehstrom</a> <a href="#e-werkzeuge">Werkzeuge</a></nav>
 
-        <a class="card" href="./tools/pruefungstimer/">
-          <div class="card-top">
-            <span class="card-title">Prüfungs-Timer</span>
-            <span class="badge tool">TOOL</span>
-          </div>
-          <p class="card-desc">
-            Countdown-Anzeige für Klassenarbeiten und Prüfungen, eignet sich für
-            Beamer-Darstellung oder als eingebettetes Element in Moodle.
-          </p>
-        </a>
+<section id="e-magnetismus-induktion" aria-labelledby="e-magnetismus-induktion-h">
+<h2 id="e-magnetismus-induktion-h">Magnetismus &amp; Induktion</h2>
+<div class="karten">
+<article class="karte">
+<span class="art">Animation</span>
+<h3><a href="./induktion/magnet-spule/">Spannungsinduktion</a></h3>
+<p class="text">Ein Stabmagnet wird in eine Spule hinein- und herausbewegt; ein Spannungsmesser mit Nullpunkt in der Mitte zeigt die induzierte Spannung. Magnet mit Maus oder Finger ziehen oder automatisch hin und her bewegen lassen.</p>
+<div class="aktionen">
+<a class="knopf haupt" href="./induktion/magnet-spule/">Öffnen</a>
+<button type="button" class="knopf" data-einbettung="e-induktion-magnet-spule" data-titel="Spannungsinduktion" data-hinweis="In Moodle im Texteditor auf die HTML-Ansicht umschalten und den Code einfügen. Er zeigt eine kleine Vorschau nur mit der Bühne und einen Link auf die volle Seite.">Moodle-Einbettung</button>
+<textarea id="e-induktion-magnet-spule" hidden>&lt;h3 dir="ltr" style="text-align: left;"&gt;&lt;strong&gt;Spannungsinduktion&lt;/strong&gt;&lt;/h3&gt;
+&lt;div&gt;&lt;iframe src="https://kh-wss.github.io/unterrichtsunterlagen/induktion/magnet-spule/?buehne=1" width="560" height="315"
+  style="width:100%; max-width:560px; height:315px; border:0;"
+  loading="lazy" title="Vorschau – Spannungsinduktion"&gt;&lt;/iframe&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/induktion/magnet-spule/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
+</div>
+</article>
+<article class="karte">
+<span class="art">Animation</span>
+<h3><a href="./spule/ein-ausschalten/">Spule ein- und ausschalten</a></h3>
+<p class="text">Interaktive Animation zur Selbstinduktion: Spule an Gleichspannung ein- und ausschalten, mit Elektronen, Magnetfeld, Spannungs- und Strompfeilen, Lichtbogen und Freilaufdiode.</p>
+<div class="aktionen">
+<a class="knopf haupt" href="./spule/ein-ausschalten/">Öffnen</a>
+<button type="button" class="knopf" data-einbettung="e-spule-ein-ausschalten" data-titel="Spule ein- und ausschalten" data-hinweis="In Moodle im Texteditor auf die HTML-Ansicht umschalten und den Code einfügen. Er zeigt eine kleine Vorschau nur mit der Bühne und einen Link auf die volle Seite.">Moodle-Einbettung</button>
+<textarea id="e-spule-ein-ausschalten" hidden>&lt;h3 dir="ltr" style="text-align: left;"&gt;&lt;strong&gt;Spule ein- und ausschalten&lt;/strong&gt;&lt;/h3&gt;
+&lt;div&gt;&lt;iframe src="https://kh-wss.github.io/unterrichtsunterlagen/spule/ein-ausschalten/?buehne=1" width="560" height="315"
+  style="width:100%; max-width:560px; height:315px; border:0;"
+  loading="lazy" title="Vorschau – Spule ein- und ausschalten"&gt;&lt;/iframe&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/spule/ein-ausschalten/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
+</div>
+</article>
+</div>
+</section>
 
-      </div>
-    </section>
+<section id="e-wechselspannung" aria-labelledby="e-wechselspannung-h">
+<h2 id="e-wechselspannung-h">Wechselspannung</h2>
+<div class="karten">
+<article class="karte">
+<span class="art">Animation</span>
+<h3><a href="./wechselspannung/erzeugung/">Erzeugung von Wechselspannung</a></h3>
+<p class="text">Generatormodell: Ein Stabmagnet dreht sich als Polrad vor einer Spule. Drehzeiger und Liniendiagramm zeigen, wie die Sinusspannung u = û · sin α entsteht; der Winkel lässt sich auch direkt einstellen.</p>
+<div class="aktionen">
+<a class="knopf haupt" href="./wechselspannung/erzeugung/">Öffnen</a>
+<button type="button" class="knopf" data-einbettung="e-wechselspannung-erzeugung" data-titel="Erzeugung von Wechselspannung" data-hinweis="In Moodle im Texteditor auf die HTML-Ansicht umschalten und den Code einfügen. Er zeigt eine kleine Vorschau nur mit der Bühne und einen Link auf die volle Seite.">Moodle-Einbettung</button>
+<textarea id="e-wechselspannung-erzeugung" hidden>&lt;h3 dir="ltr" style="text-align: left;"&gt;&lt;strong&gt;Erzeugung von Wechselspannung&lt;/strong&gt;&lt;/h3&gt;
+&lt;div&gt;&lt;iframe src="https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/erzeugung/?buehne=1" width="560" height="315"
+  style="width:100%; max-width:560px; height:315px; border:0;"
+  loading="lazy" title="Vorschau – Erzeugung von Wechselspannung"&gt;&lt;/iframe&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/erzeugung/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
+</div>
+</article>
+<article class="karte">
+<span class="art">Animation</span>
+<h3><a href="./wechselspannung/effektivwert/">Effektivwert – gleiche Leistung bei Gleich- und Wechselspannung</a></h3>
+<p class="text">Animation zum Effektivwert: Zwei gleiche Lampen an Gleichspannung und an Wechselspannung. Schritt für Schritt entsteht die Leistungskurve p = u²/R; die Spitzen der Leistungsfläche klappen in die Täler und zeigen den Mittelwert P = p̂/2.</p>
+<div class="aktionen">
+<a class="knopf haupt" href="./wechselspannung/effektivwert/">Öffnen</a>
+<button type="button" class="knopf" data-einbettung="e-wechselspannung-effektivwert" data-titel="Effektivwert – gleiche Leistung bei Gleich- und Wechselspannung" data-hinweis="In Moodle im Texteditor auf die HTML-Ansicht umschalten und den Code einfügen. Er zeigt eine kleine Vorschau nur mit der Bühne und einen Link auf die volle Seite.">Moodle-Einbettung</button>
+<textarea id="e-wechselspannung-effektivwert" hidden>&lt;h3 dir="ltr" style="text-align: left;"&gt;&lt;strong&gt;Effektivwert – gleiche Leistung bei Gleich- und Wechselspannung&lt;/strong&gt;&lt;/h3&gt;
+&lt;div&gt;&lt;iframe src="https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/effektivwert/?buehne=1" width="560" height="315"
+  style="width:100%; max-width:560px; height:315px; border:0;"
+  loading="lazy" title="Vorschau – Effektivwert – gleiche Leistung bei Gleich- und Wechselspannung"&gt;&lt;/iframe&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/effektivwert/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
+</div>
+</article>
+</div>
+</section>
 
-    <!-- ============ LF2 ============ -->
-    <section class="section">
-      <h2 class="section-title">LF2 – Schutzorgane</h2>
-      <div class="card-grid">
+<section id="e-leistung-kompensation" aria-labelledby="e-leistung-kompensation-h">
+<h2 id="e-leistung-kompensation-h">Leistung &amp; Kompensation</h2>
+<div class="karten">
+<article class="karte">
+<span class="art">Animation</span>
+<h3><a href="./leistung/wirk-blind-schein/">Wirk-, Blind- und Scheinleistung</a></h3>
+<p class="text">Interaktive Animation: Spannung, Strom und Momentanleistung bei einstellbarer Phasenverschiebung, Wirk-, Blind- und Scheinleistung als Flächen, als Zerlegung und im Leistungsdreieck.</p>
+<div class="aktionen">
+<a class="knopf haupt" href="./leistung/wirk-blind-schein/">Öffnen</a>
+<button type="button" class="knopf" data-einbettung="e-leistung-wirk-blind-schein" data-titel="Wirk-, Blind- und Scheinleistung" data-hinweis="In Moodle im Texteditor auf die HTML-Ansicht umschalten und den Code einfügen. Er zeigt eine kleine Vorschau nur mit der Bühne und einen Link auf die volle Seite.">Moodle-Einbettung</button>
+<textarea id="e-leistung-wirk-blind-schein" hidden>&lt;h3 dir="ltr" style="text-align: left;"&gt;&lt;strong&gt;Wirk-, Blind- und Scheinleistung&lt;/strong&gt;&lt;/h3&gt;
+&lt;div&gt;&lt;iframe src="https://kh-wss.github.io/unterrichtsunterlagen/leistung/wirk-blind-schein/?buehne=1" width="560" height="315"
+  style="width:100%; max-width:560px; height:315px; border:0;"
+  loading="lazy" title="Vorschau – Wirk-, Blind- und Scheinleistung"&gt;&lt;/iframe&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/leistung/wirk-blind-schein/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
+</div>
+</article>
+</div>
+</section>
 
-        <a class="card" href="./lf2-schutzorgane/ls-schalter-auslosecharakteristik/">
-          <div class="card-top">
-            <span class="card-title">LS-Schalter: Auslösecharakteristiken</span>
-            <span class="badge">LF2</span>
-          </div>
-          <p class="card-desc">
-            Informationen und interaktive Darstellung zu den Auslösecharakteristiken
-            von Leitungsschutzschaltern (B, C, D).
-          </p>
-        </a>
+<section id="e-drehstrom" aria-labelledby="e-drehstrom-h">
+<h2 id="e-drehstrom-h">Drehstrom</h2>
+<div class="karten">
+<article class="karte">
+<span class="art">Animation</span>
+<h3><a href="./drehfeld/verteilte-wicklung/">Drehfeld mit verteilter Wicklung</a></h3>
+<p class="text">Ständer mit verteilter Drehstromwicklung in Nuten: Die Ströme ändern sich, Nordpol und Südpol laufen am Ständer um, das resultierende Magnetfeld dreht sich.</p>
+<div class="aktionen">
+<a class="knopf haupt" href="./drehfeld/verteilte-wicklung/">Öffnen</a>
+<button type="button" class="knopf" data-einbettung="e-drehfeld-verteilte-wicklung" data-titel="Drehfeld mit verteilter Wicklung" data-hinweis="In Moodle im Texteditor auf die HTML-Ansicht umschalten und den Code einfügen. Diese Seite hat keine Vorschau-Ansicht – der Code bettet Überschrift und Link ein.">Moodle-Einbettung</button>
+<textarea id="e-drehfeld-verteilte-wicklung" hidden>&lt;h3 dir="ltr" style="text-align: left;"&gt;&lt;strong&gt;Drehfeld mit verteilter Wicklung&lt;/strong&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/drehfeld/verteilte-wicklung/" target="_blank"&gt;Animation mit allen Bedienelementen öffnen (für Beamer / Vollbild)&lt;/a&gt;&lt;/p&gt;</textarea>
+</div>
+</article>
+</div>
+</section>
 
-      </div>
-    </section>
+<section id="e-werkzeuge" aria-labelledby="e-werkzeuge-h">
+<h2 id="e-werkzeuge-h">Werkzeuge</h2>
+<div class="karten">
+<article class="karte">
+<span class="art">Werkzeug</span>
+<h3><a href="./tools/pruefungstimer/">Prüfungs-Uhr</a></h3>
+<p class="text">Uhr für Klassenarbeiten und Prüfungen: Anfang, Dauer, verbleibende Zeit und geplantes Ende – groß für den Beamer.</p>
+<div class="aktionen">
+<a class="knopf haupt" href="./tools/pruefungstimer/">Öffnen</a>
+<button type="button" class="knopf" data-einbettung="e-tools-pruefungstimer" data-titel="Prüfungs-Uhr" data-hinweis="In Moodle im Texteditor auf die HTML-Ansicht umschalten und den Code einfügen. Diese Seite hat keine Vorschau-Ansicht – der Code bettet Überschrift und Link ein.">Moodle-Einbettung</button>
+<textarea id="e-tools-pruefungstimer" hidden>&lt;h3 dir="ltr" style="text-align: left;"&gt;&lt;strong&gt;Prüfungs-Uhr&lt;/strong&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;a href="https://kh-wss.github.io/unterrichtsunterlagen/tools/pruefungstimer/" target="_blank"&gt;Werkzeug in neuem Fenster öffnen&lt;/a&gt;&lt;/p&gt;</textarea>
+</div>
+</article>
+</div>
+</section>
 
-    <!-- ============ LF5 ============ -->
-    <section class="section">
-      <h2 class="section-title">LF5 – Kompensation</h2>
-      <div class="card-grid">
+<footer>Stand: 16.11.2026 · Diese Übersicht wird bei jeder Änderung automatisch erzeugt. · <a href="https://github.com/kh-wss/unterrichtsunterlagen">Quelltext auf GitHub</a> · Lizenz: <a href="https://github.com/kh-wss/unterrichtsunterlagen/blob/main/LICENSE">MIT</a></footer>
+<!-- UEBERSICHT:ENDE -->
 
-        <a class="card" href="./lf5-kompensation/animation/">
-          <div class="card-top">
-            <span class="card-title">Animation: Blindleistungskompensation</span>
-            <span class="badge">LF5</span>
-          </div>
-          <p class="card-desc">
-            Animierte Darstellung der Blindleistungskompensation im Drehstromnetz.
-          </p>
-        </a>
-
-      </div>
-    </section>
-
-    <footer class="page-footer">
-      unterrichtsmaterialien · gehostet via GitHub Pages
-    </footer>
-
+</div>
+<dialog class="einbettung" id="einbettung" aria-labelledby="einbettung-titel">
+  <h2 id="einbettung-titel">Moodle-Einbettung</h2>
+  <p id="einbettung-hinweis"></p>
+  <textarea id="einbettung-code" readonly spellcheck="false" aria-label="Einbettungscode"></textarea>
+  <div class="zeile">
+    <button type="button" class="knopf haupt" id="einbettung-kopieren">Code kopieren</button>
+    <button type="button" class="knopf" id="einbettung-schliessen">Schließen</button>
   </div>
+</dialog>
+<script>
+/* Moodle-Einbettung: Fenster mit dem Code der Karte; Kopieren mit Rückfall auf Markieren */
+(function () {
+  var dlg = document.getElementById('einbettung');
+  var feld = document.getElementById('einbettung-code');
+  var knopf = document.getElementById('einbettung-kopieren');
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-einbettung]');
+    if (!b) return;
+    document.getElementById('einbettung-titel').textContent = 'Moodle-Einbettung: ' + b.getAttribute('data-titel');
+    document.getElementById('einbettung-hinweis').textContent = b.getAttribute('data-hinweis');
+    feld.value = document.getElementById(b.getAttribute('data-einbettung')).value;
+    knopf.textContent = 'Code kopieren';
+    dlg.showModal();
+    feld.scrollTop = 0;
+  });
+  knopf.addEventListener('click', async function () {
+    var ok = false;
+    try { await navigator.clipboard.writeText(feld.value); ok = true; }
+    catch (err) { feld.focus(); feld.select(); try { ok = document.execCommand('copy'); } catch (err2) {} }
+    knopf.textContent = ok ? 'Kopiert ✓' : 'Markiert – mit Strg+C kopieren';
+  });
+  document.getElementById('einbettung-schliessen').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+})();
+</script>
 </body>
 </html>
