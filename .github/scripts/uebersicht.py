@@ -135,7 +135,7 @@ def baue(wurzel: Path):
 
     for rel in list(angaben) + list(ausblenden):
         if rel not in gefunden:
-            hinweis(f'uebersicht.json nennt „{rel}“, diese Seite gibt es nicht (mehr).')
+            hinweis(f'uebersicht.json nennt „{rel}“, diese Seite gibt es (noch) nicht.')
 
     reihen = [g['name'] for g in gebiete]
     werkzeug = [n for n in reihen if n == 'Werkzeuge']
@@ -177,8 +177,11 @@ def html_block(adresse, abschnitte, stand_text):
                 z.append(f'<div class="vorschau"><iframe data-src="./{e(s["rel"])}?buehne=1" '
                          f'title="Vorschau – {e(s["titel"])}"></iframe></div>')
             else:
-                z.append('<div class="vorschau leer"><span>Keine Vorschau-Ansicht –<br>'
-                         'in Moodle erscheinen nur Überschrift und Link.</span></div>')
+                # Seite ohne Bühnenansicht (z. B. Werkzeug): ganze Seite verkleinert zeigen (1280 × 720,
+                # skaliert vom Skript in index.html); nicht bedienbar, Klick öffnet die Seite.
+                z.append(f'<a class="vorschau seite" href="./{e(s["rel"])}" tabindex="-1" aria-hidden="true">'
+                         f'<iframe data-src="./{e(s["rel"])}" tabindex="-1" title="Seitenansicht – {e(s["titel"])}"></iframe>'
+                         f'<span class="marke">Seitenansicht</span></a>')
             z.append('<div class="inhalt">')
             z.append(f'<span class="art">{e(s["art"])}</span>')
             z.append(f'<h3><a href="./{e(s["rel"])}">{e(s["titel"])}</a></h3>')

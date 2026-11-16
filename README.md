@@ -42,7 +42,9 @@ veröffentlichen“. Sie
 
 Die Vorschauen laden erst, wenn sie ins Bild kommen, und werden beim
 Wegscrollen wieder entladen – so laufen nie alle Animationen gleichzeitig.
-Seiten ohne Vorschau-Ansicht zeigen statt der Vorschau einen Hinweis.
+Seiten ohne Bühnenansicht (z. B. die Prüfungs-Uhr) zeigen statt der Vorschau
+die ganze Seite verkleinert („Seitenansicht“); in Moodle bekommen sie nur
+Überschrift und Link.
 
 **Neue Seite:** Ordner mit `index.html` anlegen, `<title>` und
 `<meta name="description">` setzen – fertig. Liegt der Ordner in einem neuen

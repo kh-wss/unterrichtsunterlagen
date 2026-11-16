@@ -44,9 +44,12 @@ section h2{font-size:1.15rem;margin:0 0 .75rem;padding-bottom:.35rem;border-bott
 /* Karte: links die kleine Vorschau (wie in Moodle, 16:9), rechts Titel, Text, Knöpfe; am Handy untereinander */
 .karte{display:grid;grid-template-columns:320px 1fr;gap:1.1rem;align-items:start;background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:.9rem}
 .karte .inhalt{display:flex;flex-direction:column;min-width:0;align-self:stretch}
-.vorschau{aspect-ratio:16/9;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:#ffffff}
+.vorschau{width:100%;aspect-ratio:16/9;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:#ffffff}
 .vorschau iframe{display:block;width:100%;height:100%;border:0}
-.vorschau.leer{display:flex;align-items:center;justify-content:center;text-align:center;padding:1rem;background:var(--page);color:var(--muted);font-size:.85rem;line-height:1.4}
+/* Seiten ohne Bühnenansicht: ganze Seite in 1280 × 720 laden und verkleinern (--skala setzt das Skript) */
+.vorschau.seite{position:relative;display:block;background:var(--page)}
+.vorschau.seite iframe{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;transform:scale(var(--skala,.25));pointer-events:none}
+.vorschau.seite .marke{position:absolute;right:6px;top:6px;font-size:.7rem;line-height:1.3;color:#fff;background:rgba(0,0,0,.6);padding:.1rem .4rem;border-radius:4px}
 @media (max-width:640px){.karte{grid-template-columns:1fr;gap:.8rem}}
 .karte .art{align-self:flex-start;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:4px;padding:.05rem .4rem;margin-bottom:.5rem}
 .karte h3{font-size:1.05rem;line-height:1.3;margin:0 0 .4rem}
@@ -80,7 +83,7 @@ footer a{color:var(--muted)}
 </header>
 
 <!-- UEBERSICHT:ANFANG -->
-<nav class="sachgebiete" aria-label="Sachgebiete"><a href="#e-magnetismus-induktion">Magnetismus &amp; Induktion</a> <a href="#e-wechselspannung">Wechselspannung</a> <a href="#e-leistung-kompensation">Leistung &amp; Kompensation</a> <a href="#e-drehstrom">Drehstrom</a> <a href="#e-werkzeuge">Werkzeuge</a></nav>
+<nav class="sachgebiete" aria-label="Sachgebiete"><a href="#e-magnetismus-induktion">Magnetismus &amp; Induktion</a> <a href="#e-wechselspannung">Wechselspannung</a> <a href="#e-leistung-kompensation">Leistung &amp; Kompensation</a> <a href="#e-antriebstechnik">Antriebstechnik</a> <a href="#e-werkzeuge">Werkzeuge</a></nav>
 
 <section id="e-magnetismus-induktion" aria-labelledby="e-magnetismus-induktion-h">
 <h2 id="e-magnetismus-induktion-h">Magnetismus &amp; Induktion</h2>
@@ -185,11 +188,11 @@ footer a{color:var(--muted)}
 </div>
 </section>
 
-<section id="e-drehstrom" aria-labelledby="e-drehstrom-h">
-<h2 id="e-drehstrom-h">Drehstrom</h2>
+<section id="e-antriebstechnik" aria-labelledby="e-antriebstechnik-h">
+<h2 id="e-antriebstechnik-h">Antriebstechnik</h2>
 <div class="karten">
 <article class="karte">
-<div class="vorschau leer"><span>Keine Vorschau-Ansicht –<br>in Moodle erscheinen nur Überschrift und Link.</span></div>
+<a class="vorschau seite" href="./drehfeld/verteilte-wicklung/" tabindex="-1" aria-hidden="true"><iframe data-src="./drehfeld/verteilte-wicklung/" tabindex="-1" title="Seitenansicht – Drehfeld mit verteilter Wicklung"></iframe><span class="marke">Seitenansicht</span></a>
 <div class="inhalt">
 <span class="art">Animation</span>
 <h3><a href="./drehfeld/verteilte-wicklung/">Drehfeld mit verteilter Wicklung</a></h3>
@@ -209,7 +212,7 @@ footer a{color:var(--muted)}
 <h2 id="e-werkzeuge-h">Werkzeuge</h2>
 <div class="karten">
 <article class="karte">
-<div class="vorschau leer"><span>Keine Vorschau-Ansicht –<br>in Moodle erscheinen nur Überschrift und Link.</span></div>
+<a class="vorschau seite" href="./tools/pruefungstimer/" tabindex="-1" aria-hidden="true"><iframe data-src="./tools/pruefungstimer/" tabindex="-1" title="Seitenansicht – Prüfungs-Uhr"></iframe><span class="marke">Seitenansicht</span></a>
 <div class="inhalt">
 <span class="art">Werkzeug</span>
 <h3><a href="./tools/pruefungstimer/">Prüfungs-Uhr</a></h3>
@@ -255,6 +258,18 @@ footer a{color:var(--muted)}
     });
   }, { rootMargin: '150px 0px' });
   rahmen.forEach(function (f) { io.observe(f); });
+})();
+/* Seitenansicht: Verkleinerung an die Breite des Rahmens anpassen */
+(function () {
+  var kaesten = document.querySelectorAll('.vorschau.seite');
+  function setze(k) { k.style.setProperty('--skala', k.clientWidth / 1280); }
+  kaesten.forEach(setze);
+  if ('ResizeObserver' in window) {
+    var ro = new ResizeObserver(function (e) { e.forEach(function (x) { setze(x.target); }); });
+    kaesten.forEach(function (k) { ro.observe(k); });
+  } else {
+    window.addEventListener('resize', function () { kaesten.forEach(setze); });
+  }
 })();
 /* Moodle-Einbettung: Fenster mit dem Code der Karte; Kopieren mit Rückfall auf Markieren */
 (function () {
