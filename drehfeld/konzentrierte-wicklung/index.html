@@ -254,7 +254,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       <li>Die Kerne sind als Stabmagnete gezeichnet. In einer echten Maschine schließt das Joch des Ständers den magnetischen Kreis; die äußeren Pole gibt es dort so nicht.</li>
       <li>Die Farbe der Pole ist proportional zum Betrag des Stroms. Kleine Werte sind kaum zu sehen.</li>
       <li>Zeitlupe: Bei <i>f</i> = 50 Hz und <i>p</i> = 1 gilt <i>n</i> = <i>f</i> / <i>p</i> = 50 Hz / 1 = 50 s<sup>−1</sup> = 3000 min<sup>−1</sup>. Ein Umlauf dauert dann <i>T</i> = 20 ms.</li>
-      <li>Fenster „So entsteht das Schnittbild“: Es zeigt immer Spule U bei <i>i</i><sub>U</sub> &gt; 0 und läuft unabhängig von <i>ωt</i>. Die Windungen sind als Ringe gezeichnet; der Übergang zur nächsten Windung liegt auf der Rückseite hinter dem Kern. Bei einer echten Wendel lägen die Leiter links und rechts um eine halbe Windungsbreite versetzt. Zuleitungen verkürzt, mit den Anschlussstellen U1 und U2; bei <i>i</i><sub>U</sub> &gt; 0 fließt der Strom bei U1 hinein und bei U2 heraus. Die Strompfeile laufen entlang des ganzen Stromwegs, also auch hinten herum. Im Schlussbild sind Rückseite der Windungen und Zuleitungen weggelassen, damit es dem Schnittbild links gleicht (in einer technischen Schnittzeichnung würden sichtbare Kanten hinter der Schnittebene mitgezeichnet).</li>
+      <li>Fenster „So entsteht das Schnittbild“: Es zeigt immer Spule U bei <i>i</i><sub>U</sub> &gt; 0 und läuft unabhängig von <i>ωt</i>. Die Windungen sind als Ringe gezeichnet; der Übergang zur nächsten Windung liegt auf der Rückseite hinter dem Kern. Bei einer echten Wendel lägen die Leiter links und rechts um eine halbe Windungsbreite versetzt. Die räumliche Spule wird von der Seite gezeigt und dann um rund 70° auf die Schnittfläche gedreht. Zuleitungen verkürzt, mit räumlich gezeichneten Anschlüssen: U1 tritt an der Hinterseite, U2 an der Vorderseite aus, beide führen zur Seite nach rechts weg – nach dem Drehen liegen sie hinter der Schnittebene, genau hinter dem obersten linken und dem untersten rechten Leiter (Festlegung 16.11.2026). Bei <i>i</i><sub>U</sub> &gt; 0 fließt der Strom bei U1 hinein und bei U2 heraus. Weil beide Zuleitungen hinter der Schnittebene liegen, kreuzt der Draht sie genau zehnmal: fünf Leiter links, fünf rechts. Der Strom ist in der räumlichen Spule rot gezeichnet und wird gelb wie Strang U, während die Pfeile auf der Schnittfläche stehen. Die Strompfeile laufen entlang des ganzen Stromwegs, also auch hinten herum. Im Schlussbild sind Rückseite der Windungen und Zuleitungen weggelassen, damit es dem Schnittbild links gleicht (in einer technischen Schnittzeichnung würden sichtbare Kanten hinter der Schnittebene mitgezeichnet).</li>
       <li>Farben: Die Stränge U, V, W tragen die Leiterfarben Orange, Grün und Lila (auch der Strom, abweichend von „Strom rot“). Das resultierende Feld ist grün wie die magnetischen Feldlinien in den anderen Animationen.</li>
     </ul>
   </details>
@@ -296,8 +296,15 @@ const CFG = {
   /* Fenster „So entsteht das Schnittbild“ (Festlegung 12.11.2026): Lage und Größe in Bühnenkoordinaten,
      Kamera am Anfang (az, el in °, Maßstab s0, Mitte cx0/cy0) und am Schluss (senkrecht, s1, cx1/cy1),
      Dauer der Phasen in s: räumlich · Schnittebene · vordere Hälfte weg · Drehen und Zoomen · Schnittbild · Ausblenden */
-  sb: { x: 40, y: 124, w: 356, h: 372, az0: -32, el0: 24, s0: 0.9, cx0: 190, cy0: 306, s1: 1.05, cx1: 218, cy1: 304,
-        phasen: [3.5, 2, 2.5, 3, 4, 1], pfeilTempo: 90 },          // Strompfeile: Weg in Längeneinheiten je s
+  /* Festlegung der Lehrkraft, 16.11.2026: räumliche Spule von der Seite zeigen, dann „um ca. 90°“ auf die Schnittfläche drehen,
+     danach sind die Anschlüsse nicht mehr zu sehen. Umgesetzt mit 70° (az0): bei 90° stünde die Schnittebene in Phase 2 und 3
+     genau auf der Kante und wäre nur ein Strich. */
+  sb: { x: 40, y: 124, w: 356, h: 372, az0: -70, el0: 22, s0: 0.9, cx0: 172, cy0: 300, s1: 1.05, cx1: 218, cy1: 304,
+        phasen: [3.5, 2, 3, 3, 4, 1], pfeilTempo: 90,              // Strompfeile: Weg in Längeneinheiten je s
+        /* Zuleitungen (Festlegung der Lehrkraft, 16.11.2026): U1 an der Hinterseite, U2 an der Vorderseite der Spule,
+           beide zur Seite nach rechts weg – nach dem Drehen liegen sie hinter der Schnittebene.
+           Länge U1 und U2, Anschlussklemme Radius und Länge */
+        zu: { l1: 150, l2: 110, klR: 20, klL: 22 } },
 };
 
 /* ================= 2 Physikalisches Modell (rein, ohne Darstellung) =================
@@ -602,6 +609,14 @@ const SBG = {
 const SB_L = SB.phasen.reduce((a, b) => a + b, 0);                 // Dauer einer Schleife in s
 const sbEase = (u) => (u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u));
 const STRANG_U = CFG.straenge[0];
+/* Festlegung der Lehrkraft, 16.11.2026: Strom in der räumlichen Spule rot (Farbe des Stroms, fachkonventionen 6);
+   gelb wie Strang U, während die Pfeile auf der Schnittfläche stehen – vor dem Drehen, nicht erst bei Punkt und Kreuz. */
+const SB_STROM = '#FF0000', SB_STROM_RAND = '#7a0000', SB_U_RAND = '#6b4f00';
+function sbMisch(a, b, t) {
+  const h = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)), A = h(a), B = h(b), f = clamp(t, 0, 1);
+  return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * f).toString(16).padStart(2, '0')).join('');
+}
+function sbPfeilFarbe(pf, col) { pf.g.children[0].setAttribute('stroke', col); pf.g.children[1].setAttribute('fill', col); }
 
 /* Ablauf: Zeit in der Schleife → Kamera und Sichtbarkeiten (reine Funktion, prüfbar über anim.state.sb) */
 function sbAblauf(t) {
@@ -609,13 +624,19 @@ function sbAblauf(t) {
   let k = 0, t0 = 0;
   while (k < SB.phasen.length - 1 && t >= t0 + SB.phasen[k]) { t0 += SB.phasen[k]; k++; }
   const tl = t - t0, u = tl / SB.phasen[k];
-  const z = { phase: k + 1, t, ebene: 0, vorn: 1, dz: 0, schnitt: false, zPfeil: 0, marken: 0, rot: 0, hinten: 1, zuleit: 1, bild: 1, strom: 1 };
+  const z = { phase: k + 1, t, ebene: 0, vorn: 1, dz: 0, schnitt: false, zPfeil: 0, gelb: 0, marken: 0, rot: 0, hinten: 1, zuleit: 1, bild: 1, strom: 1 };
   if (k === 0) z.bild = sbEase(tl / 0.4);
   if (k === 1) z.ebene = sbEase(tl / 1.0);
-  if (k === 2) { z.ebene = 1; z.vorn = 1 - sbEase(u / 0.7); z.dz = 190 * sbEase(u); z.schnitt = true; z.zPfeil = sbEase((u - 0.5) / 0.5); }
+  if (k === 2) {                                                  // vordere Hälfte weg, Pfeile stehen auf der Schnittfläche
+    z.ebene = 1; z.vorn = 1 - sbEase(u / 0.45); z.dz = 190 * sbEase(u / 0.6); z.schnitt = true;
+    z.zPfeil = sbEase((u - 0.35) / 0.3);
+    z.gelb = sbEase((u - 0.7) / 0.3);                               // Festlegung 16.11.2026: rot → gelb, solange sie auf der Fläche stehen
+  }
+  if (k >= 3) z.gelb = 1;
   if (k === 3) {
     z.vorn = 0; z.schnitt = true; z.rot = sbEase(u); z.zPfeil = 1;
-    z.ebene = 1 - sbEase(u / 0.7); z.zuleit = 1 - sbEase(u / 0.6); z.hinten = 1 - sbEase((u - 0.3) / 0.7);
+    z.ebene = 1 - sbEase(u / 0.7); z.zuleit = 1 - sbEase((u - 0.3) / 0.7);
+    z.hinten = 1 - sbEase((u - 0.3) / 0.7);                      // hintere Hälfte samt Zuleitungen blendet beim Drehen aus
     z.marken = sbEase((u - 0.5) / 0.5);
   }
   if (k >= 4) { z.vorn = 0; z.schnitt = true; z.rot = 1; z.hinten = 0; z.zuleit = 0; z.marken = 1; }
@@ -646,35 +667,30 @@ function hull(pts) {
 const sbPoly = (pts) => (pts.length ? 'M ' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L ') + ' Z' : '');
 const sbLine = (pts) => 'M ' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L ');
 
-/* Wicklung als ein Linienzug: Stromrichtung von U1 (oben) nach U2 (unten); vorn läuft der Strom von links nach rechts.
-   Aufgeteilt an der Schnittebene in Stücke vor (z ≥ 0) und hinter (z ≤ 0) der Ebene. */
-const SB_WICKL = (() => {
-  const { R, ys } = SBG, n = 24, dTh = 0.3;                          // Stützpunkte je halbe Windung, Breite des Übergangs
-  const pts = [];
-  for (let j = 0; j <= 2 * n * ys.length; j++) {
-    const phi = j * Math.PI / n, th = 1.5 * Math.PI - phi;
-    const k = Math.floor((phi + 1e-9) / (2 * Math.PI)), rest = phi - 2 * Math.PI * (k + 1);
-    let y = ys[Math.min(k, ys.length - 1)];
-    if (k + 1 < ys.length && rest > -dTh) y += (ys[k + 1] - y) * sbEase((rest + dTh) / (2 * dTh));
-    if (k > 0 && k < ys.length && phi - 2 * Math.PI * k < dTh) { const y0 = ys[k - 1]; y = y0 + (ys[k] - y0) * sbEase((phi - 2 * Math.PI * k + dTh) / (2 * dTh)); }
+/* Draht als ein Pfad in Stromrichtung U1 → U2 (Festlegung der Lehrkraft, 16.11.2026).
+   U1 kommt von hinten (−z) gerade in den obersten linken Leiter (x = −R, z = 0), dort läuft der Strom nach +z;
+   die Wicklung läuft 4,5 Windungen nach unten und endet im untersten rechten Leiter (x = +R, z = 0), wo der Strom
+   nach −z läuft; von dort geht U2 gerade nach hinten. Beide Zuleitungen liegen hinter der Schnittebene: Der Draht
+   kreuzt sie genau zehnmal – fünf Leiter links (Punkt), fünf rechts (Kreuz). In der Seitenansicht (az0 ≈ −70°)
+   zeigt −z nach rechts; nach dem Drehen liegen die Zuleitungen genau hinter diesen beiden Leitern.
+   Jede Windung ist ein Ring; der Übergang zur nächsten liegt hinten links (θ = −135°), wo der Kern ihn verdeckt. */
+const SB_PFAD = (() => {
+  const { R, ys } = SBG, n = 24, dTh = 0.3, nW = ys.length, pts = [];
+  const { l1, l2 } = CFG.sb.zu;
+  for (let j = 0; j <= 6; j++) pts.push([-R, ys[0], -l1 + l1 * j / 6]);                 // Zuleitung U1
+  for (let j = 1; j <= 2 * n * (nW - 0.5); j++) {                                       // 4,5 Windungen
+    const phi = j * Math.PI / n, th = Math.PI - phi;
+    let y = ys[0];
+    for (let k = 0; k < nW - 1; k++) y += (ys[k + 1] - ys[k]) * sbEase((phi - (1.75 * Math.PI + 2 * Math.PI * k) + dTh) / (2 * dTh));
     let zz = R * Math.sin(th); if (Math.abs(zz) < 1e-6) zz = 0;
-    pts.push([R * Math.cos(th), y, zz]);
+    let xx = R * Math.cos(th); if (Math.abs(xx) < 1e-6) xx = 0;
+    pts.push([xx, y, zz]);
   }
-  const vorn = [], hinten = [], folge = [{ art: 'zu', i: 0 }];
-  const ablegen = (r, sd) => { const l = sd > 0 ? vorn : hinten; folge.push({ art: sd > 0 ? 'vorn' : 'hinten', i: l.length }); l.push(r); };
-  let run = [pts[0]], seite = Math.sign(pts[1][2]);
-  for (let j = 1; j < pts.length; j++) {
-    run.push(pts[j]);
-    if (pts[j][2] === 0 && j < pts.length - 1) { ablegen(run, seite); run = [pts[j]]; seite = Math.sign(pts[j + 1][2]); }
-  }
-  ablegen(run, seite);
-  folge.push({ art: 'zu', i: 1 });
-  const a = pts[0], e = pts[pts.length - 1];
-  const zu = [
-    { name: 'U1', pts: [[a[0] + 118, a[1], a[2] - 40], a] },
-    { name: 'U2', pts: [e, [e[0] + 118, e[1], e[2] - 40]] },
-  ];
-  return { vorn, hinten, zu, folge };                                 // folge: Stücke in Stromrichtung U1 → U2
+  for (let j = 1; j <= 6; j++) pts.push([R, ys[nW - 1], -l2 * j / 6]);                // Zuleitung U2
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]));
+  const zu = [{ name: 'U1', ende: pts[0], dir: -1 }, { name: 'U2', ende: pts[pts.length - 1], dir: -1 }];
+  return { pts, cum, zu };
 })();
 
 /* Elemente einmal anlegen */
@@ -684,20 +700,32 @@ el('rect', { x: SB.x + 2, y: SB.y + 2, width: SB.w - 4, height: SB.h - 4, rx: 9 
 const gSb = el('g', { id: 'schnittbild-erklaert' });
 el('rect', { x: SB.x, y: SB.y, width: SB.w, height: SB.h, rx: 10, fill: '#fff', stroke: C.hilf, 'stroke-width': 2 }, gSb);
 const gSbBild = el('g', { 'clip-path': 'url(#sb-clip)' }, gSb);
-const gSbHinten = el('g', {}, gSbBild), gSbKernH = el('g', {}, gSbBild), gSbEbene = el('g', {}, gSbBild);
-const gSbSchnitt = el('g', {}, gSbBild), gSbZ = el('g', {}, gSbBild), gSbVorn = el('g', {}, gSbBild), gSbTxt = el('g', {}, gSb);
+/* Zeichenreihenfolge: hintere Hälfte (z ≤ 0) hinter dem Kern · Kern hinten · hintere Hälfte vor dem Kern · Schnittebene ·
+   Schnittfläche · Pfeile darauf · vordere Hälfte (z > 0, gleitet weg): hinter ihrem Kern · Kern vorn · vor ihrem Kern.
+   „Vor oder hinter dem Kern“ wird je Bild aus der Blickrichtung bestimmt (die Kamera dreht sich um rund 70°). */
+const gSbHB = el('g', {}, gSbBild), gSbKernH = el('g', {}, gSbBild), gSbHF = el('g', {}, gSbBild), gSbEbene = el('g', {}, gSbBild);
+const gSbSchnitt = el('g', {}, gSbBild), gSbZ = el('g', {}, gSbBild);
+const gSbVB = el('g', {}, gSbBild), gSbKernVg = el('g', {}, gSbBild), gSbVF = el('g', {}, gSbBild);
+const gSbZuTxt = el('g', {}, gSbBild), gSbTxt = el('g', {}, gSb);
 
 function sbRohr(parent, kappe) {                                     // Draht: dunkler Rand, weiße Füllung
   const g = el('g', {}, parent);
   const a = el('path', { fill: 'none', stroke: C.ink, 'stroke-linecap': kappe, 'stroke-linejoin': 'round' }, g);
   const b = el('path', { fill: 'none', stroke: '#fff', 'stroke-linecap': kappe, 'stroke-linejoin': 'round' }, g);
-  const cr = el('path', { fill: 'none', stroke: '#6b4f00', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
-  const c = el('path', { fill: 'none', stroke: STRANG_U.farbe, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+  const cr = el('path', { fill: 'none', stroke: SB_STROM_RAND, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+  const c = el('path', { fill: 'none', stroke: SB_STROM, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
   return { g, a, b, cr, c };
 }
-const sbZu = SB_WICKL.zu.map(() => sbRohr(gSbHinten, 'butt'));
-const sbKlemme = sbZu.map((r) => el('circle', { fill: '#fff', stroke: C.ink, 'stroke-width': 3 }, r.g));   // Anschlussstelle
-const sbHinten = SB_WICKL.hinten.map(() => sbRohr(gSbHinten, 'butt'));
+/* Anschlussklemme räumlich: kurzer Zylinder um das Drahtende, sichtbare Stirnfläche, bei U2 mit Bohrung */
+function sbKlemmeTeile(parent) {
+  const g = el('g', {}, parent);
+  return { g, body: el('path', { fill: '#c9ced3', stroke: C.ink, 'stroke-width': 2.5, 'stroke-linejoin': 'round' }, g),
+    face: el('path', { fill: '#eef0f2', stroke: C.ink, 'stroke-width': 2.5, 'stroke-linejoin': 'round' }, g),
+    loch: el('path', { fill: C.ink }, g) };
+}
+const sbKl = SB_PFAD.zu.map(() => sbKlemmeTeile(gSbHB));            // je Bild in die passende Gruppe gehängt
+const sbPool = Array.from({ length: 60 }, () => sbRohr(gSbHB, 'butt'));   // Drahtstücke, je Bild neu zugeteilt
+sbPool.forEach((r) => r.c.classList.add('sb-chev'));
 function sbKernTeile(parent) {
   const o = {};
   for (const k of ['S', 'N', 'Ndeckel']) o[k] = el('path', { stroke: C.ink, 'stroke-width': 2, 'stroke-linejoin': 'round' }, parent);
@@ -706,7 +734,7 @@ function sbKernTeile(parent) {
 }
 const sbKernH = sbKernTeile(gSbKernH);
 const sbEbene = el('path', { fill: '#8a949c', 'fill-opacity': 0.22, stroke: '#5f6b75', 'stroke-width': 2, 'stroke-linejoin': 'round' }, gSbEbene);
-const sbEbeneTxt = txt(0, 0, 'Schnittebene', { class: 'lbl-xs halo' }, gSbEbene);
+const sbEbeneTxt = txt(0, 0, 'Schnittebene', { class: 'lbl-xs halo', 'text-anchor': 'end' }, gSbEbene);
 const sbSchnittKern = { S: el('path', { fill: C.sued, stroke: C.ink, 'stroke-width': 2 }, gSbSchnitt), N: el('path', { fill: C.nord, stroke: C.ink, 'stroke-width': 2 }, gSbSchnitt) };
 const sbSchnittTxt = { N: txt(0, 0, 'N', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gSbSchnitt),
   S: txt(0, 0, 'S', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gSbSchnitt) };
@@ -718,14 +746,14 @@ for (const seite of [-1, 1]) for (const y of SBG.ys) {
 }
 /* Strompfeile an den Schnittflächen, parallel zu z: links kommt der Strom heraus (Spitze zum Betrachter),
    rechts geht er hinein. Von vorn gesehen wird die Spitze zum Punkt, das Pfeilende zum Kreuz. */
-const sbZPf = sbLeiter.map(() => ({ rand: makeArrow(gSbZ, '#6b4f00', 9, 22, 11), pf: makeArrow(gSbZ, STRANG_U.farbe, 5, 19, 8.5) }));
-const sbKernV = sbKernTeile(gSbVorn);
-const sbVorn = SB_WICKL.vorn.map(() => sbRohr(gSbVorn, 'round'));
-const sbZuTxt = SB_WICKL.zu.map((z) => txt(0, 0, z.name, { class: 'lbl-s fett halo', 'dominant-baseline': 'central' }, gSbTxt));
+const sbZPf = sbLeiter.map(() => ({ rand: makeArrow(gSbZ, SB_STROM_RAND, 9, 22, 11), pf: makeArrow(gSbZ, SB_STROM, 5, 19, 8.5) }));
+sbZPf.forEach((p) => p.pf.g.classList.add('sb-zpf'));
+const sbKernV = sbKernTeile(gSbKernVg);
+const sbZuTxt = SB_PFAD.zu.map((z) => txt(0, 0, z.name, { class: 'lbl-s fett halo', 'dominant-baseline': 'central' }, gSbZuTxt));
 txt(SB.x + SB.w / 2, SB.y + 31, 'So entsteht das Schnittbild', { class: 'lbl-s fett', 'text-anchor': 'middle' }, gSbTxt);
 const sbCap = [txt(SB.x + 16, SB.y + SB.h - 46, '', { class: 'lbl-xs' }, gSbTxt), txt(SB.x + 16, SB.y + SB.h - 16, '', { class: 'lbl-xs' }, gSbTxt)];
 const SB_TEXT = [
-  ['1  Spule U räumlich', `Pfeile: Strom bei ${I('i')}${SUB('U', 22, ' > 0')}`],
+  ['1  Spule U räumlich', `rote Pfeile: Strom bei ${I('i')}${SUB('U', 22, ' > 0')}`],
   ['2  Schnittebene durch die Achse', 'der Spule'],
   ['3  Vordere Hälfte wegnehmen', 'links heraus, rechts hinein'],
   ['4  Von vorn auf den Schnitt', 'Spitze → Punkt, Ende → Kreuz'],
@@ -748,14 +776,42 @@ function sbKern(o, cam, dz, th0, th1) {
   o.S.setAttribute('d', sbPoly(s.umriss)); o.N.setAttribute('d', sbPoly(n.umriss));
   o.Ndeckel.setAttribute('d', cam.el > 0.5 ? sbPoly(n.deckel) : '');
 }
+function sbKuerzen(p, L) {                                         // Linienzug an beiden Enden um L kürzen
+  const q = p.map((v) => v.slice());
+  for (const [i0, st] of [[0, 1], [q.length - 1, -1]]) {
+    let rest = L, i = i0;
+    while (rest > 0 && i + st >= 0 && i + st < q.length) {
+      const a = q[i], b = q[i + st], l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (l > rest) { a[0] += (b[0] - a[0]) * rest / l; a[1] += (b[1] - a[1]) * rest / l; break; }
+      rest -= l; i += st;                                         // Segment ganz verbraucht: weiter zum nächsten
+    }
+    for (let k = i0; k !== i; k += st) q[k] = q[i].slice();       // verbrauchte Punkte auf den neuen Anfang legen
+  }
+  return q;
+}
 function sbRohrSetzen(r, pts3, cam, dz) {
   const p = pts3.map((q) => sbProj(q, cam, dz)), d = sbLine(p), bw = 2 * SBG.w * cam.s;
-  r.a.setAttribute('d', d); r.a.setAttribute('stroke-width', (bw + 4.4).toFixed(2));
+  /* Rand an beiden Enden um 0,9 px kürzer als die Füllung: sonst zeichnet die Kantenglättung am stumpfen Ende
+     eine graue Haarlinie quer über den anschließenden Draht */
+  r.a.setAttribute("d", sbLine(sbKuerzen(p, 0.9))); r.a.setAttribute('stroke-width', (bw + 4.4).toFixed(2));
   r.b.setAttribute('d', d); r.b.setAttribute('stroke-width', bw.toFixed(2));
   return p.reduce((acc, q) => acc + q[2], 0) / p.length;              // mittlere Tiefe
 }
 function sbSortiert(parent, rohre, tiefen) {
   rohre.map((r, i) => [r, tiefen[i]]).sort((a, b) => a[1] - b[1]).forEach(([r]) => parent.appendChild(r.g));
+}
+function sbKreisZ(c, r, cam, dz) {                                  // Kreis in einer Ebene z = const (senkrecht zur Zuleitung)
+  const pts = [];
+  for (let j = 0; j < 32; j++) { const f = j / 32 * 2 * Math.PI; pts.push(sbProj([c[0] + r * Math.cos(f), c[1] + r * Math.sin(f), c[2]], cam, dz)); }
+  return pts;
+}
+function sbKlemmeSetzen(o, zu, cam, dz) {
+  const { klR, klL } = CFG.sb.zu, a = zu.ende, b = [a[0], a[1], a[2] + zu.dir * klL];
+  const ka = sbKreisZ(a, klR, cam, dz), kb = sbKreisZ(b, klR, cam, dz);
+  o.body.setAttribute('d', sbPoly(hull(ka.concat(kb))));
+  o.face.setAttribute('d', sbPoly(zu.dir > 0 ? kb : ka));          // sichtbar ist die Stirnfläche mit Normale +z (zum Betrachter)
+  o.loch.setAttribute('d', zu.dir > 0 ? sbPoly(sbKreisZ(b, 6, cam, dz)) : '');
+  return sbProj([b[0], b[1], (a[2] + b[2]) / 2], cam, dz);
 }
 function sbKreis(cx, cy, r, cam) {
   const pts = [];
@@ -764,28 +820,78 @@ function sbKreis(cx, cy, r, cam) {
 }
 
 function renderSB() {
-  const z = sbAblauf(S.sbT), cam = z.cam;
+  const z = sbAblauf(S.sbT), cam = z.cam, ab3 = z.phase >= 3;
   gSbBild.setAttribute('opacity', z.bild.toFixed(3));
-  /* hinten: Zuleitungen und Rückseite der Windungen */
-  sbZu.forEach((r, i) => { sbRohrSetzen(r, SB_WICKL.zu[i].pts, cam, 0); r.g.setAttribute('opacity', z.zuleit.toFixed(3)); });
-  const th = SB_WICKL.hinten.map((pts, i) => sbRohrSetzen(sbHinten[i], pts, cam, 0));
-  sbSortiert(gSbHinten, sbHinten, th);
-  sbHinten.forEach((r) => r.g.setAttribute('opacity', z.hinten.toFixed(3)));
-  sbZuTxt.forEach((t, i) => {
-    const p = sbProj(SB_WICKL.zu[i].pts[i === 0 ? 0 : 1], cam), rk = 14 * cam.s;
-    sbKlemme[i].setAttribute('cx', p[0].toFixed(1)); sbKlemme[i].setAttribute('cy', p[1].toFixed(1)); sbKlemme[i].setAttribute('r', rk.toFixed(1));
-    t.setAttribute('x', (p[0] + rk + 6).toFixed(1)); t.setAttribute('y', p[1].toFixed(1));
-    t.setAttribute('opacity', z.zuleit.toFixed(3)); show(t, z.zuleit > 0.001);
+  const sa = Math.sin(cam.az * D), ca = Math.cos(cam.az * D);
+  const vorDemKern = (p) => -p[0] * sa + p[2] * ca > 0;             // vom Betrachter aus vor der Kernachse?
+  const farbe = sbMisch(SB_STROM, STRANG_U.farbe, z.gelb), rand = sbMisch(SB_STROM_RAND, SB_U_RAND, z.gelb);
+  /* vordere Hälfte (z > 0): gleitet weg und blendet aus */
+  for (const g of [gSbVB, gSbKernVg, gSbVF]) { g.setAttribute('opacity', z.vorn.toFixed(3)); show(g, z.vorn > 0.001); }
+  /* Kern: in Phase 1 ganz, danach in zwei Hälften */
+  if (z.phase === 1) { sbKern(sbKernH, cam, 0, 0, 2 * Math.PI); show(gSbKernVg, false); }
+  else { sbKern(sbKernH, cam, 0, Math.PI, 2 * Math.PI); sbKern(sbKernV, cam, z.dz, 0, Math.PI); }
+  /* Anschlussklemmen: zuerst in ihre Gruppe, damit der Draht über ihrer Stirnfläche liegt */
+  SB_PFAD.zu.forEach((zu, i) => {
+    const pm = sbKlemmeSetzen(sbKl[i], zu, cam, 0), t = sbZuTxt[i], op = z.zuleit;
+    (vorDemKern(zu.ende) ? gSbHF : gSbHB).appendChild(sbKl[i].g);
+    sbKl[i].g.setAttribute('opacity', op.toFixed(3));
+    t.setAttribute('x', (pm[0] + (CFG.sb.zu.klR + 8) * cam.s).toFixed(1)); t.setAttribute('y', pm[1].toFixed(1));
+    const opT = clamp(2 * op - 1, 0, 1);                               // Beschriftung zuerst weg, sonst liegt sie beim Drehen auf dem Kern
+    t.setAttribute('opacity', opT.toFixed(3)); show(t, opT > 0.001);
   });
-  /* Kern hinten (halber Zylinder hinter der Ebene) */
-  sbKern(sbKernH, cam, 0, Math.PI, 2 * Math.PI);
+  /* Draht in Stücke zerlegen: Hälfte (z ≤ 0 bleibt, z > 0 geht weg) und Lage vor oder hinter dem Kern.
+     Ein Stück überlappt das vorige um ein Segment, damit an der Grenze keine Fuge bleibt; sobald die Hälften
+     auseinandergehen (ab Phase 3), nur noch innerhalb derselben Hälfte. Enden stumpf: ein runder Abschluss
+     zeichnet an der Grenze einen Ring über den Draht. */
+  const P = SB_PFAD.pts, stuecke = [];
+  let akt = null;
+  for (let i = 1; i < P.length; i++) {
+    const m = [(P[i - 1][0] + P[i][0]) / 2, (P[i - 1][1] + P[i][1]) / 2, (P[i - 1][2] + P[i][2]) / 2];
+    const v = m[2] > 1e-6, f = vorDemKern(m);
+    if (!akt || akt.v !== v || akt.f !== f) {
+      akt = { v, f, i0: akt && (akt.v === v || !ab3) ? Math.max(0, i - 2) : i - 1, i1: i, s0: i - 1 };
+      stuecke.push(akt);
+    } else akt.i1 = i;
+  }
+  /* Strompfeile laufen entlang des ganzen Drahts, Abstand eine Viertelwindung (vorn ist immer einer zu sehen) */
+  const abst = Math.PI * SBG.R / 2, off = (S.sbT * CFG.sb.pfeilTempo) % abst, a = 11 * cam.s;
+  const reihe = [];
+  sbPool.forEach((r) => show(r.g, false));
+  stuecke.forEach((st, k) => {
+    const r = sbPool[k], dz = st.v ? z.dz : 0;
+    for (const e of [r.a, r.b]) e.setAttribute('stroke-linecap', 'butt');
+    const tiefe = sbRohrSetzen(r, P.slice(st.i0, st.i1 + 1), cam, dz);
+    let d = '';
+    if (z.strom > 0) for (let j = st.s0; j < st.i1; j++) {
+      const p0 = P[j], p1 = P[j + 1], sG = SB_PFAD.cum[j], ls = SB_PFAD.cum[j + 1] - sG;
+      if (ls <= 0) continue;
+      const dx = p1[0] - p0[0], dy = p1[1] - p0[1], dzz = p1[2] - p0[2];
+      for (let sp = off + Math.ceil((sG - off) / abst) * abst; sp < sG + ls; sp += abst) {
+        const f = (sp - sG) / ls, q = [p0[0] + f * dx, p0[1] + f * dy, p0[2] + f * dzz];
+        const c = sbProj(q, cam, dz), c2 = sbProj([q[0] + dx / ls * 8, q[1] + dy / ls * 8, q[2] + dzz / ls * 8], cam, dz);
+        let ux = c2[0] - c[0], uy = c2[1] - c[1]; const ln = Math.hypot(ux, uy); if (ln < 1e-6) continue; ux /= ln; uy /= ln;
+        const bx = c[0] - ux * a * 0.4, by = c[1] - uy * a * 0.4;
+        d += ` M ${(bx - uy * a).toFixed(1)} ${(by + ux * a).toFixed(1)} L ${(c[0] + ux * a).toFixed(1)} ${(c[1] + uy * a).toFixed(1)} L ${(bx + uy * a).toFixed(1)} ${(by - ux * a).toFixed(1)}`;
+      }
+    }
+    r.cr.setAttribute('d', d); r.c.setAttribute('d', d);
+    r.cr.setAttribute('stroke', rand); r.c.setAttribute('stroke', farbe);
+    r.cr.setAttribute('opacity', z.strom.toFixed(3)); r.c.setAttribute('opacity', z.strom.toFixed(3));
+    r.cr.setAttribute('stroke-width', (8 * cam.s).toFixed(2)); r.c.setAttribute('stroke-width', (4.5 * cam.s).toFixed(2));
+    r.g.setAttribute('opacity', st.v ? '1' : z.hinten.toFixed(3));  // hintere Hälfte und Zuleitungen verschwinden beim Drehen
+    const ziel = st.v ? (st.f ? gSbVF : (ab3 ? gSbVB : gSbHB)) : (st.f ? gSbHF : gSbHB);
+    reihe.push([r, ziel, tiefe]);
+  });
+  reihe.sort((p, q) => p[2] - q[2]).forEach(([r, g]) => { g.appendChild(r.g); show(r.g, true); });
   /* Schnittebene */
   const E = [[-100, -118], [100, -118], [100, 118], [-100, 118]].map(([x, y]) => sbProj([x, y, 0], cam));
   sbEbene.setAttribute('d', sbPoly(E));
   gSbEbene.setAttribute('opacity', z.ebene.toFixed(3)); show(gSbEbene, z.ebene > 0.001);
-  sbEbeneTxt.setAttribute('x', (E[3][0] + 4).toFixed(1)); sbEbeneTxt.setAttribute('y', (E[3][1] - 8).toFixed(1));
-  show(sbEbeneTxt, z.phase <= 3);                                   // beim Drehen weg, sonst stößt sie an die Überschrift
-  /* Schnittflächen: Kern und Drähte, mit Punkt und Kreuz */
+  const li = E[2][0] < E[3][0] ? E[2] : E[3];                        // links neben die linke obere Ecke, nie in die Überschrift
+  show(sbEbeneTxt, z.phase <= 3);                                     // erst einblenden, dann messen (verborgen misst 0)
+  const lenE = (z.phase <= 3 && sbEbeneTxt.getComputedTextLength && sbEbeneTxt.getComputedTextLength()) || 100;
+  sbEbeneTxt.setAttribute('x', Math.max(li[0] - 6, SB.x + 12 + lenE).toFixed(1)); sbEbeneTxt.setAttribute('y', Math.max(li[1] + 10, SB.y + 58).toFixed(1));
+  /* Schnittfläche: Kern und Drähte, mit Punkt und Kreuz */
   show(gSbSchnitt, z.schnitt);
   if (z.schnitt) {
     const rc = SBG.rc, h = SBG.h;
@@ -794,7 +900,7 @@ function renderSB() {
     for (const [k, y] of [['N', h / 2], ['S', -h / 2]]) {
       const p = sbProj([0, y, 0], cam), t = sbSchnittTxt[k];
       t.setAttribute('x', p[0].toFixed(1)); t.setAttribute('y', p[1].toFixed(1));
-      t.style.fontSize = (40 * cam.s).toFixed(1) + 'px';
+      t.style.fontSize = (40 * cam.s * (0.45 + 0.55 * Math.abs(ca))).toFixed(1) + 'px';   // schmal von der Seite
     }
     for (const l of sbLeiter) {
       const x = l.seite * SBG.R;
@@ -808,52 +914,19 @@ function renderSB() {
       l.marke.setAttribute('opacity', z.marken.toFixed(3));
     }
   }
-  /* Strompfeile parallel zu z an den Schnittflächen; sie verkürzen sich, wenn der Blick senkrecht wird */
+  /* Strompfeile senkrecht auf der Schnittfläche (parallel zu z): rot, dann gelb, solange sie dort stehen;
+     beim Drehen verkürzen sie sich zu Punkt (links, heraus) und Kreuz (rechts, hinein) */
   show(gSbZ, z.zPfeil > 0);
   if (z.zPfeil > 0) {
     sbLeiter.forEach((l, i) => {
       const x = l.seite * SBG.R, Lz = 62;
-      const a = sbProj([x, l.y, l.seite < 0 ? 0 : Lz], cam), b = sbProj([x, l.y, l.seite < 0 ? Lz : 0], cam);
-      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      sbZPf[i].rand.set(a[0], a[1], b[0], b[1]); sbZPf[i].pf.set(a[0], a[1], b[0], b[1]);
+      const p0 = sbProj([x, l.y, l.seite < 0 ? 0 : Lz], cam), p1 = sbProj([x, l.y, l.seite < 0 ? Lz : 0], cam);
+      const len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+      sbZPf[i].rand.set(p0[0], p0[1], p1[0], p1[1]); sbZPf[i].pf.set(p0[0], p0[1], p1[0], p1[1]);
       const op = z.zPfeil * clamp((len - 6) / 18, 0, 1);
+      sbPfeilFarbe(sbZPf[i].pf, farbe); sbPfeilFarbe(sbZPf[i].rand, rand);
       sbZPf[i].rand.g.setAttribute('opacity', op.toFixed(3)); sbZPf[i].pf.g.setAttribute('opacity', op.toFixed(3));
     });
-  }
-  /* vorn: Kern (in Phase 1 ganz, ohne Schnittkante) und vordere Hälfte der Windungen, mit Stromrichtung */
-  show(gSbVorn, z.vorn > 0.001);
-  if (z.vorn > 0.001) {
-    gSbVorn.setAttribute('opacity', z.vorn.toFixed(3));
-    if (z.phase === 1) sbKern(sbKernV, cam, z.dz, 0, 2 * Math.PI); else sbKern(sbKernV, cam, z.dz, 0, Math.PI);
-    const tv = SB_WICKL.vorn.map((pts, i) => sbRohrSetzen(sbVorn[i], pts, cam, z.dz));
-    sbSortiert(gSbVorn, sbVorn, tv);
-  }
-  /* Strompfeile laufen entlang des ganzen Stromwegs U1 → Windungen → U2 im Kreis, auch hinten herum
-     (dort vom Kern verdeckt). Abstand eine Viertelwindung, damit vorn immer mindestens einer zu sehen ist. */
-  {
-    const abst = Math.PI * SBG.R / 2, s0 = (S.sbT * CFG.sb.pfeilTempo) % abst, a = 11 * cam.s;
-    let sG = 0;
-    for (const st of SB_WICKL.folge) {
-      const r = st.art === 'vorn' ? sbVorn[st.i] : st.art === 'hinten' ? sbHinten[st.i] : sbZu[st.i];
-      const pts = st.art === 'zu' ? SB_WICKL.zu[st.i].pts : SB_WICKL[st.art][st.i], dz = st.art === 'vorn' ? z.dz : 0;
-      let d = '';
-      for (let j = 1; j < pts.length; j++) {
-        const p0 = pts[j - 1], p1 = pts[j], dx = p1[0] - p0[0], dy = p1[1] - p0[1], dzz = p1[2] - p0[2], ls = Math.hypot(dx, dy, dzz);
-        if (z.strom > 0 && ls > 0) {
-          for (let sp = s0 + Math.ceil((sG - s0) / abst) * abst; sp < sG + ls; sp += abst) {
-            const f = (sp - sG) / ls, q = [p0[0] + f * dx, p0[1] + f * dy, p0[2] + f * dzz];
-            const c = sbProj(q, cam, dz), c2 = sbProj([q[0] + dx / ls * 8, q[1] + dy / ls * 8, q[2] + dzz / ls * 8], cam, dz);
-            let ux = c2[0] - c[0], uy = c2[1] - c[1]; const ln = Math.hypot(ux, uy); if (ln < 1e-6) continue; ux /= ln; uy /= ln;
-            const bx = c[0] - ux * a * 0.4, by = c[1] - uy * a * 0.4;
-            d += ` M ${(bx - uy * a).toFixed(1)} ${(by + ux * a).toFixed(1)} L ${(c[0] + ux * a).toFixed(1)} ${(c[1] + uy * a).toFixed(1)} L ${(bx + uy * a).toFixed(1)} ${(by - ux * a).toFixed(1)}`;
-          }
-        }
-        sG += ls;
-      }
-      r.cr.setAttribute('d', d); r.c.setAttribute('d', d);
-      r.cr.setAttribute('opacity', z.strom.toFixed(3)); r.c.setAttribute('opacity', z.strom.toFixed(3));
-      r.cr.setAttribute('stroke-width', (8 * cam.s).toFixed(2)); r.c.setAttribute('stroke-width', (4.5 * cam.s).toFixed(2));
-    }
   }
   /* Bildtext je Phase */
   const tx = SB_TEXT[z.phase - 1];
@@ -1027,6 +1100,7 @@ window.anim = {
   set(x) { S.playing = false; S.x = clamp(x, CFG.x.min, CFG.x.max); render(); return S.x; },
   opt(key, val) { S[key] = val; const c = $('#chk-' + key); if (c) c.checked = !!val; render(); },
   get state() { return { ...S, ...model(S.x), sbZustand: sbAblauf(S.sbT) }; },
+  get sbGeo() { return { pts: SB_PFAD.pts, zu: SB_PFAD.zu, leiter: sbLeiter.length }; },   // Drahtverlauf im Fenster, für die Prüfung
   sb(t) { S.sbLauf = false; S.sbT = t; sbSichtbar(); return sbAblauf(t); },   // Fenster anhalten und Zeit setzen (Prüfung)
   sbLauf(on = true) { S.sbLauf = !!on; sbSichtbar(); },
   vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },   // Normblock 10
