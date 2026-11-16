@@ -121,6 +121,8 @@ def baue(wurzel: Path):
         # Formeln nicht umbrechen: Leerzeichen um = und · geschützt (nur Anzeige)
         text = re.sub(r'(?<=\S) ([=·]) (?=\S)', '\u00a0\\1\u00a0', text)
         art = a.get('art') or (g or {}).get('art') or 'Animation'
+        if text.startswith('Gerüst für'):
+            hinweis(f'{rel}: <meta name="description"> ist noch der Text aus dem Gerüst – durch eine Beschreibung der Animation ersetzen.')
         if not text:
             hinweis(f'{rel}: kein Text (weder <meta name="description"> noch "text" in uebersicht.json).')
         if g is None:
