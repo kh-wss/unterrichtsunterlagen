@@ -6,6 +6,7 @@
   "sachgebiete": [
     { "name": "Magnetismus & Induktion",  "ordner": ["induktion", "spule"] },
     { "name": "Wechselspannung",          "ordner": ["wechselspannung"] },
+    { "name": "Dreiphasenwechselspannung", "ordner": ["dreiphasenwechselspannung"] },
     { "name": "Leistung & Kompensation",  "ordner": ["leistung", "lf5-kompensation"] },
     { "name": "Antriebstechnik",          "ordner": ["drehfeld"] },
     { "name": "Schutzorgane",             "ordner": ["lf2-schutzorgane"] },
@@ -19,7 +20,8 @@
     "wechselspannung/erzeugung/":  { "reihenfolge": 1,
       "text": "Generatormodell: Ein Stabmagnet dreht sich als Polrad vor einer Spule. Drehzeiger und Liniendiagramm zeigen, wie die Sinusspannung u = û · sin α entsteht; der Winkel lässt sich auch direkt einstellen." },
     "wechselspannung/effektivwert/": { "reihenfolge": 2 },
-    "wechselspannung/dreiphasen-erzeugung/": { "reihenfolge": 3 },
+
+    "dreiphasenwechselspannung/erzeugung/": { "reihenfolge": 1 },
 
     "drehfeld/konzentrierte-wicklung/": { "reihenfolge": 1 },
     "drehfeld/verteilte-wicklung/":     { "reihenfolge": 2 },
@@ -37,6 +39,7 @@
 
   "_ausblenden_hinweis": "Seiten, die (noch) nicht in der Übersicht erscheinen sollen, z. B. Platzhalter ohne Inhalt. Die Seite bleibt unter ihrer Adresse erreichbar.",
   "ausblenden": [
+    "wechselspannung/dreiphasen-erzeugung/",
     "lf2-schutzorgane/ls-schalter-auslosecharakteristik/",
     "lf5-kompensation/animation/"
   ]
