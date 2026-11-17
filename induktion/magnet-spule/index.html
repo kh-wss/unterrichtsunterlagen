@@ -238,9 +238,9 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       <label class="chk" for="chk-feld"><input id="chk-feld" type="checkbox">Feldlinien <i class="m">B</i></label>
       <label class="chk" for="chk-diag"><input id="chk-diag" type="checkbox">Diagramm</label>
       <label class="chk" for="chk-phi"><input id="chk-phi" type="checkbox">Fluss <i class="m">Φ</i></label>
-      <label class="chk" for="chk-form"><input id="chk-form" type="checkbox" checked>Formeln</label>
+      <label class="chk" for="chk-form"><input id="chk-form" type="checkbox">Formeln</label>
       <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox" checked>Berechnung</label>
-      <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox" checked>Momentanwerte</label>
+      <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox">Momentanwerte</label>
       <span class="sp"></span>
       <button type="button" id="btn-fs">Vollbild</button>
     </div>
@@ -396,8 +396,9 @@ function model(xM, v, phiM = 0, omegaM = 0, N = CFG.N) {
 }
 
 /* ================= 3 Zustand ================= */
-const S = { N: CFG.N, T: CFG.T, bereich: CFG.bereich, feld: false, diag: false, phi: false, form: true,
-            rech: true, werte: true,            // Berechnung und Momentanwerte ein- und ausblendbar (Wunsch der Lehrkraft, 12.11.2026)
+const S = { N: CFG.N, T: CFG.T, bereich: CFG.bereich, feld: false, diag: false, phi: false, form: false,
+            rech: true, werte: false,           // Berechnung und Momentanwerte ein- und ausblendbar (Wunsch der Lehrkraft, 12.11.2026);
+                                                // Formeln (mit der kurzen Info zu Φ) und Momentanwerte beim Öffnen aus (Festlegung 17.11.2026)
             qr: false,                          // QR-Code beim Öffnen aus, Platzhalter an (Festlegung 12.11.2026, W)
             auto: false, paused: false, benutzt: false };
 const st = {};
@@ -1213,7 +1214,7 @@ try {
   if (q.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau: nur die Bühne
   if (q.get('auto') === '1') S.startAuto = true;                                   // Automatik beim Öffnen
   for (const k of ['feld', 'diag', 'phi']) if (q.get(k) === '1') S[k] = true;
-  for (const k of ['form', 'rech', 'werte']) if (q.get(k) === '0') S[k] = false;
+  for (const k of ['form', 'rech', 'werte']) if (q.has(k)) S[k] = q.get(k) !== '0';   // ?form=1, ?werte=1, ?rech=0
   if (q.has('qr')) S.qr = q.get('qr') !== '0';                 // ?qr=1: QR-Code gleich sichtbar (Beamer-Link)
 } catch (e) { /* ignorieren */ }
 window.anim = {
