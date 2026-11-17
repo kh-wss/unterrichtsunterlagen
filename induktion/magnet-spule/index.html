@@ -971,6 +971,14 @@ const magHit = el('rect', { class: 'grab', fill: 'transparent', tabindex: 0, rol
 const magFrame = el('rect', { class: 'grab-frame', fill: 'none', stroke: '#6b747c', 'stroke-width': 2.5, 'stroke-dasharray': '10 7', 'pointer-events': 'none', rx: 12 }, gLbl);
 const REDUZIERT = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
 const polTxt = [0, 1].map(() => txt(0, 0, '', { class: 'pol', 'text-anchor': 'middle', 'pointer-events': 'none' }, gMag));
+function huelle(P) {   // konvexe Hülle (monotone Kette), Bildpunkte [x, y]
+  const p = P.map((q) => [q[0], q[1]]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const kreuz = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const unten = [], oben = [];
+  for (const q of p) { while (unten.length > 1 && kreuz(unten[unten.length - 2], unten[unten.length - 1], q) <= 0) unten.pop(); unten.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (oben.length > 1 && kreuz(oben[oben.length - 2], oben[oben.length - 1], q) <= 0) oben.pop(); oben.push(q); }
+  return unten.slice(0, -1).concat(oben.slice(0, -1));
+}
 function zeichneMagnet() {
   gMag.querySelectorAll('polygon').forEach((p) => p.remove());
   const c = Math.cos(st.phiM * D), sn = Math.sin(st.phiM * D), a = aZ, hl = CFG.lM / 2, dd = CAM.d;
@@ -996,8 +1004,12 @@ function zeichneMagnet() {
       const f = Math.min(1, Math.max(0, ((P[0] - m1[0]) * vx + (P[1] - m1[1]) * vy) / v2));
       stop.setAttribute('offset', f.toFixed(3)); stop.setAttribute('stop-color', shade(hf.farbe, 0.6 + 0.55 * Math.max(0, dot(NM(t), L) / nl)));
     });
-    el('polygon', { points: pts([A1, B1, B2, A2]), fill: `url(#gradMag${hf.g})`, stroke: shade(hf.farbe, 0.5), 'stroke-width': 1.5, 'stroke-linejoin': 'round' }, gMag);
-    box([A1, B1, B2, A2]);
+    // Umriss = konvexe Hülle beider Endkreise (17.11.2026: vorher Viereck – das abgewandte Ende wirkte abgeschnitten)
+    const Q = [];
+    for (const lx of [hf.a, hf.b]) for (let i = 0; i < 48; i++) Q.push(kreis(lx, 2 * Math.PI * i / 48));
+    const H = huelle(Q);
+    el('polygon', { points: pts(H), fill: `url(#gradMag${hf.g})`, stroke: shade(hf.farbe, 0.5), 'stroke-width': 1.5, 'stroke-linejoin': 'round' }, gMag);
+    box(H);
     // äußere Stirnfläche, wenn sie zur Kamera zeigt
     const lx = hf.g === 'N' ? hl : -hl, nA = [Math.sign(lx) * c, 0, -Math.sign(lx) * sn];
     if (dot(nA, dd) < 0) {
@@ -1215,7 +1227,7 @@ function baueNotizen() {
     `<b>Automatik:</b> Die Magnetmitte bewegt sich kosinusförmig zwischen ${g(CFG.xAus, 'mm')} und ${g(CFG.xEin, 'mm')} (Spulenmitte = 0) mit der Periodendauer <i class="m">T</i> = 4&#8239;s, 2&#8239;s oder 1&#8239;s. Die Bewegung ist sinusförmig, die Spannung nicht: Sie ist am größten, wenn der Pol durch die Wicklung läuft.`,
     `<b>Ziehen mit Maus oder Finger:</b> Der Magnet folgt dem Zeiger mit <i class="m">τ</i> = ${g(CFG.tauMaus, 's')}, die Geschwindigkeit wird mit <i class="m">τ</i> = ${g(CFG.tauV, 's')} geglättet, weil Zeigerereignisse unregelmäßig kommen. Pfeiltasten bewegen mit ${g(CFG.vTaste / 1000, 'm/s')} (mit Umschalttaste dreimal so schnell). Der Magnet lässt sich von ${g(CFG.xMin, 'mm')} bis ${g(CFG.xMax, 'mm')} schieben (Spulenmitte = 0), also fast durch die Spule: Jenseits der Mitte nimmt der Fluss beim Weiterschieben wieder ab, die Spannung kehrt sich um, obwohl sich die Bewegungsrichtung nicht ändert.`,
     `<b>Umdrehen:</b> Der Magnet wird erst bis ${g(CFG.xAus, 'mm')} herausgezogen und dann gedreht. Beim Drehen gilt näherungsweise <i class="m">Ψ</i> = <i class="m">Ψ</i><sub>0</sub> · cos <i class="m">φ</i><sub>M</sub>.`,
-    `<b>Feldlinien der Flussdichte <i class="m">B</i></b> sind aus demselben Modell berechnet, nicht skizziert. Weil das Feld rotationssymmetrisch ist, liegen dieselben Linien in ${CFG.feldEbenen} Ebenen durch die Achse, gleichmäßig verteilt; Linien hinter der Achse sind blasser gezeichnet. Zwischen zwei Nachbarlinien einer Ebene liegt jeweils derselbe Fluss, ein Drittel des Flusses im Magneten. Die Linien sind geschlossen: Im Magneten laufen sie vom Süd- zum Nordpol und sind dort verdeckt. Linien aus verschiedenen Ebenen überdecken sich im Bild, im Raum schneiden sie sich nicht. Am Bildrand laufen die Linien aus, sie gehen weiter.`,
+    `<b>Feldlinien der Flussdichte <i class="m">B</i></b> sind aus demselben Modell berechnet, nicht skizziert. Weil das Feld rotationssymmetrisch ist, liegen dieselben Linien in ${CFG.feldEbenen} Ebenen durch die Achse, gleichmäßig verteilt; Linien hinter der Achse sind blasser gezeichnet. Zwischen zwei Nachbarlinien einer Ebene liegt jeweils derselbe Fluss, ein Drittel des Flusses im Magneten. Die Linien sind geschlossen: Im Magneten laufen sie vom Süd- zum Nordpol und sind dort verdeckt. Linien aus verschiedenen Ebenen überdecken sich im Bild, im Raum schneiden sie sich nicht. Am Bildrand laufen die Linien aus, sie gehen weiter. Senkrecht zur Oberfläche treten die Linien nur aus Eisen aus (μ<sub>r</sub> ≫ 1). Am Dauermagneten gilt das nur in der Mitte der Stirnfläche; zum Rand hin treten sie immer schräger aus (am Rand etwa 55° zur Senkrechten), an der Mantelfläche laufen sie zur Magnetmitte hin fast entlang der Oberfläche.`,
     `<b>Zählpfeil <i class="m">u</i><sub>i</sub>:</b> Länge ∝ Wert; der Abstand der Buchsen entspricht etwa dem Messbereich, längere Pfeile sind gekürzt. Der Bewegungspfeil <i class="m">v</i> zeigt in Bewegungsrichtung.`,
   ].map((s) => `<li>${s}</li>`).join('');
 }
