@@ -187,6 +187,13 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
 .diag{background:#fff;border:1px solid var(--rule);border-radius:4px}
 .info.ohne-werte{grid-template-columns:minmax(0,1fr)}
 .formulas .erk{font-family:var(--font-ui);font-size:14px;color:var(--muted)}
+/* Texte unter der Bühne (17.11.2026): Forschungsfragen, „Gerade eben“, Hinweis bei Anschlag */
+:root{--warn:#b42318}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--warn:#ff8a80}}
+:root[data-theme="dark"]{--warn:#ff8a80}
+.fragen{margin:8px 0 0;padding-left:1.4em;display:grid;gap:4px;max-width:68ch}
+.gerade{margin:10px 0 0;padding:6px 10px;border-left:3px solid var(--rule);color:var(--muted);max-width:68ch}
+.warn{margin:8px 0 0;color:var(--warn);font-weight:600;max-width:68ch}
 .m{font-family:var(--font-math);font-size:1.08em}
 .vals td:first-child{font-family:var(--font-math);font-size:16px}
 </style>
@@ -238,15 +245,16 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       <label class="chk" for="chk-feld"><input id="chk-feld" type="checkbox">Feldlinien <i class="m">B</i></label>
       <label class="chk" for="chk-diag"><input id="chk-diag" type="checkbox">Diagramm</label>
       <label class="chk" for="chk-phi"><input id="chk-phi" type="checkbox">Fluss <i class="m">Φ</i></label>
+      <label class="chk" for="chk-erkl"><input id="chk-erkl" type="checkbox">Erklärung</label>
       <label class="chk" for="chk-form"><input id="chk-form" type="checkbox">Formeln</label>
-      <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox" checked>Berechnung</label>
+      <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox">Berechnung</label>
       <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox">Momentanwerte</label>
       <span class="sp"></span>
       <button type="button" id="btn-fs">Vollbild</button>
     </div>
     <details class="keys">
       <summary>Tastatur</summary>
-      <div class="hint">Magnet mit Maus oder Finger ziehen · <kbd>←</kbd> <kbd>→</kbd> Magnet bewegen (mit <kbd>Umschalt</kbd> schneller) · <kbd>Leertaste</kbd> Automatik an/aus · <kbd>F</kbd> Vollbild (mit eingeschaltetem Diagramm darunter) · <kbd>Esc</kbd> Vollbild beenden. Adresse: <code>?qr=1</code> zeigt den QR-Code gleich, <code>?auto=1</code> startet die Automatik, <code>?buehne=1</code> nur die Bühne (Vorschau für Moodle).</div>
+      <div class="hint">Magnet mit Maus oder Finger ziehen · <kbd>←</kbd> <kbd>→</kbd> Magnet bewegen (mit <kbd>Umschalt</kbd> schneller) · <kbd>Leertaste</kbd> Automatik an/aus · <kbd>F</kbd> Vollbild (mit eingeschaltetem Diagramm darunter) · <kbd>Esc</kbd> Vollbild beenden. Adresse: <code>?qr=1</code> zeigt den QR-Code gleich, <code>?auto=1</code> startet die Automatik, <code>?buehne=1</code> nur die Bühne (Vorschau für Moodle), <code>?erkl=1</code> Erklärung statt Forschungsfragen.</div>
     </details>
   </div>
 
@@ -258,7 +266,15 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
   <section class="info" id="info">
     <article class="card">
       <h2 id="pTitle" aria-live="polite"></h2>
+      <ol id="fragen" class="fragen">
+        <li>Wann zeigt der Spannungsmesser eine Spannung an, und wann nicht?</li>
+        <li>Wovon hängt ab, zu welcher Seite der Zeiger ausschlägt?</li>
+        <li>Wie erreichst du einen größeren Ausschlag?</li>
+        <li>Schiebe den Magneten fast ganz durch die Spule. Was fällt dir auf?</li>
+      </ol>
       <p id="pText"></p>
+      <p id="pGerade" class="gerade" hidden></p>
+      <p id="pWarn" class="warn" hidden>Der Zeiger schlägt an: größeren Messbereich wählen oder langsamer bewegen.</p>
       <div id="pForm" class="formulas"></div>
     </article>
     <aside class="card vals" id="werte">
@@ -397,8 +413,9 @@ function model(xM, v, phiM = 0, omegaM = 0, N = CFG.N) {
 
 /* ================= 3 Zustand ================= */
 const S = { N: CFG.N, T: CFG.T, bereich: CFG.bereich, feld: false, diag: false, phi: false, form: false,
-            rech: true, werte: false,           // Berechnung und Momentanwerte ein- und ausblendbar (Wunsch der Lehrkraft, 12.11.2026);
-                                                // Formeln (mit der kurzen Info zu Φ) und Momentanwerte beim Öffnen aus (Festlegung 17.11.2026)
+            rech: false, werte: false,          // Berechnung und Momentanwerte ein- und ausblendbar (Wunsch der Lehrkraft, 12.11.2026);
+            erkl: false,                        // Erklärung statt Forschungsfragen (Festlegung 17.11.2026)
+                                                // Formeln (mit der kurzen Info zu Φ), Berechnung und Momentanwerte beim Öffnen aus (Festlegung 17.11.2026)
             qr: false,                          // QR-Code beim Öffnen aus, Platzhalter an (Festlegung 12.11.2026, W)
             auto: false, paused: false, benutzt: false };
 const st = {};
@@ -406,10 +423,11 @@ const drag = { aktiv: false, ziel: 0, versatz: 0, id: null };
 const taste = { dir: 0, schnell: false };
 function reset() {
   Object.assign(st, { t: 0, x: CFG.xAus, v: 0, vf: 0, phiM: 0, omegaM: 0, tA: 0, job: null,
-                      Psi: 0, phi: 0, dphidt: 0, u: 0, zeiger: 0, anschlag: false, ruheSeit: 1, zustand: 'ruhe' });
+                      Psi: 0, phi: 0, dphidt: 0, u: 0, zeiger: 0, anschlag: false, ruheSeit: 1, zustand: 'ruhe', vLetzt: 0 });
   S.auto = false; drag.aktiv = false; taste.dir = 0;
   Object.assign(st, model(st.x, 0, 0, 0, S.N));
   diagClear();
+  Object.assign(TX, { schl: '', kand: '', kandSeit: 0, z: '', letzteBew: null, gerade: null, anschlagT: null, bk: '', bkSeit: 0 });
   refreshText(true);
 }
 const orient = () => (Math.cos(st.phiM * D) >= 0 ? 1 : -1);   // +1: Nordpol zur Spule
@@ -461,6 +479,7 @@ function step(dt) {
     v = st.vf;
   } else st.vf = v;
   st.v = v; st.omegaM = omega;
+  if (Math.abs(v) >= 3) st.vLetzt = v;                 // Richtung der letzten echten Bewegung (für die Texte)
   Object.assign(st, model(st.x, v, st.phiM, omega, S.N));
   /* Festlegung der Lehrkraft, 12.11.2026: Messgerät nicht träge – der Zeiger zeigt sofort den Momentanwert. */
   const grenze = CFG.anschlag * S.bereich;
@@ -469,6 +488,7 @@ function step(dt) {
   // Zustand für den Text (kurze Stillstände an den Umkehrpunkten zählen nicht als „steht still“)
   if (Math.abs(st.v) < 3 && !st.job) st.ruheSeit += dt; else st.ruheSeit = 0;
   diagSample();
+  merkeBewegung();
 }
 
 /* ================= 4 Hilfen ================= */
@@ -1044,9 +1064,11 @@ function draw() {
 const bruch = (z, n) => `<span class="fr"><span>${z}</span><span>${n}</span></span>`;
 function zustand() {
   if (st.job && st.job.art === 'dreh') return 'dreh';
+  if (S.auto || (st.job && /^auto/.test(st.job.dann || ''))) return 'auto';   // Automatik: ein fester Text
   if (st.ruheSeit > 0.3) return 'ruhe';
-  if (st.x > 0.5) return st.v > 0 ? 'durch' : 'zurueck';    // jenseits der Spulenmitte (Fluss dort am größten)
-  return st.v > 0 ? 'hinein' : 'heraus';
+  const vr = Math.abs(st.v) >= 3 ? st.v : st.vLetzt || 0;      // beim Abbremsen die bisherige Richtung behalten
+  if (st.x > 0.5) return vr > 0 ? 'durch' : 'zurueck';     // jenseits der Spulenmitte (Fluss dort am größten)
+  return vr > 0 ? 'hinein' : 'heraus';
 }
 const TEXTE = {
   ruhe: (pol, drin) => ['Der Magnet steht still',
@@ -1059,18 +1081,42 @@ const TEXTE = {
     'Der Magnet bewegt sich in dieselbe Richtung weiter, aber das Magnetfeld in der Spule wird jetzt schwächer. Deshalb kehrt sich die Spannung um: Der Zeiger schlägt zur anderen Seite aus. Entscheidend ist nicht die Bewegungsrichtung, sondern ob das Magnetfeld in der Spule stärker oder schwächer wird.'],
   zurueck: () => ['Der Magnet wird in die Spule zurückgeschoben',
     'Das Magnetfeld in der Spule wird wieder stärker. Der Zeiger schlägt deshalb zur selben Seite aus wie beim Hineinschieben, obwohl sich der Magnet jetzt in die Gegenrichtung bewegt.'],
+  auto: (pol) => ['Der Magnet wird hinein- und herausbewegt',
+    'Beim Hineinbewegen wird das Magnetfeld in der Spule stärker, beim Herausbewegen schwächer. Deshalb schlägt der Zeiger abwechselnd zur einen und zur anderen Seite aus. An den Umkehrpunkten steht der Magnet kurz still, dann ist die Spannung null. Je schneller die Bewegung, desto größer der Ausschlag.' + (pol === 'Südpol' ? ' Mit dem Südpol voran sind die Ausschläge andersherum als mit dem Nordpol.' : '')],
   dreh: () => ['Der Magnet wird umgedreht', 'Danach zeigt der andere Pol zur Spule. Auch beim Drehen ändert sich das Magnetfeld in der Spule ein wenig. Der Zeiger zuckt deshalb kurz.'],
 };
-let textSchl = '';
+/* Texte unter der Bühne (Festlegung der Lehrkraft, 17.11.2026): Beim Öffnen stehen feste Forschungsfragen da – die
+   Erklärung nähme das Ergebnis vorweg. Der Schalter „Erklärung“ zeigt die Phasentexte, aber ruhig: Ein neuer Zustand gilt
+   erst, wenn er ½ s anhält; die Automatik hat einen festen Text; nach dem Anhalten bleibt die Erklärung der letzten
+   Bewegung als „Gerade eben“ stehen. Vorher wechselte der Text bei der Automatik etwa alle 0,5 s und flackerte beim Ziehen. */
+const BEWEGUNG = ['hinein', 'heraus', 'durch', 'zurueck'];
+const TX = { schl: '', kand: '', kandSeit: 0, z: '', letzteBew: null, gerade: null, anschlagT: null, bk: '', bkSeit: 0 };
+function merkeBewegung() {   // je Zeitschritt: letzte Bewegung, die mindestens 0,15 s anhielt (Zucken beim Anhalten zählt nicht)
+  const z = zustand(), pol = orient() > 0 ? 'Nordpol' : 'Südpol', drin = st.x + CFG.lM / 2 > -CFG.lS / 2, k = z + pol + drin;
+  if (k !== TX.bk) { TX.bk = k; TX.bkSeit = st.t; }
+  if (z === 'auto' || z === 'dreh') TX.letzteBew = null;
+  else if (BEWEGUNG.includes(z) && st.t - TX.bkSeit >= 0.15) TX.letzteBew = [z, pol, drin];
+}
 function refreshText(sofort = false) {
-  const z = zustand(), pol = orient() > 0 ? 'Nordpol' : 'Südpol', drin = st.x + CFG.lM / 2 > -CFG.lS / 2;   // Stirnfläche in der Wicklung
-  const schl = z + pol + drin + st.anschlag;
-  if (schl !== textSchl || sofort) {
-    textSchl = schl;
-    const [t, p] = TEXTE[z](pol, drin);
-    $('pTitle').textContent = t;
-    $('pText').textContent = p + (st.anschlag ? ' Der Zeiger schlägt an: größeren Messbereich wählen oder langsamer bewegen.' : '');
+  $('fragen').hidden = S.erkl; $('pText').hidden = !S.erkl;
+  if (!S.erkl) {
+    $('pTitle').textContent = 'Forschungsfragen'; $('pGerade').hidden = true; TX.schl = '';
+  } else {
+    const z = zustand(), pol = orient() > 0 ? 'Nordpol' : 'Südpol', drin = st.x + CFG.lM / 2 > -CFG.lS / 2;   // Stirnfläche in der Wicklung
+    const schl = [z, pol, BEWEGUNG.includes(z) || z === 'ruhe' ? drin : ''].join('|');
+    if (schl !== TX.kand) { TX.kand = schl; TX.kandSeit = st.t; }
+    if (schl !== TX.schl && (sofort || !TX.schl || st.t - TX.kandSeit >= 0.5)) {
+      TX.schl = schl; TX.z = z;
+      TX.gerade = z === 'ruhe' && TX.letzteBew ? TEXTE[TX.letzteBew[0]](TX.letzteBew[1], TX.letzteBew[2]) : null;
+      const [t, p] = TEXTE[z](pol, drin);
+      $('pTitle').textContent = t; $('pText').textContent = p;
+      $('pGerade').hidden = !TX.gerade;
+      if (TX.gerade) { $('pGerade').innerHTML = '<b>Gerade eben:</b> '; $('pGerade').append(TX.gerade[0] + '. ' + TX.gerade[1]); }
+    }
   }
+  // Hinweis bei Anschlag (in beiden Ansichten): steht noch 2 s nach dem letzten Anschlag
+  if (st.anschlag) TX.anschlagT = st.t;
+  $('pWarn').hidden = !(TX.anschlagT !== null && st.t - TX.anschlagT < 2);
   const N = S.N;
   const dp = fmtLauf(st.dphidt, 'Wb/s'), dpK = dp.startsWith('−') ? `(${dp})` : dp;     // negativer Faktor in Klammern
   $('pForm').innerHTML = [
@@ -1142,7 +1188,7 @@ function setOpt(key, val) {
   if (key === 'diag' || key === 'phi') { layout(); baueDiagAchsen(); }
   refreshText(true); draw();
 }
-for (const k of ['feld', 'diag', 'phi', 'form', 'rech', 'werte']) $('chk-' + k).addEventListener('change', (e) => setOpt(k, e.target.checked));
+for (const k of ['feld', 'diag', 'phi', 'erkl', 'form', 'rech', 'werte']) $('chk-' + k).addEventListener('change', (e) => setOpt(k, e.target.checked));
 /* Vollbild nach Normblock 10: die ganze Seite; sichtbar sind nur Bühne und eingeschaltetes Diagramm.
    Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
 function setVollbild(an) {
@@ -1214,7 +1260,7 @@ try {
   if (q.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau: nur die Bühne
   if (q.get('auto') === '1') S.startAuto = true;                                   // Automatik beim Öffnen
   for (const k of ['feld', 'diag', 'phi']) if (q.get(k) === '1') S[k] = true;
-  for (const k of ['form', 'rech', 'werte']) if (q.has(k)) S[k] = q.get(k) !== '0';   // ?form=1, ?werte=1, ?rech=0
+  for (const k of ['erkl', 'form', 'rech', 'werte']) if (q.has(k)) S[k] = q.get(k) !== '0';   // ?erkl=1, ?form=1, ?rech=1, ?werte=1
   if (q.has('qr')) S.qr = q.get('qr') !== '0';                 // ?qr=1: QR-Code gleich sichtbar (Beamer-Link)
 } catch (e) { /* ignorieren */ }
 window.anim = {
@@ -1222,7 +1268,7 @@ window.anim = {
   cfg: CFG,
   model, psi0, dpsi0, feld: FELD, feldPfeile,
   act,                                                        // 'auto', 'autoAn', 'autoAus', 'umdrehen', 'reset'
-  advance(sek) { const n = Math.max(1, Math.round(sek * 240)); for (let k = 0; k < n; k++) step(sek / n); draw(); refreshText(true); refreshVals(); return st.t; },
+  advance(sek) { const n = Math.max(1, Math.round(sek * 240)); for (let k = 0; k < n; k++) { step(sek / n); if ((k + 1) % 24 === 0) refreshText(); } draw(); refreshText(true); refreshVals(); return st.t; },
   pause(on = true) { S.paused = on; refreshText(true); },
   opt(key, val) {
     if (key === 'N') setN(val); else if (key === 'bereich') setBereich(val); else if (key === 'T') setTempo(val); else setOpt(key, val);
@@ -1238,7 +1284,7 @@ window.anim = {
 messeBuehne();
 reset();
 document.querySelectorAll('[data-n]').forEach((o) => o.setAttribute('aria-pressed', String(Number(o.dataset.n) === S.N)));
-for (const k of ['feld', 'diag', 'phi', 'form', 'rech', 'werte']) $('chk-' + k).checked = S[k];
+for (const k of ['feld', 'diag', 'phi', 'erkl', 'form', 'rech', 'werte']) $('chk-' + k).checked = S[k];
 baueSkala(); baueDiagAchsen(); baueNotizen(); layout();
 if (S.startAuto) { AKTIONEN.autoAn(); S.benutzt = false; }        // ?auto=1: läuft gleich los, Hinweis „ziehen“ bleibt
 draw(); refreshText(true); refreshVals();
