@@ -192,7 +192,16 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--warn:#ff8a80}}
 :root[data-theme="dark"]{--warn:#ff8a80}
 .fragen{margin:8px 0 0;padding-left:1.4em;display:grid;gap:4px;max-width:68ch}
-.gerade{margin:10px 0 0;padding:6px 10px;border-left:3px solid var(--rule);color:var(--muted);max-width:68ch}
+/* Erklärung: alle Fälle zugleich in zwei Spalten, der aktive hervorgehoben (Festlegung 17.11.2026) */
+:root{--hl:#e6f0fa}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--hl:#1d3346}}
+:root[data-theme="dark"]{--hl:#1d3346}
+.erkl-grid{margin:8px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:700px){.erkl-grid{grid-template-columns:minmax(0,1fr)}}
+.ek{padding:6px 10px 7px;border:1px solid var(--rule);border-radius:6px;font-size:14px;line-height:1.4;transition:background-color .2s,border-color .2s,box-shadow .2s}
+.ek b{display:block;font-size:14.5px;margin-bottom:2px}
+.ek.aktiv{background:var(--hl);border-color:var(--focus);box-shadow:inset 4px 0 0 var(--focus)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .warn{margin:8px 0 0;color:var(--warn);font-weight:600;max-width:68ch}
 .m{font-family:var(--font-math);font-size:1.08em}
 .vals td:first-child{font-family:var(--font-math);font-size:16px}
@@ -265,15 +274,15 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
   </section>
   <section class="info" id="info">
     <article class="card">
-      <h2 id="pTitle" aria-live="polite"></h2>
+      <h2 id="pTitle"></h2>
       <ol id="fragen" class="fragen">
         <li>Wann zeigt der Spannungsmesser eine Spannung an, und wann nicht?</li>
         <li>Wovon hängt ab, zu welcher Seite der Zeiger ausschlägt?</li>
         <li>Wie erreichst du einen größeren Ausschlag?</li>
         <li>Schiebe den Magneten fast ganz durch die Spule. Was fällt dir auf?</li>
       </ol>
-      <p id="pText"></p>
-      <p id="pGerade" class="gerade" hidden></p>
+      <div id="erkl" class="erkl-grid" hidden></div>
+      <span id="pAktiv" class="sr" aria-live="polite"></span>
       <p id="pWarn" class="warn" hidden>Der Zeiger schlägt an: größeren Messbereich wählen oder langsamer bewegen.</p>
       <div id="pForm" class="formulas"></div>
     </article>
@@ -427,7 +436,7 @@ function reset() {
   S.auto = false; drag.aktiv = false; taste.dir = 0;
   Object.assign(st, model(st.x, 0, 0, 0, S.N));
   diagClear();
-  Object.assign(TX, { schl: '', kand: '', kandSeit: 0, z: '', letzteBew: null, gerade: null, anschlagT: null, bk: '', bkSeit: 0 });
+  Object.assign(TX, { schl: '', kand: '', kandSeit: 0, anschlagT: null });
   refreshText(true);
 }
 const orient = () => (Math.cos(st.phiM * D) >= 0 ? 1 : -1);   // +1: Nordpol zur Spule
@@ -488,7 +497,6 @@ function step(dt) {
   // Zustand für den Text (kurze Stillstände an den Umkehrpunkten zählen nicht als „steht still“)
   if (Math.abs(st.v) < 3 && !st.job) st.ruheSeit += dt; else st.ruheSeit = 0;
   diagSample();
-  merkeBewegung();
 }
 
 /* ================= 4 Hilfen ================= */
@@ -1064,54 +1072,40 @@ function draw() {
 const bruch = (z, n) => `<span class="fr"><span>${z}</span><span>${n}</span></span>`;
 function zustand() {
   if (st.job && st.job.art === 'dreh') return 'dreh';
-  if (S.auto || (st.job && /^auto/.test(st.job.dann || ''))) return 'auto';   // Automatik: ein fester Text
   if (st.ruheSeit > 0.3) return 'ruhe';
   const vr = Math.abs(st.v) >= 3 ? st.v : st.vLetzt || 0;      // beim Abbremsen die bisherige Richtung behalten
   if (st.x > 0.5) return vr > 0 ? 'durch' : 'zurueck';     // jenseits der Spulenmitte (Fluss dort am größten)
   return vr > 0 ? 'hinein' : 'heraus';
 }
-const TEXTE = {
-  ruhe: (pol, drin) => ['Der Magnet steht still',
-    (drin ? 'Der Magnet steckt in der Spule, aber er bewegt sich nicht. ' : '') + 'Das Magnetfeld in der Spule ändert sich nicht. Deshalb wird keine Spannung induziert (erzeugt). Der Zeiger steht auf null.'],
-  hinein: (pol, drin) => [drin ? `Der ${pol} bewegt sich in die Spule hinein` : `Der ${pol} nähert sich der Spule`,
-    'Das Magnetfeld in der Spule wird stärker. Dadurch wird eine Spannung induziert (erzeugt). Je schneller sich der Magnet bewegt, desto größer ist die Spannung.' + (pol === 'Südpol' ? ' Der Zeiger schlägt andersherum aus als beim Nordpol.' : '')],
-  heraus: (pol, drin) => [drin ? `Der ${pol} bewegt sich aus der Spule heraus` : `Der ${pol} entfernt sich von der Spule`,
-    'Das Magnetfeld in der Spule wird schwächer. Die Spannung hat jetzt die umgekehrte Richtung: Der Zeiger schlägt zur anderen Seite aus.'],
-  durch: (pol) => [`Der ${pol} tritt auf der anderen Seite aus`,
-    'Der Magnet bewegt sich in dieselbe Richtung weiter, aber das Magnetfeld in der Spule wird jetzt schwächer. Deshalb kehrt sich die Spannung um: Der Zeiger schlägt zur anderen Seite aus. Entscheidend ist nicht die Bewegungsrichtung, sondern ob das Magnetfeld in der Spule stärker oder schwächer wird.'],
-  zurueck: () => ['Der Magnet wird in die Spule zurückgeschoben',
-    'Das Magnetfeld in der Spule wird wieder stärker. Der Zeiger schlägt deshalb zur selben Seite aus wie beim Hineinschieben, obwohl sich der Magnet jetzt in die Gegenrichtung bewegt.'],
-  auto: (pol) => ['Der Magnet wird hinein- und herausbewegt',
-    'Beim Hineinbewegen wird das Magnetfeld in der Spule stärker, beim Herausbewegen schwächer. Deshalb schlägt der Zeiger abwechselnd zur einen und zur anderen Seite aus. An den Umkehrpunkten steht der Magnet kurz still, dann ist die Spannung null. Je schneller die Bewegung, desto größer der Ausschlag.' + (pol === 'Südpol' ? ' Mit dem Südpol voran sind die Ausschläge andersherum als mit dem Nordpol.' : '')],
-  dreh: () => ['Der Magnet wird umgedreht', 'Danach zeigt der andere Pol zur Spule. Auch beim Drehen ändert sich das Magnetfeld in der Spule ein wenig. Der Zeiger zuckt deshalb kurz.'],
-};
-/* Texte unter der Bühne (Festlegung der Lehrkraft, 17.11.2026): Beim Öffnen stehen feste Forschungsfragen da – die
-   Erklärung nähme das Ergebnis vorweg. Der Schalter „Erklärung“ zeigt die Phasentexte, aber ruhig: Ein neuer Zustand gilt
-   erst, wenn er ½ s anhält; die Automatik hat einen festen Text; nach dem Anhalten bleibt die Erklärung der letzten
-   Bewegung als „Gerade eben“ stehen. Vorher wechselte der Text bei der Automatik etwa alle 0,5 s und flackerte beim Ziehen. */
-const BEWEGUNG = ['hinein', 'heraus', 'durch', 'zurueck'];
-const TX = { schl: '', kand: '', kandSeit: 0, z: '', letzteBew: null, gerade: null, anschlagT: null, bk: '', bkSeit: 0 };
-function merkeBewegung() {   // je Zeitschritt: letzte Bewegung, die mindestens 0,15 s anhielt (Zucken beim Anhalten zählt nicht)
-  const z = zustand(), pol = orient() > 0 ? 'Nordpol' : 'Südpol', drin = st.x + CFG.lM / 2 > -CFG.lS / 2, k = z + pol + drin;
-  if (k !== TX.bk) { TX.bk = k; TX.bkSeit = st.t; }
-  if (z === 'auto' || z === 'dreh') TX.letzteBew = null;
-  else if (BEWEGUNG.includes(z) && st.t - TX.bkSeit >= 0.15) TX.letzteBew = [z, pol, drin];
+/* Erklärung (Festlegung der Lehrkraft, 17.11.2026): Beim Öffnen stehen feste Forschungsfragen da – die Erklärung nähme
+   das Ergebnis vorweg. Der Schalter „Erklärung“ zeigt alle Fälle zugleich in zwei Spalten (links wird das Magnetfeld in
+   der Spule stärker, rechts schwächer; unten Ruhe und Umdrehen); der gerade zutreffende Fall ist hervorgehoben. Die
+   Hervorhebung wechselt erst, wenn ein Fall 0,2 s anhält (kein Flackern beim Zucken). Vorher wechselte ein einzelner
+   Text bei der Automatik etwa alle 0,5 s und war nicht lesbar. */
+const KARTEN = [
+  ['hinein', 'Magnet wird hineingeschoben', 'Das Magnetfeld in der Spule wird stärker. Dadurch wird eine Spannung induziert (erzeugt). Je schneller die Bewegung, desto größer die Spannung.'],
+  ['heraus', 'Magnet wird herausgezogen', 'Das Magnetfeld in der Spule wird schwächer. Die Spannung hat die umgekehrte Richtung: Der Zeiger schlägt zur anderen Seite aus.'],
+  ['zurueck', 'Magnet wird von der anderen Seite zurückgeschoben', 'Das Magnetfeld in der Spule wird wieder stärker. Der Zeiger schlägt zur selben Seite aus wie beim Hineinschieben, obwohl sich der Magnet in die Gegenrichtung bewegt.'],
+  ['durch', 'Magnet tritt auf der anderen Seite aus', 'Der Magnet bewegt sich in dieselbe Richtung weiter, aber das Magnetfeld in der Spule wird schwächer. Deshalb kehrt sich die Spannung um. Entscheidend ist, ob das Magnetfeld stärker oder schwächer wird, nicht die Bewegungsrichtung.'],
+  ['ruhe', 'Magnet steht still', 'Das Magnetfeld in der Spule ändert sich nicht, auch wenn der Magnet in der Spule steckt. Deshalb wird keine Spannung induziert, der Zeiger steht auf null.'],
+  ['dreh', 'Magnet wird umgedreht', 'Danach zeigt der andere Pol zur Spule: Alle Ausschläge sind andersherum. Beim Drehen selbst ändert sich das Magnetfeld ein wenig, der Zeiger zuckt kurz.'],
+];
+for (const [z, t, p] of KARTEN) {
+  const d = document.createElement('div'); d.className = 'ek'; d.dataset.z = z;
+  const b = document.createElement('b'); b.textContent = t; d.append(b, p); $('erkl').append(d);
 }
+const TX = { schl: '', kand: '', kandSeit: 0, anschlagT: null };
 function refreshText(sofort = false) {
-  $('fragen').hidden = S.erkl; $('pText').hidden = !S.erkl;
-  if (!S.erkl) {
-    $('pTitle').textContent = 'Forschungsfragen'; $('pGerade').hidden = true; TX.schl = '';
-  } else {
-    const z = zustand(), pol = orient() > 0 ? 'Nordpol' : 'Südpol', drin = st.x + CFG.lM / 2 > -CFG.lS / 2;   // Stirnfläche in der Wicklung
-    const schl = [z, pol, BEWEGUNG.includes(z) || z === 'ruhe' ? drin : ''].join('|');
-    if (schl !== TX.kand) { TX.kand = schl; TX.kandSeit = st.t; }
-    if (schl !== TX.schl && (sofort || !TX.schl || st.t - TX.kandSeit >= 0.5)) {
-      TX.schl = schl; TX.z = z;
-      TX.gerade = z === 'ruhe' && TX.letzteBew ? TEXTE[TX.letzteBew[0]](TX.letzteBew[1], TX.letzteBew[2]) : null;
-      const [t, p] = TEXTE[z](pol, drin);
-      $('pTitle').textContent = t; $('pText').textContent = p;
-      $('pGerade').hidden = !TX.gerade;
-      if (TX.gerade) { $('pGerade').innerHTML = '<b>Gerade eben:</b> '; $('pGerade').append(TX.gerade[0] + '. ' + TX.gerade[1]); }
+  $('fragen').hidden = S.erkl; $('erkl').hidden = !S.erkl;
+  $('pTitle').textContent = S.erkl ? 'Erklärung' : 'Forschungsfragen';
+  if (!S.erkl) TX.schl = '';
+  else {
+    const z = zustand();
+    if (z !== TX.kand) { TX.kand = z; TX.kandSeit = st.t; }
+    if (z !== TX.schl && (sofort || !TX.schl || st.t - TX.kandSeit >= 0.2)) {
+      TX.schl = z;
+      for (const d of $('erkl').children) { const an = d.dataset.z === z; d.classList.toggle('aktiv', an); if (an) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current'); }
+      $('pAktiv').textContent = (KARTEN.find((k) => k[0] === z) || ['', ''])[1];
     }
   }
   // Hinweis bei Anschlag (in beiden Ansichten): steht noch 2 s nach dem letzten Anschlag
