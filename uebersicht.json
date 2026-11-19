@@ -28,7 +28,8 @@
     "drehfeld/verteilte-wicklung/":     { "reihenfolge": 2 },
 
     "leistung/wirk-blind-schein/": { "reihenfolge": 1 },
-    "lf5-kompensation/animation/": { "reihenfolge": 2, "titel": "Blindleistungskompensation",
+    "leistung/blindleistung-pendeln/": { "reihenfolge": 2 },
+    "lf5-kompensation/animation/": { "reihenfolge": 3, "titel": "Blindleistungskompensation",
       "text": "Animierte Darstellung der Blindleistungskompensation im Drehstromnetz." },
 
     "lf2-schutzorgane/ls-schalter-auslosecharakteristik/": { "titel": "LS-Schalter: Auslösecharakteristiken", "art": "Infoseite",
