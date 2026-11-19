@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blindleistung pendelt</title>
+<meta name="description" content="Interaktive Animation: Die Energie pendelt zwischen Generator und Spule oder Kondensator, dazu Auf- und Abbau des Magnetfelds oder des elektrischen Felds und das Liniendiagramm von u, i und p.">
+<style>
+/* LAYOUT-NORM:begin v3 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+   Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
+   gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit. */
+:root{
+  /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
+  --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
+  --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
+  /* Bühne: immer weiß, ohne Karoraster – die Größenfarben der Fachkonventionen gelten für weißen Grund */
+  --stage:#ffffff; --ink:#1b2127;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-math:var(--font-ui);   /* Formeln in der Textschrift (Festlegung der Lehrkraft, 12.11.2026; fachkonventionen 3a) */
+  /* Bühnengröße = (Fensterhöhe − --reserve) · 16/9, höchstens 1920 px und höchstens die Seitenbreite.
+     --reserve: Ränder, Abstand und Bedienleiste. Derselbe Wert steht in scripts/pruefen.py (NORM). */
+  --reserve:250px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+    --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+  --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--page);color:var(--fg)}
+body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.45;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+sub,sup{font-size:.72em;line-height:0}
+
+/* 1 Seitenaufbau, immer in dieser Reihenfolge, alles gleich breit: Bühne (#stage) → Bedienleiste (#controls) →
+   Zusatzbereiche (.card, .info, optional) → Modellhinweise (.notes). Über der Bühne steht nichts. */
+.wrap{width:100%;max-width:min(1920px,max(min(100%,720px),calc((100dvh - var(--reserve)) * 16 / 9)));
+  margin:0 auto;display:grid;gap:12px}
+
+/* 2 Bühne: immer 16:9, logisch 1920 × 1080 (SVG-viewBox; Canvas darunter, SVG mit Titel und QR-Code darüber) */
+.stage{position:relative;background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.stage svg,.stage canvas{display:block;width:100%;height:100%}
+.stage canvas + svg{position:absolute;inset:0}
+.stage:fullscreen{border:0;border-radius:0;aspect-ratio:auto;width:100vw;height:100vh;max-width:none}   /* nur noch für Animationen vor v3 */
+
+/* 3 Schrift in der Bühne (Bühnenpixel bei 1920 Breite): Formelzeichen kursiv (.i), Einheiten, Zahlen, Indizes aufrecht */
+#stage-svg text{font-family:var(--font-math);fill:var(--ink)}
+#stage-svg .t-main{font-size:60px;font-weight:700}     /* Titel, oben rechts neben dem QR-Code */
+#stage-svg .t-panel{font-size:34px;font-weight:700}    /* Bereichsüberschrift */
+#stage-svg .ro{font-size:38px}                         /* Momentanwerte */
+#stage-svg .lbl{font-size:30px}                        /* Formelzeichen an Pfeilen und Bauteilen */
+#stage-svg .lbl-s{font-size:25px}
+#stage-svg .lbl-xs{font-size:22px}                     /* kleinste erlaubte Beschriftung */
+#stage-svg .sans{font-family:var(--font-ui)}
+#stage-svg .i{font-style:italic}
+#stage-svg .muted{fill:#58636e}
+#stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .qr-cap{font-family:var(--font-ui);font-size:22px}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
+
+/* 4 Bedienleiste: höchstens drei Zeilen – 1 Lauf (und Wert), 2 Einstellen (nur wenn nötig), 3 Ansicht – dann „Tastatur“.
+   Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+.card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.controls{display:grid;gap:6px;font-size:13.5px;line-height:1.35}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.row .sp{flex:1 1 auto}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
+.group.wert .group{flex-wrap:nowrap}
+.group.wert input[type=range]{min-width:100px}
+.cap{font-size:12px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
+button{padding:3px 9px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:9em;font-weight:600}
+button.primary:hover{opacity:.92}
+select{padding:2px 5px}
+input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
+.seg{display:inline-flex}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
+.seg button:last-child{border-radius:0 5px 5px 0}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:14px;height:14px;margin:0}
+:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.keys .hint{margin-top:6px}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+.sep{width:1px;align-self:stretch;background:var(--rule)}
+@media (max-width:640px){.sep{display:none}}
+
+/* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
+.diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
+.diag text{font-family:var(--font-math);fill:var(--ink)}           /* Schriftstufen wie in der Bühne (Bühnenpixel bei 1920) */
+.diag .lbl{font-size:30px} .diag .lbl-s{font-size:25px} .diag .lbl-xs{font-size:22px}
+.diag .sans{font-family:var(--font-ui)} .diag .i{font-style:italic} .diag .muted{fill:#58636e}
+.diag .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+.info{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.info{grid-template-columns:1fr}}
+.info h2{margin:0;font-size:19px}
+.info h3,.card h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#pText{margin:8px 0 0;max-width:68ch}
+.formulas{margin-top:10px;padding:10px 12px;border-left:3px solid var(--rule);background:var(--btn);border-radius:0 6px 6px 0;display:grid;gap:8px;font-family:var(--font-math);font-size:17px}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px;line-height:1.15}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 3px}
+.vals table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.vals td{padding:4px 0;border-bottom:1px solid var(--rule)}
+.vals td:last-child{text-align:right;font-weight:600}
+.vals tr:last-child td{border-bottom:0}
+
+/* 6 Modellhinweise: immer zuletzt, aufklappbar */
+.notes summary{cursor:pointer;font-weight:600}
+.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
+
+/* 7 Export (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
+html.export .wrap>:not(.stage){display:none}
+
+/* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
+   16:9-Rahmen genau aus. Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.buehne .wrap{width:100%;max-width:none;gap:0}
+html.buehne .stage{border:0;border-radius:0}
+html.buehne .wrap>:not(.stage){display:none}
+
+/* 9 Handy quer (Fenster flach und höchstens 520 px hoch): Bühne links, so groß wie es die Höhe erlaubt; Bedienleiste
+   rechts daneben, bei Bedarf mit eigenem Rollbalken; alles Weitere darunter. Nicht in Vorschau und Export. */
+@media (orientation:landscape) and (max-height:520px){
+  html:not(.buehne):not(.export):not(.vollbild) .wrap{max-width:none;
+    grid-template-columns:min(calc((100dvh - 32px) * 16 / 9),calc(100% - 272px)) minmax(260px,1fr);align-items:start}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>*{grid-column:1 / -1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.stage{grid-column:1;grid-row:1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{grid-column:2;grid-row:1;min-width:0;max-height:calc(100dvh - 32px);
+    overflow-x:hidden;overflow-y:auto;padding:8px 10px}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+}
+
+/* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
+   sichtbar sind nur die Bühne und – wenn eingeschaltet – das Diagramm (#diagCard) darunter. Die Bühne bleibt 16:9 und wird
+   so groß, dass beides auf den Bildschirm passt (mit Diagramm: 1920 × 1480 Bühnenpixel zusammen). Ohne Vollbild-Schnittstelle
+   (iPhone, eingebettete Ansicht) füllt dieselbe Ansicht das Fenster; dann führt .vb-ende zurück.
+   Festlegung der Lehrkraft, 12.11.2026: „Vollbild nimmt ein eingeschaltetes Diagramm mit.“ */
+html.vollbild,html.vollbild body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.vollbild .wrap{position:fixed;inset:0;z-index:20;max-width:none;width:auto;margin:0;gap:0;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;--vb-h:1080}
+html.vollbild .wrap:has(>#diagCard:not([hidden])){--vb-h:1480}
+html.vollbild .wrap>*{display:none}
+html.vollbild .wrap>.stage{display:block;flex:none;border:0;border-radius:0;width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild .wrap>#diagCard:not([hidden]){display:block;flex:none;border:0;border-radius:0;padding:0;background:#fff;
+  width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild #diagCard h3{display:none}
+html.vollbild #diagCard .diag{border:0;border-radius:0}
+.vb-ende{display:none}
+html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:21;opacity:.8}
+/* LAYOUT-NORM:end */
+
+/* Nur diese Animation: Größenfarben nach fachkonventionen, Abschnitt 6 (Festlegung der Lehrkraft, 14.11.2026:
+   Wirkleistung grün, Blindleistung orange, Scheinleistung lila – wie die Leiterfarben; u blau, i rot). */
+:root{ --u:#0070C0; --i:#FF0000; --p:#00B050; --q:#FFC000; --s:#7030A0; }
+#stage-svg .fett{font-weight:700}
+.formeln{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:7px 28px;align-items:start;font-family:var(--font-math);font-size:16px;line-height:1.5}
+.formeln .z{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .35em}
+.formeln .sw{display:inline-block;width:22px;height:5px;border-radius:2px;align-self:center;margin-right:4px;background:var(--rule)}
+.formeln .sp2{display:grid;gap:7px}
+.formeln .hin{grid-column:1 / -1;font-family:var(--font-ui);font-size:13px;color:var(--muted)}
+.notes a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 1 Bühne: 16:9, logisch 1920 × 1080. Über ihr steht nichts. -->
+  <div class="stage" id="stage">
+    <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">Blindleistung pendelt</title>
+      <desc id="svg-desc">Ein Generator speist eine ideale Spule oder einen idealen Kondensator. Pfeile zeigen, wie die Energie zum Bauteil und zurück zum Generator pendelt, während sich das Magnetfeld oder das elektrische Feld auf- und abbaut. Darunter baut sich das Liniendiagramm von u, i und p auf.</desc>
+    </svg>
+  </div>
+
+  <!-- 2 Bedienleiste: unmittelbar unter der Bühne, höchstens drei Zeilen, dann „Tastatur“ -->
+  <div class="controls" id="controls">
+    <div class="row">                                   <!-- Zeile 1 · Lauf und Wert (Zeitpunkt ωt) -->
+      <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
+      <label class="group" for="sel-speed"><span class="cap">Tempo</span>
+        <select id="sel-speed">
+          <option value="8" selected>1 Periode in 8 s</option>
+          <option value="16">1 Periode in 16 s</option>
+          <option value="32">1 Periode in 32 s</option>
+        </select>
+      </label>
+      <button id="btn-reset" type="button">Zurücksetzen</button>
+      <div class="group wert">
+        <input id="rng-x" type="range" aria-label="Zeitpunkt ωt in Grad">
+        <label class="group" for="num-x"><span class="cap"><i>ωt</i> in °</span>
+          <input id="num-x" type="number">
+        </label>
+      </div>
+    </div>
+    <div class="row">                                   <!-- Zeile 2 · Einstellen: Bauteil, Schritte, Direktwahl -->
+      <div class="group" role="group" aria-label="Bauteil wählen"><span class="cap">Bauteil</span>
+        <span class="seg" id="seg-bauteil">
+          <button type="button" data-v="L" title="φ = +90°">Spule</button><button type="button" data-v="C" title="φ = −90°">Kondensator</button>
+        </span>
+      </div>
+      <div class="group" role="group" aria-label="Schritt"><span class="cap">Schritt</span>
+        <span class="seg" id="steps"></span>
+      </div>
+      <div class="group" role="group" aria-label="Direktwahl"><span class="cap">Direkt</span>
+        <span class="seg" id="presets"></span>
+      </div>
+    </div>
+    <div class="row">                                   <!-- Zeile 3 · Ansicht: Ebenen ein/aus, rechts außen Vollbild -->
+      <label class="chk" for="chk-feld"><input id="chk-feld" type="checkbox" checked>Feldlinien</label>
+      <label class="chk" for="chk-linien"><input id="chk-linien" type="checkbox" checked>Liniendiagramm</label>
+      <label class="chk" for="chk-energie"><input id="chk-energie" type="checkbox">Energie im Feld</label>
+      <label class="chk" for="chk-ro"><input id="chk-ro" type="checkbox">Momentanwerte</label>
+      <label class="chk" for="chk-form"><input id="chk-form" type="checkbox">Formeln</label>
+      <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox">Berechnung</label>
+      <span class="sp"></span>
+      <button type="button" id="btn-fs">Vollbild</button>
+    </div>
+    <details class="keys">
+      <summary>Tastatur und Verlinken</summary>
+      <div class="hint">
+        <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> Zeitpunkt <i>ωt</i> um 0,5° · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> um 15° · <kbd>L</kbd> Spule · <kbd>C</kbd> Kondensator · <kbd>Pos1</kbd> Anfang · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
+        Verlinken: <code>#a135</code> für <i>ωt</i> = 135°, davor z.&nbsp;B. <code>?bauteil=C&amp;energie=1</code>.
+      </div>
+    </details>
+  </div>
+
+  <!-- 3 Zusatzbereich: Formeln und Berechnung (einzeln ausblendbar), zuletzt die Modellhinweise -->
+  <div class="card" id="formCard">
+    <h3>Formeln</h3>
+    <div class="formeln" id="formeln"></div>
+  </div>
+
+  <details class="card notes">
+    <summary>Modell und Vereinfachungen</summary>
+    <ul>
+      <li>Ideale Bauteile ohne Wirkwiderstand: Die Phasenverschiebung ist genau <i>φ</i> = +90° (Spule) oder <i>φ</i> = −90° (Kondensator), die Wirkleistung ist <i>P</i> = 0. Eine echte Spule hat einen Drahtwiderstand und setzt einen kleinen Teil der Energie in Wärme um.</li>
+      <li>Werte wie in der Animation „Wirk-, Blind- und Scheinleistung“: <i>U</i> = 230&#8239;V, <i>I</i> = 10&#8239;A, <i>f</i> = 50&#8239;Hz, also <i>X</i> = 23&#8239;Ω, <i>L</i> = 73,2&#8239;mH und <i>C</i> = 138&#8239;µF. Die Animation läuft in starker Zeitlupe: Eine Periode dauert in Wirklichkeit 20&#8239;ms.</li>
+      <li>Verbraucherzählpfeilsystem: <i>p</i> = <i>u</i> · <i>i</i> &gt; 0 heißt Energie zum Bauteil. Die Zählpfeile <i>u</i> und <i>i</i> behalten ihre Richtung; ihre Länge folgt dem Betrag, das Vorzeichen steht am Wert.</li>
+      <li>Die Energie pendelt mit der doppelten Frequenz: je Periode zweimal zum Bauteil und zweimal zurück. Das Feld baut sich dabei einmal in jede Richtung auf.</li>
+      <li>Energiepfeile: Die Größe folgt dem Betrag der Momentanleistung |<i>p</i>|, die Farbe der Richtung (dunkel: zum Blindwiderstand, hell: zurück zum Generator; der Rand hat jeweils die andere Farbe). Die Pfeile wandern mit der im Feld gespeicherten Energie hin und her; das ist ein Bild für das Pendeln und kein Ort der Energie. Sie stehen zwischen den Leitungen, weil die Energie nicht mit dem Strom durch einen Draht wandert: Der Strom wechselt jede Halbperiode die Richtung, die Energie jede Viertelperiode.</li>
+      <li>Magnetfeldlinien (grün): Linien der Flussdichte <i>B</i>, skizziert und geglättet, nicht berechnet und nicht maßstäblich. Jede Linie ist in sich geschlossen. In der Spule sind die Linien gerade, parallel und gleich dicht gezeichnet (homogenes Feld); in Wirklichkeit ist das Feld an den Enden einer so kurzen Spule nur etwa halb so stark wie in der Mitte. Die Zahl der Linien folgt dem Betrag des Stroms (höchstens 6 je Seite); an ihnen soll nicht gezählt werden. Richtung nach der Rechtsschraubenregel für die gezeichnete Wickelrichtung: Bei <i>i</i> &gt; 0 zeigt das Feld in der Spule nach oben. Luftspule ohne Eisenkern.</li>
+      <li>Elektrische Feldlinien (blau): Linien der Feldstärke <i>E</i>. Die Zahl der Linien und der Ladungen folgt dem Betrag der Spannung (höchstens 10). Jede Linie beginnt an einer positiven und endet an einer negativen Ladung; anders als Magnetfeldlinien sind elektrische Feldlinien hier nicht geschlossen. Das Randfeld ist vernachlässigt (gilt für <i>d</i> ≪ √<i>A</i>); in der Zeichnung ist der Plattenabstand stark vergrößert.</li>
+      <li>„Zurück zum Generator“: Die Energie geht in die Quelle zurück, bei einem echten Generator in die Drehbewegung des Läufers und damit ins Netz. Die Zuleitungen sind widerstandslos gezeichnet; in echten Leitungen verursacht auch der Blindstrom Verluste.</li>
+      <li>Maßstäbe im Liniendiagramm: <i>û</i> ≙ 100, <i>î</i> ≙ 75 und der Scheitelwert von <i>p</i> ≙ 115 Bühnenpixel. Die Kurve von <i>p</i> ist lila wie in der anderen Animation.</li>
+      <li>Anregung für das Thema: Video „Was ist Wirkleistung, was Blindleistung? Wie entsteht daraus die Scheinleistung? (Wechselstrom 13)“, YouTube-Kanal „Bestehe Deine nächste Klausur!“, 14.09.2018, <a href="https://www.youtube.com/watch?v=P4ejYnrqgVw" target="_blank" rel="noopener">youtube.com/watch?v=P4ejYnrqgVw</a>. Diese Animation ist eine eigene Umsetzung; Bilder, Texte und Grafiken des Videos sind nicht übernommen.</li>
+    </ul>
+  </details>
+</div>
+
+<button type="button" class="vb-ende" id="vb-ende">Vollbild beenden</button>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const D = Math.PI / 180;
+
+/* ================= 1 Parameterblock =================
+   Alles, was die Lehrkraft später selbst ändern können soll, steht hier: Werte, Bereiche, Geometrie, Farben.
+   Festlegungen der Lehrkraft, 14.11.2026 (Auswahlrunde und Auftrag):
+   – nur φ = +90° (Spule) und φ = −90° (Kondensator); reale Bauteile (räumliche Wicklung, zwei Platten), Schaltzeichen klein daneben
+   – Quelle als Generator-Quadrat G ~
+   – Energiepfeile: dunkles Orange = Energie zum Bauteil (Feld baut sich auf), helles Orange = zurück zum Generator
+   – elektrische Feldlinien blau (wie die Spannung); Magnetfeldlinien grün (Festlegung 11.11.2026)
+   – Liniendiagramm in der Bühne unter der Schaltung, baut sich mit ωt auf */
+const CFG = {
+  x: { zeichen: 'ωt', einheit: '°', min: 0, max: 360, step: 0.5, big: 15, start: 60, hash: 'a', loop: true,
+       presets: [0, 45, 90, 135, 180, 270] },
+  U: 230, I: 10, f: 50,                                   // Effektivwerte in V und A, Frequenz in Hz
+  sz: { yo: 340, yu: 720, gx: 215, gy: 530, gs: 130, cx: 1380, xs: 1770 },   // Szene: Leitungen oben/unten, Generator (Mitte, Kantenlänge), Achse des Bauteils, Schaltzeichen
+  spule: { yt: 420, yb: 640, rx: 70, ry: 14, N: 7, nFeld: 6 },             // Wicklung: oben, unten, Halbachsen, Windungen; Feldlinien je Seite bei vollem Strom
+  kond: { yo: 450, yu: 610, b: 380, d: 32, nFeld: 10 },                    // Platten: Mitte oben/unten, Breite, Dicke; Feldlinien bei voller Spannung
+  pf: { x0: 440, teil: 140, n: 4, len: 110, h: 80, weg: 100, y: 530 },     // Energiepfeile: Anfang, Abstand, Anzahl, Länge, größte Höhe, Pendelweg
+  dg: { x0: 150, y0: 925, kx: 3.0, ku: 100, ki: 75, kp: 115, xEnd: 1256 }, // Liniendiagramm: Ursprung, px je Grad, û, î, Scheitel von p in px
+  bar: { x: 1350, y: 962, w: 500, h: 40 },                                 // Balken „Energie im Feld“
+  col: { u: '#0070C0', i: '#FF0000', Q: '#FFC000', S: '#7030A0', B: '#00B050', E: '#0070C0',
+         hin: '#E07B00', zur: '#FFD27A',                                   // Energie: dunkel = hin, hell = zurück; Rand jeweils in der anderen Farbe
+         ink: '#1b2127', muted: '#58636e', draht: '#2a333b', hinten: '#98a3ac', platte: '#dfe4e9' },
+};
+
+/* ================= 2 Physikalisches Modell (rein, ohne Darstellung) =================
+   u = û · sin ωt,  i = î · sin(ωt − φ)  mit φ = +90° (Spule) oder φ = −90° (Kondensator); ideale Bauteile, P = 0.
+   Verbraucherzählpfeilsystem: p = u · i > 0 heißt Energie zum Bauteil.
+     Spule:        p = −U · I · sin 2ωt,  W = ½ · L · i² = W_max · cos² ωt
+     Kondensator:  p = +U · I · sin 2ωt,  W = ½ · C · u² = W_max · sin² ωt
+   X = U / I,  L = X / ω,  C = 1 / (ω · X),  W_max = ½ · L · î² = ½ · C · û² = U · I / ω  →  |Q| = ω · W_max
+   feld: Feldstärke bezogen auf ihren Scheitelwert, mit Vorzeichen (Spule: i / î, Kondensator: u / û). */
+function model(wt, bauteil) {
+  const U = CFG.U, I = CFG.I, omega = 2 * Math.PI * CFG.f, uHat = U * Math.SQRT2, iHat = I * Math.SQRT2;
+  const ind = bauteil !== 'C', phi = ind ? 90 : -90;
+  const n = (v) => (Math.abs(v) < 1e-9 ? 0 : v);              // Rechenrauschen (1e-13) ist null
+  const u = n(uHat * Math.sin(wt * D)), i = n(iHat * Math.sin((wt - phi) * D));
+  const X = U / I, L = X / omega, C = 1 / (omega * X);
+  return { phi, omega, uHat, iHat, u, i, p: n(u * i), X, L, C, S: U * I, Q: (ind ? 1 : -1) * U * I,
+           W: ind ? 0.5 * L * i * i : 0.5 * C * u * u, Wmax: U * I / omega, feld: ind ? i / iHat : u / uHat };
+}
+
+/* ================= 3 Zustand =================
+   Feldlinien und Liniendiagramm beim Öffnen an (Auftrag der Lehrkraft, 14.11.2026: Feld und Linienbild gehören zum Bild);
+   „Energie im Feld“ beim Öffnen aus (Zusatzebene, Festlegung 11.11.2026).
+   Formeln, Berechnung, Momentanwerte beim Öffnen aus (Festlegung der Lehrkraft, 14.11.2026; vorher 12.11.2026: an). */
+const S = { x: CFG.x.start, bauteil: 'L', playing: false, dauer: 8,      // Tempo beim Öffnen: schnellste Stufe (Festlegung der Lehrkraft, 14.11.2026)
+           
+            feld: true, linien: true, energie: false, ro: false, form: false, rech: false, qr: false };
+
+/* ================= 4 Hilfen ================= */
+const $ = (s) => document.querySelector(s);
+const svg = $('#stage-svg');
+function el(tag, attrs = {}, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function txt(x, y, html, attrs = {}, parent = svg) { const t = el('text', { x, y, ...attrs }, parent); t.innerHTML = html; return t; }
+const I = (s) => `<tspan class="i">${s}</tspan>`;                                  // Formelzeichen kursiv
+const SUB = (s, size = 30, rest = '') => `<tspan dy="${size * 0.3}" font-size="${size * 0.7}">${s}</tspan>` + (rest ? `<tspan dy="${-size * 0.3}">${rest}</tspan>` : '');
+const P = (cx, cy, R, deg) => [cx + R * Math.cos(deg * D), cy - R * Math.sin(deg * D)];   // math. Winkel → SVG
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const show = (e, on) => { e.style.display = on ? '' : 'none'; };
+
+/* Zahlen nach fachkonventionen, Abschnitt 4: Dezimalkomma, Einheitenvorsatz, höchstens 2 Nachkommastellen,
+   echtes Minuszeichen; Winkel in Grad glatt ohne, sonst mit 2 Nachkommastellen; Größen < 1 ohne Vorsatz mit 3. */
+function dez(v, nk) {
+  let s = Math.abs(v).toFixed(nk).replace('.', ',');
+  if (v < 0 && Number(s.replace(',', '.')) !== 0) s = '−' + s;
+  return s;
+}
+function fmtWert(v, einheit) {
+  if (!isFinite(v)) return '–';
+  const a = Math.abs(v);
+  if (a < 5e-13) return '0 ' + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let f = 1e-12, p = 'p';
+  for (const [fac, pf] of vors) if (a >= fac * 0.999995) { f = fac; p = pf; break; }
+  return dez(v / f, 2) + ' ' + p + einheit;
+}
+/* Laufende Werte (ändern sich beim Abspielen) mit drei geltenden Ziffern: „−32,2 V“, „220 mm/s“, „7,86 µWb“
+   (Festlegung der Lehrkraft, 12.11.2026, W). Gegebene Werte mit fmtGegeben, Ergebnisse in Notizen mit fmtWert. */
+function fmtLauf(v, einheit) {
+  if (!isFinite(v)) return '–';
+  if (Math.abs(v) < 5e-13) return '0 ' + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let i = vors.findIndex(([f]) => Math.abs(v) >= f * 0.9995); if (i < 0) i = vors.length - 1;
+  for (;;) {
+    const [f, p] = vors[i], m = v / f, a = Math.abs(m), nk = a >= 99.95 ? 0 : a >= 9.995 ? 1 : 2;
+    if (Math.abs(Number(m.toFixed(nk))) >= 1000 && i > 0) { i--; continue; }   // 999,96 mV → 1,00 V
+    return dez(m, nk) + ' ' + p + einheit;
+  }
+}
+/* Gegebene Werte erscheinen so, wie sie gegeben sind: „325 V“, „1 kΩ“, „2,5 mA“ – ohne angehängte Nullen. */
+function fmtGegeben(v, einheit) {
+  return fmtWert(v, einheit).replace(/,(\d*?)0+ /, (m, z) => (z ? ',' + z : '') + ' ');
+}
+const fmtGrad = (a) => { const r = Math.round(a * 100) / 100; return (Number.isInteger(r) ? dez(r, 0) : dez(r, 2)) + '°'; };
+const fmtZahl = (v) => dez(v, 3);              // cos φ, sin α, Wirkungsgrad, Bogenmaß
+
+function arrowHead(x2, y2, ux, uy, L, W) {
+  const bx = x2 - ux * L, by = y2 - uy * L;
+  return `${x2},${y2} ${bx - uy * W},${by + ux * W} ${bx + uy * W},${by - ux * W}`;
+}
+/* Pfeil, dessen Länge einem Wert folgt; bei sehr kurzen Pfeilen schrumpft die Spitze mit. */
+function makeArrow(parent, color, sw, L, W) {
+  const g = el('g', {}, parent);
+  const line = el('line', { stroke: color, 'stroke-width': sw }, g);
+  const head = el('polygon', { fill: color }, g);
+  return {
+    g,
+    set(x1, y1, x2, y2) {
+      const dx = x2 - x1, dy = y2 - y1, raw = Math.hypot(dx, dy), len = raw || 1, ux = dx / len, uy = dy / len;
+      const Lc = Math.min(L, raw * 0.6), Wc = W * Lc / L;
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2 - ux * Math.max(Lc - 1, 0)); line.setAttribute('y2', y2 - uy * Math.max(Lc - 1, 0));
+      head.setAttribute('points', arrowHead(x2, y2, ux, uy, Lc, Wc));
+      g.style.visibility = raw < 1.5 ? 'hidden' : '';
+    },
+  };
+}
+
+/* ================= 5 Statische Zeichnung (einmal) =================
+   Reihenfolge der Gruppen = Reihenfolge der Ebenen: hinten → vorn. */
+const { sz: Z, spule: SP, kond: KO, pf: PF, dg: G, bar: BAR, col: C } = CFG;
+const K0 = model(0, 'L');                                       // feste Größen: û, î, S, W_max
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const defs = el('defs');
+const clipZeit = el('rect', { x: G.x0, y: 760, width: 10, height: 320 }, el('clipPath', { id: 'clip-zeit' }, defs));   // Kurven bis ωt
+el('rect', { x: 0, y: 0, width: 1920, height: G.y0 }, el('clipPath', { id: 'clip-pos' }, defs));
+el('rect', { x: 0, y: G.y0, width: 1920, height: 1080 - G.y0 }, el('clipPath', { id: 'clip-neg' }, defs));
+const gFeldA = el('g', { id: 'feld-aussen' });                  // Feldlinien außen: hinter allem
+const gBack = el('g', { id: 'back' });
+const gKreis = el('g', { id: 'kreis' });
+const gL = el('g', { id: 'spule' }), gC = el('g', { id: 'kondensator' });
+const gPf = el('g', { id: 'energiepfeile' });
+const gDg = el('g', { id: 'liniendiagramm' });
+const gBar = el('g', { id: 'energie' });
+const gDyn = el('g', { id: 'dyn' });
+const gLbl = el('g', { id: 'labels' });
+
+// Titel zweizeilig oben rechts; rückt neben den QR-Code (syncUI)
+const titel = [txt(1872, 180, 'Blindleistung', { class: 't-main', 'text-anchor': 'end' }, gBack),
+               txt(1872, 256, 'pendelt', { class: 't-main', 'text-anchor': 'end' }, gBack)];
+
+/* ---- Generator (Schaltzeichen Generator-Quadrat, schaltzeichen/hausstil 4: Zeichen unter dem G) und Leitungen ---- */
+const gTop = Z.gy - Z.gs / 2, gBot = Z.gy + Z.gs / 2;
+const draht = (d, parent) => el('path', { d, fill: 'none', stroke: C.draht, 'stroke-width': 6, 'stroke-linejoin': 'round' }, parent);
+el('rect', { x: Z.gx - Z.gs / 2, y: gTop, width: Z.gs, height: Z.gs, fill: '#fff', stroke: C.draht, 'stroke-width': 4 }, gKreis);
+txt(Z.gx, Z.gy - 4, 'G', { 'font-size': 56, 'font-weight': 700, 'text-anchor': 'middle' }, gKreis);
+el('path', { d: `M ${Z.gx - 26} ${Z.gy + 34} q 13 -22 26 0 t 26 0`, fill: 'none', stroke: C.ink, 'stroke-width': 4.5, 'stroke-linecap': 'round' }, gKreis);
+txt(Z.gx, gBot + 44, 'Generator', { class: 'lbl-s sans', 'text-anchor': 'start', x: Z.gx + 18 }, gKreis);
+
+/* ---- Spule: räumliche Wicklung um eine senkrechte Achse; hintere Hälften, Feldlinien innen, vordere Hälften ----
+   Wickelsinn: Der Strom (Zählrichtung) kommt oben links an, läuft vorn nach rechts und hinten zurück – von oben gesehen
+   gegen den Uhrzeigersinn. Rechtsschraubenregel: Bei i > 0 zeigt das Feld in der Spule nach oben. */
+draht(`M ${Z.gx} ${gTop} V ${Z.yo} H ${Z.cx - SP.rx} V ${SP.yt} M ${Z.cx - SP.rx} ${SP.yb} V ${Z.yu} H ${Z.gx} V ${gBot}`, gL);
+const gWH = el('g', {}, gL), gFeldI = el('g', {}, gL), gWV = el('g', {}, gL);
+{
+  const pitch = (SP.yb - SP.yt) / SP.N;
+  const bogen = (k, t0, t1) => {
+    let d = '';
+    for (let j = 0; j <= 24; j++) {
+      const t = t0 + (t1 - t0) * j / 24;
+      d += (j ? ' L ' : 'M ') + (Z.cx - SP.rx * Math.cos(t)).toFixed(1) + ' ' + (SP.yt + pitch * (k + t / (2 * Math.PI)) + SP.ry * Math.sin(t)).toFixed(1);
+    }
+    return d;
+  };
+  let dv = '', dh = '';
+  for (let k = 0; k < SP.N; k++) { dv += bogen(k, 0, Math.PI) + ' '; dh += bogen(k, Math.PI, 2 * Math.PI) + ' '; }
+  el('path', { d: dh, fill: 'none', stroke: C.hinten, 'stroke-width': 8, 'stroke-linecap': 'round' }, gWH);
+  el('path', { d: dv, fill: 'none', stroke: '#fff', 'stroke-width': 13, 'stroke-linecap': 'round' }, gWV);
+  el('path', { d: dv, fill: 'none', stroke: C.draht, 'stroke-width': 8, 'stroke-linecap': 'round' }, gWV);
+}
+/* Magnetfeldlinien (darstellung.md 6, Skill feldbilder-darstellen: Größe B, Stufe Q): geschlossen, kreuzen und berühren sich nicht,
+   in der Spule gerade, parallel und gleich dicht – auch über die Achse hinweg (R7) –, Dichte ∝ B: wächst das Feld, kommen Linien dazu
+   (weich eingeblendet); jede Linie trägt einen Richtungspfeil, die Pfeile sitzen versetzt. Geglättete Skizze, nicht berechnet.
+   Baustein aus „Spule ein- und ausschalten“ (fieldWeights, Schleifen aus zwei Bézierbögen), hier als SVG. */
+const bez = (p, t) => { const u = 1 - t; return {
+  x: u * u * u * p[0].x + 3 * u * u * t * p[1].x + 3 * u * t * t * p[2].x + t * t * t * p[3].x,
+  y: u * u * u * p[0].y + 3 * u * u * t * p[1].y + 3 * u * t * t * p[2].y + t * t * t * p[3].y,
+  dx: 3 * u * u * (p[1].x - p[0].x) + 6 * u * t * (p[2].x - p[1].x) + 3 * t * t * (p[3].x - p[2].x),
+  dy: 3 * u * u * (p[1].y - p[0].y) + 6 * u * t * (p[2].y - p[1].y) + 3 * t * t * (p[3].y - p[2].y) }; };
+function feldGewichte(betrag, nmax) {                           // [[Anzahl Linien, Deckkraft], …]: höchstens zwei Sätze überblenden
+  const lam = nmax * clamp(betrag, 0, 1), n = Math.floor(lam), t = smooth(0.46, 0.54, lam - n), out = [];
+  if (1 - t > 0.01) out.push([n, 1 - t]);
+  if (n + 1 <= nmax && t > 0.01) out.push([n + 1, t]);
+  return out;
+}
+const pfeilchen = [];                                           // alle Richtungspfeile: { e, x, y, w, art }
+function chevron(parent, x, y, winkel, farbe, art) {
+  const e = el('path', { d: 'M -10 -8 L 0 0 L -10 8', fill: 'none', stroke: farbe, 'stroke-width': 3.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, parent);
+  pfeilchen.push({ e, x, y, w: winkel, art });
+}
+const satzL = [null], satzLI = [null];
+{
+  const ya = SP.yt - 10, yb = SP.yb + 10, ym = (SP.yt + SP.yb) / 2, AUSSEN = [['c2', 0.03], ['c1', 0.78], ['c2', 0.22]];
+  for (let n = 1; n <= SP.nFeld; n++) {
+    const ga = el('g', { opacity: 0 }, gFeldA), gi = el('g', { opacity: 0 }, gFeldI);
+    for (let k = 0; k < n; k++) for (const side of [1, -1]) {
+      const a = (k + 0.5) * (SP.rx - 10) / n, h = 104 - 1.25 * a, w = 170 - 2.2 * a, xa = Z.cx + side * a, xo = Z.cx + side * (SP.rx + w);
+      const B = { c1: [{ x: xa, y: ya }, { x: xa, y: ya - 1.3 * h }, { x: xo, y: ya - 1.3 * h }, { x: xo, y: ym }],
+                  c2: [{ x: xo, y: ym }, { x: xo, y: yb + 1.3 * h }, { x: xa, y: yb + 1.3 * h }, { x: xa, y: yb }] };
+      const c = (p) => `C ${p[1].x} ${p[1].y} ${p[2].x} ${p[2].y} ${p[3].x} ${p[3].y}`;
+      el('path', { d: `M ${xa} ${ya} ${c(B.c1)} ${c(B.c2)}`, fill: 'none', stroke: C.B, 'stroke-width': 2.8 }, ga);
+      el('line', { x1: xa, y1: yb, x2: xa, y2: ya, stroke: C.B, 'stroke-width': 2.8 }, gi);
+      const [bogen, t] = AUSSEN[k % 3], q = bez(B[bogen], t);
+      chevron(ga, q.x, q.y, Math.atan2(q.dy, q.dx) / D, C.B, 'B');
+      chevron(gi, xa, yb - (0.3 + 0.2 * ((k + (side < 0 ? 1 : 0)) % 3)) * (yb - ya), -90, C.B, 'B');   // links um eine Stufe versetzt: die beiden Linien an der Achse liegen dicht beieinander
+    }
+    satzL.push(ga); satzLI.push(gi);
+  }
+}
+/* ---- Kondensator: zwei Platten, Feldlinien von der positiven zur negativen Platte, je Linie ein Ladungspaar ---- */
+draht(`M ${Z.gx} ${gTop} V ${Z.yo} H ${Z.cx} V ${KO.yo} M ${Z.cx} ${KO.yu} V ${Z.yu} H ${Z.gx} V ${gBot}`, gC);
+const gFeldE = el('g', {}, gC), gPlatten = el('g', {}, gC), gLadung = el('g', {}, gC);
+const satzC = [null], satzCL = [null], zeichenOben = [], zeichenUnten = [];
+{
+  const y1 = KO.yo + KO.d / 2, y2 = KO.yu - KO.d / 2;
+  for (let n = 1; n <= KO.nFeld; n++) {
+    const g = el('g', { opacity: 0 }, gFeldE), gl = el('g', { opacity: 0 }, gLadung);
+    for (let k = 0; k < n; k++) {
+      const x = Z.cx - KO.b / 2 + 18 + (k + 0.5) * (KO.b - 36) / n;
+      el('line', { x1: x, y1, x2: x, y2, stroke: C.E, 'stroke-width': 2.8 }, g);
+      chevron(g, x, y1 + (0.34 + 0.2 * (k % 3)) * (y2 - y1), 90, C.E, 'E');
+      zeichenOben.push(txt(x, KO.yo + 10, '+', { class: 'lbl fett', 'text-anchor': 'middle' }, gl));     // Ladungen sitzen in den Platten
+      zeichenUnten.push(txt(x, KO.yu + 10, '−', { class: 'lbl fett', 'text-anchor': 'middle' }, gl));
+    }
+    satzC.push(g); satzCL.push(gl);
+  }
+  for (const y of [KO.yo, KO.yu]) el('rect', { x: Z.cx - KO.b / 2, y: y - KO.d / 2, width: KO.b, height: KO.d, rx: 3, fill: C.platte, stroke: C.draht, 'stroke-width': 3 }, gPlatten);
+}
+/* ---- Schaltzeichen klein daneben, in der Farbe der Blindleistung getönt (wie in „Wirk-, Blind- und Scheinleistung“) ---- */
+const tBauteil = txt(Z.xs, 404, '', { class: 't-panel', 'text-anchor': 'middle' }, gLbl);
+const tWert = txt(Z.xs, 586, '', { class: 'lbl', 'text-anchor': 'middle' }, gLbl);
+const symL = el('g', {}, gKreis), symC = el('g', {}, gKreis);
+el('path', { d: `M ${Z.xs} 424 V 444 M ${Z.xs} 544 V 548`, stroke: C.ink, 'stroke-width': 3, fill: 'none' }, symL);
+el('path', { d: `M ${Z.xs} 444` + ' a 12.5 12.5 0 0 0 0 25'.repeat(4), fill: C.Q, 'fill-opacity': 0.6, stroke: C.ink, 'stroke-width': 3 }, symL);
+el('rect', { x: Z.xs - 26, y: 480, width: 52, height: 12, fill: C.Q, 'fill-opacity': 0.6 }, symC);
+el('path', { d: `M ${Z.xs} 424 V 480 M ${Z.xs} 492 V 548`, stroke: C.ink, 'stroke-width': 3, fill: 'none' }, symC);
+el('path', { d: `M ${Z.xs - 26} 480 H ${Z.xs + 26} M ${Z.xs - 26} 492 H ${Z.xs + 26}`, stroke: C.ink, 'stroke-width': 4, fill: 'none' }, symC);
+
+/* ---- Zählpfeile u und i: Richtung fest, Länge ∝ Betrag (darstellung.md 3); Spannungspfeil neben dem Generator, Strompfeil neben der Leitung ---- */
+const aUz = makeArrow(gDyn, C.u, 5, 24, 9), aIz = makeArrow(gDyn, C.i, 5, 24, 9);
+txt(Z.gx + Z.gs / 2 + 46, Z.gy + 10, I('u'), { class: 'lbl' }, gLbl);
+txt(520, Z.yo - 44, I('i'), { class: 'lbl', 'text-anchor': 'middle' }, gLbl);
+
+/* ---- Energiepfeile zwischen den Leitungen: Größe ∝ |p|, dunkel = zum Bauteil, hell = zurück; wandern mit der gespeicherten Energie ---- */
+const ePfeil = Array.from({ length: PF.n }, () => el('polygon', { 'stroke-width': 3, 'stroke-linejoin': 'round' }, gPf));   // Rand in der Gegenfarbe (Festlegung 14.11.2026): so wirken beide Pfeile gleich groß
+const tPhase = txt(PF.x0 + (PF.n * PF.teil + PF.weg) / 2 - 15, 640, '', { class: 'lbl fett', 'text-anchor': 'middle' }, gLbl);
+const tPhase2 = txt(PF.x0 + (PF.n * PF.teil + PF.weg) / 2 - 15, 682, '', { class: 'lbl-s sans', 'text-anchor': 'middle' }, gLbl);
+function pfeilForm(x, y, len, h, dir) {                         // Blockpfeil, dir = +1 nach rechts
+  const sh = h * 0.27, hh = h / 2, hl = Math.min(0.46 * len, 0.9 * h + 8), a = dir > 0 ? x : x + len, s = dir;
+  return [[a, y - sh], [a + s * (len - hl), y - sh], [a + s * (len - hl), y - hh], [a + s * len, y], [a + s * (len - hl), y + hh], [a + s * (len - hl), y + sh], [a, y + sh]]
+    .map((q) => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+}
+
+/* ---- Liniendiagramm unter der Schaltung: baut sich bis zum Zeitpunkt ωt auf ---- */
+const X = (deg) => G.x0 + G.kx * deg, XE = X(360);
+const yU = (u) => G.y0 - G.ku * u / K0.uHat, yI = (i) => G.y0 - G.ki * i / K0.iHat, yP = (p) => G.y0 - G.kp * p / K0.S;
+makeArrow(gDg, C.ink, 2.2, 20, 6.5).set(G.x0 - 4, G.y0, G.xEnd, G.y0);
+makeArrow(gDg, C.ink, 2.2, 20, 6.5).set(G.x0, G.y0 + G.kp + 8, G.x0, G.y0 - G.kp - 44);
+txt(G.xEnd + 8, G.y0 + 10, I('ωt'), { class: 'lbl' }, gDg);
+for (let d = 30; d <= 360; d += 30) {
+  el('line', { x1: X(d), y1: G.y0 - 9, x2: X(d), y2: G.y0 + 9, stroke: C.ink, 'stroke-width': 2 }, gDg);
+}
+[[C.u, 'u'], [C.i, 'i'], [C.S, 'p']].forEach(([farbe, z], k) => {
+  const x = G.x0 + 22 + 90 * k, y = G.y0 - G.kp - 22;
+  el('line', { x1: x, y1: y - 10, x2: x + 36, y2: y - 10, stroke: farbe, 'stroke-width': 5, 'stroke-linecap': 'round' }, gDg);
+  txt(x + 46, y, I(z), { class: 'lbl' }, gDg);
+});
+const gSpur = el('g', { 'clip-path': 'url(#clip-zeit)' }, gDg);  // alles, was sich aufbaut
+const fHin = el('path', { fill: C.hin, 'clip-path': 'url(#clip-pos)' }, gSpur);
+const fZur = el('path', { fill: C.zur, 'clip-path': 'url(#clip-neg)' }, gSpur);
+const linie = (farbe) => el('path', { fill: 'none', stroke: farbe, 'stroke-width': 4, 'stroke-linejoin': 'round' }, gSpur);
+const cU = linie(C.u), cI = linie(C.i), cP = linie(C.S);
+function pfad(f, y0) {
+  let d = '';
+  for (let a = 0; a <= 360; a += 1) d += (d ? ' L ' : 'M ') + X(a).toFixed(1) + ' ' + f(a).toFixed(1);
+  return y0 === undefined ? d : d + ` L ${XE} ${y0} L ${X(0)} ${y0} Z`;
+}
+cU.setAttribute('d', pfad((a) => yU(model(a, 'L').u)));
+const gTick = el('g', {}, gDg);
+for (let d = 90; d <= 360; d += 90) txt(X(d), G.y0 + 40, `${d}°`, { class: 'lbl-s halo', 'text-anchor': 'middle' }, gTick);
+const cursor = el('line', { y1: G.y0 - G.kp - 12, y2: G.y0 + G.kp + 6, stroke: C.muted, 'stroke-width': 1.6, 'stroke-dasharray': '10 8' }, gDg);
+const aU = makeArrow(gDg, C.u, 6, 22, 9), aI = makeArrow(gDg, C.i, 3, 22, 7), aP = makeArrow(gDg, C.ink, 4.5, 22, 8.5);
+const tWt = txt(0, 1073, '', { class: 'lbl halo', 'text-anchor': 'middle' }, gDg);
+// Legende rechts neben dem Diagramm: kleine Pfeile in beiden Orangetönen (Farbe und Richtung)
+{
+  const x = BAR.x, zeile = (y, farbe, dir, text) => {
+    el('polygon', { points: pfeilForm(x, y - 9, 62, 30, dir), fill: farbe, stroke: farbe === C.hin ? C.zur : C.hin, 'stroke-width': 2.2, 'stroke-linejoin': 'round' }, gDg);
+    txt(x + 78, y, text, { class: 'lbl-s sans' }, gDg);
+  };
+  zeile(826, C.hin, 1, 'Energie zum Blindwiderstand');
+  zeile(870, C.zur, -1, 'Energie zurück zum Generator');
+}
+/* ---- Energie im Feld (zuschaltbar): Balken von 0 bis W_max ---- */
+const tBar = txt(BAR.x, BAR.y - 16, '', { class: 'lbl' }, gBar);
+el('rect', { x: BAR.x, y: BAR.y, width: BAR.w, height: BAR.h, fill: '#fff', stroke: C.ink, 'stroke-width': 2.5 }, gBar);
+const rBar = el('rect', { x: BAR.x, y: BAR.y, width: 0, height: BAR.h, fill: C.Q, stroke: C.ink, 'stroke-width': 2.5 }, gBar);
+txt(BAR.x, BAR.y + BAR.h + 30, '0', { class: 'lbl-s' }, gBar);
+const tBarMax = txt(BAR.x + BAR.w, BAR.y + BAR.h + 30, '', { class: 'lbl-s', 'text-anchor': 'end' }, gBar);
+
+// Momentanwertzeilen oben links (die Ecke oben rechts gehört QR-Code und Titel)
+const ro = [60, 110, 160].map((y) => txt(60, y, '', { class: 'ro' }, gLbl));
+
+/* ================= 7 Darstellung: Zustand → Bild ================= */
+const klammer = (s) => (s.startsWith('−') ? `(${s})` : s);      // negativer Faktor in einer Rechnung steht in Klammern
+const WI = (index) => `${I('W')}${SUB(index, 30)}`;
+let gebaut = null, richtung = { B: 0, E: 0 };
+function kurven(bauteil) {                                      // nur wenn das Bauteil gewechselt hat
+  const fp = (a) => yP(model(a, bauteil).p);
+  cI.setAttribute('d', pfad((a) => yI(model(a, bauteil).i)));
+  cP.setAttribute('d', pfad(fp)); fHin.setAttribute('d', pfad(fp, G.y0)); fZur.setAttribute('d', pfad(fp, G.y0));
+  gebaut = bauteil;
+}
+function setzeRichtung(art, dir) {                              // Richtungspfeile der Feldlinien umdrehen
+  if (richtung[art] === dir) return;
+  richtung[art] = dir;
+  for (const q of pfeilchen) if (q.art === art) q.e.setAttribute('transform', `translate(${q.x.toFixed(1)} ${q.y.toFixed(1)}) rotate(${(q.w + (dir < 0 ? 180 : 0)).toFixed(1)})`);
+  if (art === 'E') { for (const t of zeichenOben) t.textContent = dir > 0 ? '+' : '−'; for (const t of zeichenUnten) t.textContent = dir > 0 ? '−' : '+'; }
+}
+function phase(m, ind) {                                        // Text zur Richtung des Energieflusses
+  const s = Math.abs(m.p) / m.S, ding = ind ? 'zur Spule' : 'zum Kondensator';
+  if (s < 0.02) return Math.abs(m.feld) > 0.5
+    ? ['Kein Energiefluss', ind ? 'Der Strom ist am größten, das Magnetfeld ist voll aufgebaut.' : 'Die Spannung ist am größten, das elektrische Feld ist voll aufgebaut.']
+    : ['Kein Energiefluss', ind ? 'Der Strom ist null, das Magnetfeld ist abgebaut.' : 'Die Spannung ist null, das elektrische Feld ist abgebaut.'];
+  if (m.p > 0) return [`Energie fließt ${ding}`, ind ? 'Der Strom wird stärker, das Magnetfeld baut sich auf.' : 'Der Kondensator lädt sich auf, sein Feld baut sich auf.'];
+  return ['Energie fließt zurück zum Generator', ind ? 'Der Strom wird schwächer, das Magnetfeld baut sich ab.' : 'Der Kondensator entlädt sich, sein Feld baut sich ab.'];
+}
+function render() {
+  const wt = S.x, ind = S.bauteil !== 'C', m = model(wt, S.bauteil), W = S.ro;
+  if (S.bauteil !== gebaut) kurven(S.bauteil);
+  // Bauteil und Schaltzeichen
+  show(gL, ind); show(gFeldA, ind && S.feld); show(gFeldI, S.feld); show(gC, !ind); show(gFeldE, S.feld); show(gLadung, S.feld); show(symL, ind); show(symC, !ind);
+  tBauteil.textContent = ind ? 'Spule' : 'Kondensator';
+  tWert.innerHTML = ind ? `${I('L')}` + (W ? ` = ${fmtLauf(m.L, 'H')}` : '') : `${I('C')}` + (W ? ` = ${fmtLauf(m.C, 'F')}` : '');
+  // Feldlinien: Anzahl ∝ |Feld| (zwei Sätze überblenden), Richtung nach dem Vorzeichen
+  const saetze = ind ? [satzL, satzLI] : [satzC, satzCL], nmax = ind ? SP.nFeld : KO.nFeld, gew = new Map(feldGewichte(Math.abs(m.feld), nmax));
+  for (const satz of saetze) for (let n = 1; n <= nmax; n++) { const g = gew.get(n) || 0; show(satz[n], g > 0); satz[n].setAttribute('opacity', g.toFixed(3)); }
+  if (m.feld !== 0) setzeRichtung(ind ? 'B' : 'E', m.feld > 0 ? 1 : -1);
+  // Zählpfeile (Richtung fest, Länge ∝ Betrag)
+  const lu = 65 * Math.abs(m.u) / m.uHat, li = 70 * Math.abs(m.i) / m.iHat, xu = Z.gx + Z.gs / 2 + 30;
+  aUz.set(xu, Z.gy - lu, xu, Z.gy + lu); aIz.set(520 - li, Z.yo - 24, 520 + li, Z.yo - 24);
+  // Energiepfeile
+  const s = Math.abs(m.p) / m.S, hin = m.p > 0, x0 = PF.x0 + PF.weg * m.W / m.Wmax;
+  ePfeil.forEach((e, k) => {
+    show(e, s >= 0.03);
+    e.setAttribute('points', pfeilForm(x0 + k * PF.teil, PF.y, PF.len, PF.h * s, hin ? 1 : -1));
+    e.setAttribute('fill', hin ? C.hin : C.zur); e.setAttribute('stroke', hin ? C.zur : C.hin);
+  });
+  const [t1, t2] = phase(m, ind); tPhase.textContent = t1; tPhase2.textContent = t2;
+  // Liniendiagramm: Kurven und Flächen bis ωt, Momentanwerte als Pfeile (Spitze auf der Kurve)
+  show(gDg, S.linien);
+  const x = X(wt);
+  clipZeit.setAttribute('width', Math.max(x - G.x0, 0));
+  cursor.setAttribute('x1', x); cursor.setAttribute('x2', x);
+  aU.set(x, G.y0, x, yU(m.u)); aI.set(x, G.y0, x, yI(m.i)); aP.set(x, G.y0, x, yP(m.p));
+  tWt.setAttribute('x', x); tWt.innerHTML = `${I('ωt')}` + (W ? ` = ${fmtGrad(wt)}` : '');
+  // Energie im Feld
+  show(gBar, S.energie);
+  const idx = ind ? 'L' : 'C';
+  rBar.setAttribute('width', (BAR.w * m.W / m.Wmax).toFixed(1));
+  tBar.innerHTML = `Energie im Feld: ${I('W')}` + (W ? ` = ${fmtLauf(m.W, 'J')}` : '');
+  tBarMax.innerHTML = `${WI('max')}` + (W ? `<tspan dy="-9"> = ${fmtLauf(m.Wmax, 'J')}</tspan>` : '');
+  // Wertezeilen: Formel → eingesetzte Werte → Ergebnis; ohne „Momentanwerte“ nur die Formel
+  const sU = fmtLauf(m.u, 'V'), sI = fmtLauf(m.i, 'A'), vz = ind ? '−' : '+';
+  /* Wertezeile (Festlegung der Lehrkraft, 14.11.2026: Momentanwerte, Formeln und Berechnung beim Öffnen aus):
+     Formelzeichen [= Formel bei „Formeln“] [= eingesetzte Werte bei „Momentanwerte“ und „Berechnung“] [= Ergebnis bei „Momentanwerte“];
+     ohne „Formeln“ und ohne „Momentanwerte“ bleibt die Zeile leer. */
+  const zeile = (z, formel, rechnung, ergebnis) => ((!S.form && !W) ? '' : z + (S.form ? ` = ${formel}` : '') + (W && S.rech ? ` = ${rechnung}` : '') + (W ? ` = ${ergebnis}` : ''));
+  ro[0].innerHTML = zeile(I('u'), `${I('û')} · sin ${I('ωt')}`, `${fmtWert(m.uHat, 'V')} · sin ${fmtGrad(wt)}`, sU);
+  ro[1].innerHTML = zeile(I('i'), `${I('î')} · sin(${I('ωt')} ${vz} 90°)`, `${fmtWert(m.iHat, 'A')} · sin(${fmtGrad(wt)} ${vz} 90°)`, sI);
+  ro[2].innerHTML = zeile(I('p'), `${I('u')} · ${I('i')}`, `${sU} · ${klammer(sI)}`, fmtLauf(m.p, 'W'));
+  formeln(m, ind);
+  syncUI();
+}
+/* Formeln unter der Bühne, ausblendbar (Festlegung 11.11.2026); Berechnung einzeln ausblendbar (12.11.2026).
+   Schmales Leerzeichen zwischen Zahl und Einheit (fachkonventionen 3a). */
+const h = (s) => `<i>${s}</i>`, eh = (s) => s.replace(/(\d) /g, '$1 '), sub = (a, b) => `${h(a)}<sub>${b}</sub>`;
+const bruch = (a, b) => `<span class="fr"><span>${a}</span><span>${b}</span></span>`;
+function formeln(m, ind) {
+  const card = $('#formCard'); card.hidden = !S.form;
+  if (!S.form) return;
+  const r = S.rech, L = (v, e) => eh(fmtLauf(v, e)), X = ind ? 'L' : 'C';
+  const z = (farbe, formel, rechnung) => `<div class="z"><span class="sw"${farbe ? ` style="background:${farbe}"` : ''}></span><span>${formel}</span>${r && rechnung ? `<span>${rechnung}</span>` : ''}</div>`;
+  const sOm = L(m.omega, 's⁻¹'), sX = L(m.X, 'Ω'), sW = L(m.W, 'J'), sWm = L(m.Wmax, 'J');
+  const bauteil = ind
+    ? z('', `${h('L')} = ${bruch(sub('X', 'L'), h('ω'))}`, `= ${bruch(sX, sOm)} = ${L(m.L, 'H')}`)
+    : z('', `${h('C')} = ${bruch('1', `${h('ω')} · ${sub('X', 'C')}`)}`, `= ${bruch('1', `${sOm} · ${sX}`)} = ${L(m.C, 'F')}`);
+  const energie = ind
+    ? z(C.Q, `${h('W')} = ½ · ${h('L')} · ${h('i')}²`, `= ½ · ${L(m.L, 'H')} · (${L(m.i, 'A')})² = ${sW}`) +
+      z(C.Q, `${sub('W', 'max')} = ½ · ${h('L')} · ${h('î')}²`, `= ½ · ${L(m.L, 'H')} · (${eh(fmtWert(m.iHat, 'A'))})² = ${sWm}`)
+    : z(C.Q, `${h('W')} = ½ · ${h('C')} · ${h('u')}²`, `= ½ · ${L(m.C, 'F')} · (${L(m.u, 'V')})² = ${sW}`) +
+      z(C.Q, `${sub('W', 'max')} = ½ · ${h('C')} · ${h('û')}²`, `= ½ · ${L(m.C, 'F')} · (${eh(fmtWert(m.uHat, 'V'))})² = ${sWm}`);
+  $('#formeln').innerHTML = '<div class="sp2">' +
+    z('', `${h('ω')} = 2π · ${h('f')}`, `= 2π · ${eh(fmtGegeben(CFG.f, 'Hz'))} = ${sOm}`) +
+    z('', `${sub('X', X)} = ${bruch(h('U'), h('I'))}`, `= ${bruch(eh(fmtGegeben(CFG.U, 'V')), eh(fmtGegeben(CFG.I, 'A')))} = ${sX}`) +
+    bauteil +
+    z(C.S, `${h('p')} = ${h('u')} · ${h('i')}`, `= ${L(m.u, 'V')} · ${klammer(L(m.i, 'A'))} = ${L(m.p, 'W')}`) + '</div><div class="sp2">' +
+    energie +
+    z(C.Q, `|${h('Q')}| = ${h('ω')} · ${sub('W', 'max')}`, `= ${sOm} · ${sWm} = ${L(Math.abs(m.Q), 'var')}`) +
+    z(C.Q, `${h('Q')} = ${h('U')} · ${h('I')} · sin ${h('φ')}`, `= ${eh(fmtGegeben(CFG.U, 'V'))} · ${eh(fmtGegeben(CFG.I, 'A'))} · ${klammer(ind ? '1' : '−1')} = ${L(m.Q, 'var')}`) + '</div>' +
+    `<div class="hin">Bei ${h('φ')} = ±90° ist ${h('P')} = 0: Im Mittel wird keine Energie umgesetzt. Die Blindleistung sagt, wie viel Energie zwischen Generator und Feld pendelt.</div>`;
+}
+
+/* ===== QR-Code rechts oben in der Bühne (Festlegungen der Lehrkraft, 12.11.2026, Animation W) =====
+   Führt zur Adresse der Animation auf GitHub Pages (technik.md Abschnitt 8). Die Zeile `const QR = …;` erzeugt
+   python3 scripts/qr_buehne.py <Adresse> quelle.html  – null heißt: noch keine Adresse, die Ecke bleibt frei.
+   Beim Öffnen steht dort nur ein Platzhalter (QR-Symbol, „QR-Code“). Klick oder Enter darauf zeigt den QR-Code,
+   Klick auf den QR-Code blendet ihn wieder aus. ?qr=1 in der Adresse zeigt ihn gleich (Link für den Beamer).
+   Unter 800 px Fensterbreite fehlen beide (am Handy ist die Animation schon offen); im Export nur mit ?qr=1.
+   6 px je Modul (rund 270 px), ganzzahlig und auf ganze Pixel gesetzt: vom Beamer aus lesbar, auch verkleinert.
+   pruefen.py prüft Platzhalter und Umschalten und liest den Code in 1920 und 1280 px Breite. */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/leistung/blindleistung-pendeln/", "n": 37, "d": "M0 0h7v1h-7zM10 0h2v1h-2zM13 0h1v1h-1zM18 0h1v1h-1zM22 0h1v1h-1zM25 0h2v1h-2zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM11 1h1v1h-1zM13 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM21 1h2v1h-2zM25 1h2v1h-2zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h3v1h-3zM14 2h1v1h-1zM18 2h1v1h-1zM20 2h3v1h-3zM26 2h3v1h-3zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM10 3h4v1h-4zM15 3h1v1h-1zM17 3h1v1h-1zM19 3h3v1h-3zM24 3h2v1h-2zM27 3h2v1h-2zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h1v1h-1zM11 4h3v1h-3zM15 4h1v1h-1zM17 4h1v1h-1zM19 4h2v1h-2zM22 4h4v1h-4zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h2v1h-2zM14 5h1v1h-1zM16 5h2v1h-2zM20 5h3v1h-3zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM8 7h2v1h-2zM13 7h3v1h-3zM18 7h2v1h-2zM23 7h1v1h-1zM26 7h3v1h-3zM0 8h1v1h-1zM6 8h1v1h-1zM8 8h1v1h-1zM11 8h2v1h-2zM14 8h5v1h-5zM22 8h2v1h-2zM25 8h2v1h-2zM29 8h2v1h-2zM33 8h3v1h-3zM1 9h1v1h-1zM3 9h2v1h-2zM10 9h2v1h-2zM16 9h1v1h-1zM18 9h2v1h-2zM22 9h2v1h-2zM25 9h3v1h-3zM29 9h1v1h-1zM31 9h5v1h-5zM1 10h2v1h-2zM5 10h2v1h-2zM11 10h2v1h-2zM15 10h2v1h-2zM20 10h3v1h-3zM24 10h1v1h-1zM27 10h1v1h-1zM31 10h2v1h-2zM35 10h2v1h-2zM2 11h1v1h-1zM4 11h2v1h-2zM8 11h1v1h-1zM10 11h1v1h-1zM14 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM22 11h1v1h-1zM26 11h2v1h-2zM29 11h1v1h-1zM33 11h1v1h-1zM36 11h1v1h-1zM2 12h3v1h-3zM6 12h1v1h-1zM8 12h1v1h-1zM10 12h7v1h-7zM19 12h2v1h-2zM23 12h2v1h-2zM27 12h2v1h-2zM30 12h2v1h-2zM33 12h1v1h-1zM36 12h1v1h-1zM1 13h2v1h-2zM4 13h2v1h-2zM7 13h2v1h-2zM11 13h3v1h-3zM15 13h3v1h-3zM19 13h2v1h-2zM23 13h1v1h-1zM25 13h3v1h-3zM31 13h1v1h-1zM33 13h1v1h-1zM2 14h1v1h-1zM5 14h2v1h-2zM9 14h1v1h-1zM11 14h5v1h-5zM17 14h1v1h-1zM20 14h1v1h-1zM22 14h1v1h-1zM25 14h9v1h-9zM35 14h2v1h-2zM0 15h2v1h-2zM3 15h1v1h-1zM5 15h1v1h-1zM8 15h1v1h-1zM11 15h1v1h-1zM13 15h4v1h-4zM20 15h1v1h-1zM24 15h1v1h-1zM26 15h3v1h-3zM30 15h2v1h-2zM33 15h3v1h-3zM1 16h1v1h-1zM3 16h2v1h-2zM6 16h2v1h-2zM9 16h1v1h-1zM11 16h2v1h-2zM14 16h2v1h-2zM18 16h2v1h-2zM23 16h1v1h-1zM25 16h3v1h-3zM29 16h4v1h-4zM34 16h3v1h-3zM0 17h2v1h-2zM5 17h1v1h-1zM7 17h1v1h-1zM10 17h4v1h-4zM16 17h1v1h-1zM18 17h4v1h-4zM23 17h1v1h-1zM27 17h3v1h-3zM31 17h1v1h-1zM33 17h3v1h-3zM0 18h3v1h-3zM4 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h3v1h-3zM14 18h1v1h-1zM16 18h1v1h-1zM18 18h3v1h-3zM23 18h1v1h-1zM25 18h1v1h-1zM27 18h1v1h-1zM29 18h1v1h-1zM32 18h2v1h-2zM36 18h1v1h-1zM0 19h2v1h-2zM3 19h2v1h-2zM8 19h1v1h-1zM11 19h1v1h-1zM13 19h4v1h-4zM20 19h1v1h-1zM23 19h2v1h-2zM27 19h2v1h-2zM30 19h1v1h-1zM32 19h1v1h-1zM36 19h1v1h-1zM3 20h6v1h-6zM10 20h1v1h-1zM16 20h2v1h-2zM22 20h1v1h-1zM24 20h3v1h-3zM28 20h1v1h-1zM30 20h1v1h-1zM32 20h3v1h-3zM1 21h1v1h-1zM9 21h1v1h-1zM11 21h1v1h-1zM13 21h3v1h-3zM17 21h1v1h-1zM19 21h1v1h-1zM21 21h1v1h-1zM23 21h1v1h-1zM26 21h2v1h-2zM32 21h1v1h-1zM34 21h1v1h-1zM0 22h1v1h-1zM2 22h1v1h-1zM4 22h4v1h-4zM10 22h1v1h-1zM13 22h1v1h-1zM15 22h3v1h-3zM21 22h2v1h-2zM24 22h1v1h-1zM26 22h8v1h-8zM35 22h2v1h-2zM2 23h1v1h-1zM4 23h2v1h-2zM7 23h1v1h-1zM10 23h4v1h-4zM16 23h4v1h-4zM22 23h2v1h-2zM27 23h1v1h-1zM29 23h5v1h-5zM35 23h2v1h-2zM0 24h4v1h-4zM6 24h1v1h-1zM8 24h3v1h-3zM13 24h3v1h-3zM17 24h1v1h-1zM19 24h2v1h-2zM27 24h2v1h-2zM30 24h2v1h-2zM35 24h2v1h-2zM0 25h1v1h-1zM3 25h1v1h-1zM5 25h1v1h-1zM8 25h1v1h-1zM12 25h1v1h-1zM14 25h1v1h-1zM18 25h3v1h-3zM22 25h2v1h-2zM25 25h1v1h-1zM27 25h1v1h-1zM31 25h1v1h-1zM33 25h2v1h-2zM0 26h1v1h-1zM6 26h1v1h-1zM9 26h3v1h-3zM13 26h1v1h-1zM15 26h2v1h-2zM21 26h2v1h-2zM27 26h3v1h-3zM31 26h1v1h-1zM34 26h3v1h-3zM0 27h1v1h-1zM2 27h2v1h-2zM5 27h1v1h-1zM7 27h5v1h-5zM13 27h2v1h-2zM16 27h1v1h-1zM19 27h1v1h-1zM22 27h1v1h-1zM24 27h1v1h-1zM26 27h2v1h-2zM29 27h6v1h-6zM0 28h1v1h-1zM5 28h3v1h-3zM9 28h2v1h-2zM15 28h1v1h-1zM17 28h1v1h-1zM19 28h2v1h-2zM22 28h14v1h-14zM8 29h3v1h-3zM12 29h1v1h-1zM14 29h3v1h-3zM18 29h3v1h-3zM23 29h6v1h-6zM32 29h1v1h-1zM0 30h7v1h-7zM9 30h2v1h-2zM14 30h12v1h-12zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM36 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM9 31h2v1h-2zM12 31h3v1h-3zM16 31h1v1h-1zM19 31h1v1h-1zM23 31h2v1h-2zM27 31h2v1h-2zM32 31h1v1h-1zM36 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM9 32h1v1h-1zM11 32h1v1h-1zM13 32h3v1h-3zM18 32h1v1h-1zM22 32h1v1h-1zM24 32h9v1h-9zM34 32h2v1h-2zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM17 33h1v1h-1zM19 33h1v1h-1zM22 33h2v1h-2zM26 33h2v1h-2zM29 33h2v1h-2zM33 33h1v1h-1zM36 33h1v1h-1zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM10 34h2v1h-2zM13 34h1v1h-1zM17 34h1v1h-1zM20 34h3v1h-3zM26 34h1v1h-1zM29 34h1v1h-1zM33 34h1v1h-1zM35 34h2v1h-2zM0 35h1v1h-1zM6 35h1v1h-1zM10 35h1v1h-1zM15 35h2v1h-2zM18 35h1v1h-1zM20 35h1v1h-1zM22 35h1v1h-1zM26 35h1v1h-1zM28 35h2v1h-2zM32 35h2v1h-2zM36 35h1v1h-1zM0 36h7v1h-7zM8 36h1v1h-1zM10 36h1v1h-1zM12 36h1v1h-1zM14 36h1v1h-1zM19 36h1v1h-1zM23 36h2v1h-2zM28 36h2v1h-2zM31 36h1v1h-1zM33 36h1v1h-1zM36 36h1v1h-1z"};
+const gQR = el('g', { id: 'qr', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code ausblenden' });        // zuletzt angelegt:
+const gQRPlatz = el('g', { id: 'qr-platz', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code anzeigen' }); // liegen über allem
+const QR_BOX = QR && (() => {
+  const m = 6, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
+  gQR.dataset.url = QR.url;
+  el('title', {}, gQR).textContent = 'Klicken: QR-Code ausblenden';
+  el('rect', { x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1 }, gQR);
+  el('path', { d: QR.d, fill: '#000', transform: `translate(${x0 + q} ${y0 + q}) scale(${m})`, 'shape-rendering': 'crispEdges' }, gQR);
+  txt(x0 + w / 2, y0 + w + 26, 'Am eigenen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  txt(x0 + w / 2, y0 + w + 52, 'Gerät öffnen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  // Platzhalter, rechts oben bündig mit dem QR-Code: gestrichelter Rahmen, Symbol (drei Suchmuster und einige
+  // Module – kein lesbarer Code), darunter „QR-Code“
+  const p = 96, px = 1900 - p, s = 3, o = Math.round((p - 21 * s) / 2);
+  el('title', {}, gQRPlatz).textContent = 'Klicken: QR-Code anzeigen';
+  el('rect', { x: px, y: y0, width: p, height: p, rx: 8, fill: '#fff', stroke: '#9aa3ad', 'stroke-width': 2, 'stroke-dasharray': '8 6' }, gQRPlatz);
+  let d = '';
+  for (const [cx, cy] of [[0, 0], [14, 0], [0, 14]]) d += `M${cx} ${cy}h7v7h-7zM${cx + 1} ${cy + 1}v5h5v-5zM${cx + 2} ${cy + 2}h3v3h-3z`;
+  for (const [x, y] of [[9, 1], [11, 2], [9, 4], [12, 4], [10, 6], [12, 8], [8, 9], [10, 10], [14, 9], [16, 10], [18, 9], [20, 11], [1, 9], [3, 10], [5, 9],
+    [2, 12], [9, 12], [11, 13], [15, 14], [17, 15], [19, 16], [14, 17], [16, 19], [18, 18], [20, 20], [9, 15], [11, 17], [9, 19], [12, 20]]) d += `M${x} ${y}h1v1h-1z`;
+  el('path', { d, fill: '#5b6570', 'fill-rule': 'evenodd', transform: `translate(${px + o} ${y0 + o}) scale(${s})`, 'shape-rendering': 'crispEdges' }, gQRPlatz);
+  txt(px + p / 2, y0 + p + 28, 'QR-Code', { class: 'qr-cap', 'text-anchor': 'middle' }, gQRPlatz);
+  return { x0, y0, w };
+})();
+const qrGross = () => window.innerWidth >= 800, qrExport = () => document.documentElement.classList.contains('export');
+function qrSichtbar() { return !!QR && S.qr && (qrGross() || qrExport()); }
+function qrPlatzSichtbar() { return !!QR && !S.qr && qrGross() && !qrExport(); }
+function qrUmschalten() {
+  S.qr = !S.qr; render();
+  const z = S.qr ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({ preventScroll: true });
+}
+for (const g of [gQR, gQRPlatz]) {
+  g.addEventListener('click', qrUmschalten);
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
+}
+
+/* ================= 8 Bedienung ================= */
+const btnPlay = $('#btn-play'), rng = $('#rng-x'), num = $('#num-x');
+for (const e of [rng, num]) { e.min = CFG.x.min; e.max = CFG.x.max; e.step = CFG.x.step; e.value = CFG.x.start; }
+const knopf = (text, fn, wo) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.addEventListener('click', fn); $(wo).appendChild(b); return b; };
+const zahl = (v) => String(v).replace('.', ',').replace('-', '−');
+for (const d of [-CFG.x.big, -CFG.x.step, CFG.x.step, CFG.x.big]) knopf((d > 0 ? '+' : '') + zahl(d) + '°', () => setX(S.x + d), '#steps');
+for (const v of CFG.x.presets) knopf(zahl(v) + '°', () => setX(v), '#presets');
+const bauteilBtn = [...document.querySelectorAll('#seg-bauteil button')];
+for (const b of bauteilBtn) b.addEventListener('click', () => { S.bauteil = b.dataset.v; render(); });
+function syncUI() {
+  const v = Math.round(S.x * 100) / 100;
+  rng.value = v;
+  if (document.activeElement !== num) num.value = v;
+  btnPlay.textContent = S.playing ? '❚❚ Pause' : '▶ Abspielen';
+  btnPlay.setAttribute('aria-pressed', String(S.playing));
+  for (const b of bauteilBtn) b.setAttribute('aria-pressed', String(b.dataset.v === S.bauteil));
+  $('#chk-rech').disabled = !(S.form || S.ro);          // „Berechnung“ wirkt nur zusammen mit „Formeln“ (Karte) oder „Momentanwerte“ (Bühne)
+  show(gQR, qrSichtbar()); show(gQRPlatz, qrPlatzSichtbar());
+  for (const t of titel) t.setAttribute('x', (qrSichtbar() || qrPlatzSichtbar()) ? QR_BOX.x0 - 60 : 1872);   // springt beim Umschalten nicht
+}
+function setX(v, fromUser = true) {
+  if (!Number.isFinite(v)) return;
+  if (fromUser) S.playing = false;
+  S.x = clamp(v, CFG.x.min, CFG.x.max);
+  render();
+  if (fromUser) writeHash();
+}
+function writeHash() {
+  try { history.replaceState(null, '', '#' + CFG.x.hash + String(Math.round(S.x * 100) / 100).replace('.', '-')); } catch (e) { /* Rahmen erlaubt es nicht */ }
+}
+function readStart() {
+  try {
+    const m = new RegExp('^#' + CFG.x.hash + '(\\d+)(?:-(\\d+))?$').exec(location.hash || '');
+    if (m) return parseFloat(m[1] + (m[2] ? '.' + m[2] : ''));
+  } catch (e) { /* ignorieren */ }
+  return CFG.x.start;
+}
+let last = null;
+function tick(ts) {
+  if (!S.playing) { last = null; return; }
+  if (last !== null) {
+    S.x += Math.min((ts - last) / 1000, 0.1) * (CFG.x.max - CFG.x.min) / S.dauer;
+    if (S.x >= CFG.x.max) { if (CFG.x.loop) S.x -= (CFG.x.max - CFG.x.min); else { S.x = CFG.x.max; S.playing = false; } }
+    render();
+  }
+  last = ts;
+  requestAnimationFrame(tick);
+}
+function togglePlay() {
+  S.playing = !S.playing;
+  if (S.playing && S.x >= CFG.x.max) S.x = CFG.x.min;
+  syncUI();
+  if (S.playing) requestAnimationFrame(tick); else writeHash();
+}
+btnPlay.addEventListener('click', togglePlay);
+$('#sel-speed').addEventListener('change', (e) => { S.dauer = Number(e.target.value); });
+rng.addEventListener('input', () => setX(parseFloat(rng.value)));
+num.addEventListener('change', () => setX(parseFloat(String(num.value).replace(',', '.'))));
+const SCHALTER = ['feld', 'linien', 'energie', 'ro', 'form', 'rech'];     // Schlüssel in S, zu jedem gehört <input id="chk-…">
+for (const key of SCHALTER) $('#chk-' + key).addEventListener('change', (e) => { S[key] = e.target.checked; render(); });
+/* Vollbild nach Normblock 10: die ganze Seite; sichtbar ist nur die Bühne.
+   Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
+function setVollbild(an) {
+  const html = document.documentElement;
+  html.classList.toggle('vollbild', an);
+  try {
+    if (an && !document.fullscreenElement) html.requestFullscreen?.().catch(() => {});
+    if (!an && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* nicht verfügbar: Ersatz über die Klasse */ }
+  render();
+}
+const toggleFullscreen = () => setVollbild(!document.documentElement.classList.contains('vollbild'));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.documentElement.classList.contains('vollbild')) setVollbild(false); });
+$('#btn-fs').addEventListener('click', toggleFullscreen);
+$('#vb-ende').addEventListener('click', () => setVollbild(false));
+$('#btn-reset').addEventListener('click', () => setX(CFG.x.start));      // Startwert, Abspielen aus
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  const inField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if (e.key === ' ' && !inField && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); return; }
+  if (inField && t.type !== 'checkbox') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setX(S.x + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? CFG.x.big : CFG.x.step)); }
+  else if (e.key === 'Home') { e.preventDefault(); setX(CFG.x.min); }
+  else if (e.key === 'l' || e.key === 'L') { S.bauteil = 'L'; render(); }
+  else if (e.key === 'c' || e.key === 'C') { S.bauteil = 'C'; render(); }
+  else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  else if (e.key === 'Escape' && document.documentElement.classList.contains('vollbild')) setVollbild(false);
+});
+window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S.x) setX(v, false); });
+window.addEventListener('resize', syncUI);
+
+/* ================= 9 Schnittstelle für Prüfung und Export (Pflicht) =================
+   scripts/pruefen.py und scripts/video.py steuern die Seite nur hierüber. */
+const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
+if (params.has('export')) document.documentElement.classList.add('export');
+if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne
+for (const k of SCHALTER) if (params.has(k)) { S[k] = params.get(k) !== '0'; $('#chk-' + k).checked = S[k]; }
+if (params.get('bauteil') === 'C' || params.get('bauteil') === 'L') S.bauteil = params.get('bauteil');
+if (params.has('qr')) S.qr = params.get('qr') !== '0';      // ?qr=1: QR-Code gleich sichtbar (Beamer-Link)
+window.anim = {
+  bauart: 'stellgroesse',
+  cfg: CFG,
+  model,                                                       // reine Physik, zum Nachrechnen: model(ωt, 'L' | 'C')
+  set(x) { S.playing = false; S.x = clamp(x, CFG.x.min, CFG.x.max); render(); return S.x; },
+  opt(key, val) {                                              // 'bauteil' ('L' | 'C') und die Schalter
+    if (key === 'bauteil') { if (val === 'L' || val === 'C') S.bauteil = val; }
+    else { S[key] = val; const c = $('#chk-' + key); if (c) c.checked = !!val; }
+    render();
+  },
+  vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },   // Normblock 10
+  get feldlinien() { return feldGewichte(Math.abs(model(S.x, S.bauteil).feld), S.bauteil === 'C' ? KO.nFeld : SP.nFeld); },   // [[Anzahl, Deckkraft], …]
+  get state() { return { ...S, ...model(S.x, S.bauteil) }; },
+};
+
+/* ================= 10 Start ================= */
+S.x = clamp(readStart(), CFG.x.min, CFG.x.max);
+render();
+})();
+</script>
+</body>
+</html>
