@@ -798,7 +798,7 @@ const toggleFullscreen = () => setVollbild(!document.documentElement.classList.c
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.documentElement.classList.contains('vollbild')) setVollbild(false); });
 $('#btn-fs').addEventListener('click', toggleFullscreen);
 $('#vb-ende').addEventListener('click', () => setVollbild(false));
-$('#btn-reset').addEventListener('click', () => setX(CFG.x.start));      // Startwert, Abspielen aus
+$('#btn-reset').addEventListener('click', () => { setX(CFG.x.start); abspielen(); });      // wie beim Öffnen: Startwert, Abspielen an
 document.addEventListener('keydown', (e) => {
   const t = e.target, tag = t && t.tagName;
   const inField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
@@ -826,6 +826,7 @@ window.anim = {
   bauart: 'stellgroesse',
   cfg: CFG,
   model,                                                       // reine Physik, zum Nachrechnen: model(ωt, 'L' | 'C')
+  pause(an = true) { if (an) { S.playing = false; syncUI(); } else abspielen(); },   // technik.md: laufenden Ablauf anhalten
   set(x) { S.playing = false; S.x = clamp(x, CFG.x.min, CFG.x.max); render(); return S.x; },
   opt(key, val) {                                              // 'bauteil' ('L' | 'C') und die Schalter
     if (key === 'bauteil') { if (val === 'L' || val === 'C') S.bauteil = val; }
@@ -840,6 +841,9 @@ window.anim = {
 /* ================= 10 Start ================= */
 S.x = clamp(readStart(), CFG.x.min, CFG.x.max);
 render();
+/* Beim Öffnen automatisch abspielen (Festlegung der Lehrkraft, 19.11.2026) – außer ein Link gibt mit #a… eine feste Stelle vor. */
+function abspielen() { if (S.playing) return; S.playing = true; if (S.x >= CFG.x.max) S.x = CFG.x.min; syncUI(); requestAnimationFrame(tick); }
+if (!new RegExp('^#' + CFG.x.hash + '\\d').test(location.hash || '')) abspielen();
 })();
 </script>
 </body>
