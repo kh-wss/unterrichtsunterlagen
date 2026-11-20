@@ -10,6 +10,7 @@
     { "name": "Dreiphasenwechselspannung", "ordner": ["dreiphasenwechselspannung"] },
     { "name": "Antriebstechnik",          "ordner": ["drehfeld"] },
     { "name": "Schutzorgane",             "ordner": ["lf2-schutzorgane"] },
+    { "name": "Digitaltechnik",           "ordner": ["digitaltechnik"] },
     { "name": "Werkzeuge",                "ordner": ["tools"], "art": "Werkzeug" }
   ],
 
@@ -26,6 +27,8 @@
 
     "drehfeld/konzentrierte-wicklung/": { "reihenfolge": 1 },
     "drehfeld/verteilte-wicklung/":     { "reihenfolge": 2 },
+
+    "digitaltechnik/abstraktionsebenen/": { "reihenfolge": 1 },
 
     "leistung/wirk-blind-schein/": { "reihenfolge": 1 },
     "leistung/blindleistung-pendeln/": { "reihenfolge": 2 },
