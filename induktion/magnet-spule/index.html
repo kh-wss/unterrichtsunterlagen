@@ -214,6 +214,17 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
 #btn-fs{margin-left:auto;align-self:center}
 @media (orientation:landscape) and (max-height:520px){#controls .kasten .sep{display:none}}
 #controls .kasten{flex:1 1 auto}
+/* Steuerung als Raster: Zurücksetzen steht unter Pause, Magnet umdrehen unter dem Hauptknopf; schmal (Handy) untereinander */
+#controls .kasten.steuerung{display:grid;grid-template-columns:repeat(3,auto);justify-content:start;align-content:center;
+  justify-items:start;gap:6px 12px;flex:3 1 auto}
+#controls .kasten .zeile{display:contents}
+#bReset{grid-column:3}
+#controls .kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;flex:1 1 auto}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){
+  #controls .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  #controls .kasten .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+}
+@media (orientation:landscape) and (max-height:520px){#controls .kasten.parameter{grid-template-columns:auto}}
 @media (max-width:640px){#controls .kasten{flex:1 1 100%}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .warn{margin:8px 0 0;color:var(--warn);font-weight:600;max-width:68ch}
@@ -233,44 +244,42 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
 
   <!-- 2 Bedienleiste: unmittelbar unter der Bühne, drei Zeilen (Lauf · Einstellen · Ansicht), dann „Tastatur“ -->
   <div class="controls" id="controls" role="toolbar" aria-label="Bedienung">
-    <!-- Kästen mit Überschrift (Wunsch der Lehrkraft, 20.11.2026): Steuerung · Parameter · Feld · Messwerte · Text -->
-    <div class="row">                                   <!-- Zeile 1 · Lauf -->
-      <div class="kasten" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
-        <button id="bAuto" class="primary" type="button"></button>
-        <div class="group"><span class="cap">Tempo</span>
-          <div class="seg" role="group" aria-label="Tempo der automatischen Bewegung">
-            <button type="button" data-tempo="4" aria-pressed="false">0,5×</button>
-            <button type="button" data-tempo="2" aria-pressed="true">1×</button>
-            <button type="button" data-tempo="1" aria-pressed="false">2×</button>
+    <!-- Kästen mit Überschrift (Wunsch der Lehrkraft, 20.11.2026): oben Steuerung links und Parameter rechts, je zwei
+         Zeilen; „Magnet umdrehen“ gehört zur Steuerung (Eingriff, kein Wert). Darunter Feld · Messwerte · Text · Vollbild. -->
+    <div class="row">                                   <!-- Zeile 1 · Steuerung | Parameter -->
+      <div class="kasten spalten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <div class="zeile">
+          <button id="bAuto" class="primary" type="button"></button>
+          <div class="group"><span class="cap">Tempo</span>
+            <div class="seg" role="group" aria-label="Tempo der automatischen Bewegung">
+              <button type="button" data-tempo="4" aria-pressed="false">0,5×</button>
+              <button type="button" data-tempo="2" aria-pressed="true">1×</button>
+              <button type="button" data-tempo="1" aria-pressed="false">2×</button>
+            </div>
           </div>
+          <button id="bPause" type="button">Pause</button>
         </div>
-        <button id="bPause" type="button">Pause</button>
-        <span class="sep"></span>
-        <button id="bReset" type="button">Zurücksetzen</button>
-      </div>
-    </div>
-    <div class="row">                                   <!-- Zeile 2 · Einstellen -->
-      <div class="kasten" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
-        <button id="bFlip" type="button">Magnet umdrehen</button>
-        <span class="sep"></span>
-        <div class="group"><span class="cap">Windungen <i class="m">N</i></span>
-          <div class="seg" role="group" aria-label="Windungszahl">
-            <button type="button" data-n="300" aria-pressed="false">300</button>
-            <button type="button" data-n="600" aria-pressed="true">600</button>
-            <button type="button" data-n="1200" aria-pressed="false">1200</button>
-          </div>
-        </div>
-        <span class="sep"></span>
-        <div class="group"><span class="cap">Messbereich</span>
-          <div class="seg" role="group" aria-label="Messbereich">
-            <button type="button" data-bereich="0.1" aria-pressed="true">100 mV</button>
-            <button type="button" data-bereich="0.3" aria-pressed="false">300 mV</button>
-            <button type="button" data-bereich="1" aria-pressed="false">1 V</button>
-          </div>
+        <div class="zeile">
+          <button id="bFlip" type="button">Magnet umdrehen</button>
+          <button id="bReset" type="button">Zurücksetzen</button>
         </div>
       </div>
+      <div class="kasten parameter" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
+        <span class="cap">Windungen <i class="m">N</i></span>
+        <div class="seg" role="group" aria-label="Windungszahl">
+          <button type="button" data-n="300" aria-pressed="false">300</button>
+          <button type="button" data-n="600" aria-pressed="true">600</button>
+          <button type="button" data-n="1200" aria-pressed="false">1200</button>
+        </div>
+        <span class="cap">Messbereich</span>
+        <div class="seg" role="group" aria-label="Messbereich">
+          <button type="button" data-bereich="0.1" aria-pressed="true">100 mV</button>
+          <button type="button" data-bereich="0.3" aria-pressed="false">300 mV</button>
+          <button type="button" data-bereich="1" aria-pressed="false">1 V</button>
+        </div>
+      </div>
     </div>
-    <div class="row">                                   <!-- Zeile 3 · Ansicht in drei Kästen, rechts außen Vollbild -->
+    <div class="row">                                   <!-- Zeile 2 · Ansicht in drei Kästen, rechts außen Vollbild -->
       <div class="kasten" role="group" aria-labelledby="lg-feld"><span class="lg" id="lg-feld">Feld</span>
         <label class="chk" for="chk-feld"><input id="chk-feld" type="checkbox">Feldlinien <i class="m">B</i></label>
         <label class="chk" for="chk-phi"><input id="chk-phi" type="checkbox">Fluss <i class="m">Φ</i></label>
