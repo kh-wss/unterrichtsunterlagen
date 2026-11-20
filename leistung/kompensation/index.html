@@ -626,10 +626,10 @@ txt(M.x + M.w / 2 + 40, M.y + 80, 'im Bemessungsbetrieb', { class: 'lbl-xs sans 
      der Umriss bleibt das schwarze Normzeichen. */
   el('rect', { x: x - 18, y: rY[0], width: 36, height: rY[1] - rY[0], fill: '#fff' }, gLeit);
   el('rect', { x: x - 18, y: rY[0], width: 36, height: rY[1] - rY[0], fill: C.P, 'fill-opacity': 0.4, stroke: C.ink, 'stroke-width': 3 }, gLeit);
-  { const n = 6, r = (lY[1] - lY[0]) / n / 2;                     // Spule mit sechs Bögen
-    el('path', { d: `M ${x} ${lY[0]}` + ` a ${r} ${r} 0 0 1 0 ${2 * r}`.repeat(n), fill: C.Q, 'fill-opacity': 0.6, stroke: C.ink, 'stroke-width': 3 }, gLeit); }
+  const n = 4, rL = (lY[1] - lY[0]) / n / 2;                      // Spule mit vier Halbkreisen (Lehrkraft, 20.11.2026)
+  el('path', { d: `M ${x} ${lY[0]}` + ` a ${rL} ${rL} 0 0 1 0 ${2 * rL}`.repeat(n), fill: C.Q, 'fill-opacity': 0.6, stroke: C.ink, 'stroke-width': 3 }, gLeit);
   txt(x + 30, (rY[0] + rY[1]) / 2 + 10, I('R'), { class: 'lbl' }, gLeit);
-  txt(x + 40, (lY[0] + lY[1]) / 2 + 10, I('L'), { class: 'lbl' }, gLeit);
+  txt(x + rL + 14, (lY[0] + lY[1]) / 2 + 10, I('L'), { class: 'lbl' }, gLeit);
   for (const [y, n] of [[G.yo, 'U1'], [G.yu, 'U2']]) {
     el('circle', { cx: x, cy: y, r: 6, fill: '#fff', stroke: C.ink, 'stroke-width': 2.5 }, gLeit);
     txt(x + 14, y + (n === 'U1' ? -12 : 28), n, { class: 'lbl-xs sans' }, gLeit);
