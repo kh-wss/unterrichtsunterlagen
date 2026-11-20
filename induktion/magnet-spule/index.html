@@ -214,17 +214,25 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
 #btn-fs{margin-left:auto;align-self:center}
 @media (orientation:landscape) and (max-height:520px){#controls .kasten .sep{display:none}}
 #controls .kasten{flex:1 1 auto}
-/* Steuerung als Raster: Zurücksetzen steht unter Pause, Magnet umdrehen unter dem Hauptknopf; schmal (Handy) untereinander */
-#controls .kasten.steuerung{display:grid;grid-template-columns:repeat(3,auto);justify-content:start;align-content:center;
-  justify-items:start;gap:6px 12px;flex:3 1 auto}
-#controls .kasten .zeile{display:contents}
-#bReset{grid-column:3}
+/* Steuerung als Raster in drei Spalten: Hauptknopf / Magnet umdrehen · Pause / Zurücksetzen · Tempo / Anzeige; schmal (Handy) untereinander.
+   Tabelle und Diagramm sind Ein/Aus-Knöpfe (aria-pressed), eingeschaltet dunkel wie die gewählte Stufe einer Auswahl. */
+#controls{container:leiste / inline-size}
+#controls .kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;
+  justify-items:start;gap:6px 10px;flex:3 1 auto}
+#controls .kasten .zeile,#controls .kasten.steuerung .group{display:contents}
+#controls .kasten .paar{display:flex;gap:6px}
+#controls .kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+#controls button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
 #controls .kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;flex:1 1 auto}
 @media (max-width:640px),(orientation:landscape) and (max-height:520px){
   #controls .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
   #controls .kasten .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  #controls .kasten.steuerung .group{display:flex}
 }
 @media (orientation:landscape) and (max-height:520px){#controls .kasten.parameter{grid-template-columns:auto}}
+/* Leiste 600–850 px breit (z. B. 1280 × 720): Parameter mit Überschrift über der Auswahl, damit beide Kästen nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){#controls .kasten.parameter{grid-template-columns:auto;gap:2px 10px}
+  #controls .kasten.parameter .seg{margin-bottom:4px}}
 @media (max-width:640px){#controls .kasten{flex:1 1 100%}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .warn{margin:8px 0 0;color:var(--warn);font-weight:600;max-width:68ch}
@@ -245,11 +253,13 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
   <!-- 2 Bedienleiste: unmittelbar unter der Bühne, drei Zeilen (Lauf · Einstellen · Ansicht), dann „Tastatur“ -->
   <div class="controls" id="controls" role="toolbar" aria-label="Bedienung">
     <!-- Kästen mit Überschrift (Wunsch der Lehrkraft, 20.11.2026): oben Steuerung links und Parameter rechts, je zwei
-         Zeilen; „Magnet umdrehen“ gehört zur Steuerung (Eingriff, kein Wert). Darunter Feld · Messwerte · Text · Vollbild. -->
+         Zeilen; „Magnet umdrehen“ gehört zur Steuerung (Eingriff, kein Wert); Pause und Zurücksetzen links von Tempo,
+         Tabelle und Diagramm als Ein/Aus-Knöpfe in der Steuerung. Darunter Feld · Text · Vollbild. -->
     <div class="row">                                   <!-- Zeile 1 · Steuerung | Parameter -->
       <div class="kasten spalten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
         <div class="zeile">
           <button id="bAuto" class="primary" type="button"></button>
+          <button id="bPause" type="button">Pause</button>
           <div class="group"><span class="cap">Tempo</span>
             <div class="seg" role="group" aria-label="Tempo der automatischen Bewegung">
               <button type="button" data-tempo="4" aria-pressed="false">0,5×</button>
@@ -257,11 +267,14 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
               <button type="button" data-tempo="1" aria-pressed="false">2×</button>
             </div>
           </div>
-          <button id="bPause" type="button">Pause</button>
         </div>
         <div class="zeile">
           <button id="bFlip" type="button">Magnet umdrehen</button>
           <button id="bReset" type="button">Zurücksetzen</button>
+          <div class="group"><span class="cap">Anzeige</span>
+            <div class="paar"><button id="ein-werte" class="ein" type="button" aria-pressed="false" title="Momentanwerte als Tabelle ein/aus">Tabelle</button>
+            <button id="ein-diag" class="ein" type="button" aria-pressed="false" title="Liniendiagramm ein/aus">Diagramm</button></div>
+          </div>
         </div>
       </div>
       <div class="kasten parameter" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
@@ -279,14 +292,10 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
         </div>
       </div>
     </div>
-    <div class="row">                                   <!-- Zeile 2 · Ansicht in drei Kästen, rechts außen Vollbild -->
+    <div class="row">                                   <!-- Zeile 2 · Ansicht: Feld und Text, rechts außen Vollbild -->
       <div class="kasten" role="group" aria-labelledby="lg-feld"><span class="lg" id="lg-feld">Feld</span>
         <label class="chk" for="chk-feld"><input id="chk-feld" type="checkbox">Feldlinien <i class="m">B</i></label>
         <label class="chk" for="chk-phi"><input id="chk-phi" type="checkbox">Fluss <i class="m">Φ</i></label>
-      </div>
-      <div class="kasten" role="group" aria-labelledby="lg-werte"><span class="lg" id="lg-werte">Messwerte</span>
-        <label class="chk" for="chk-werte" title="Momentanwerte als Tabelle"><input id="chk-werte" type="checkbox">Tabelle</label>
-        <label class="chk" for="chk-diag"><input id="chk-diag" type="checkbox">Diagramm</label>
       </div>
       <div class="kasten" role="group" aria-labelledby="lg-text"><span class="lg" id="lg-text">Text</span>
         <label class="chk" for="chk-erkl"><input id="chk-erkl" type="checkbox">Erklärung</label>
@@ -1295,11 +1304,17 @@ document.querySelectorAll('[data-tempo]').forEach((b) => b.addEventListener('cli
 document.querySelectorAll('[data-n]').forEach((b) => b.addEventListener('click', () => setN(Number(b.dataset.n))));
 document.querySelectorAll('[data-bereich]').forEach((b) => b.addEventListener('click', () => setBereich(Number(b.dataset.bereich))));
 function setOpt(key, val) {
-  S[key] = val; const c = $('chk-' + key); if (c) c.checked = !!val;
+  S[key] = val; zeigeSchalter(key);
   if (key === 'diag' || key === 'phi') { layout(); baueDiagAchsen(); }
   refreshText(true); draw();
 }
-for (const k of ['feld', 'diag', 'phi', 'erkl', 'form', 'rech', 'werte']) $('chk-' + k).addEventListener('change', (e) => setOpt(k, e.target.checked));
+/* Schalter: Kästchen (chk-…) oder Ein/Aus-Knopf (ein-…, Tabelle und Diagramm seit 20.11.2026) */
+const SCHALTER = ['feld', 'diag', 'phi', 'erkl', 'form', 'rech', 'werte'];
+function schalterEl(k) { return $('chk-' + k) || $('ein-' + k); }
+function zeigeSchalter(k) { const c = schalterEl(k); if (!c) return; if (c.type === 'checkbox') c.checked = !!S[k]; else c.setAttribute('aria-pressed', String(!!S[k])); }
+for (const k of SCHALTER) { const c = schalterEl(k);
+  if (c.type === 'checkbox') c.addEventListener('change', (e) => setOpt(k, e.target.checked));
+  else c.addEventListener('click', () => setOpt(k, !S[k])); }
 /* Vollbild nach Normblock 10: die ganze Seite; sichtbar sind nur Bühne und eingeschaltetes Diagramm.
    Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
 function setVollbild(an) {
@@ -1395,7 +1410,7 @@ window.anim = {
 messeBuehne();
 reset();
 document.querySelectorAll('[data-n]').forEach((o) => o.setAttribute('aria-pressed', String(Number(o.dataset.n) === S.N)));
-for (const k of ['feld', 'diag', 'phi', 'erkl', 'form', 'rech', 'werte']) $('chk-' + k).checked = S[k];
+for (const k of SCHALTER) zeigeSchalter(k);
 baueSkala(); baueDiagAchsen(); baueNotizen(); layout();
 if (S.startAuto) { AKTIONEN.autoAn(); S.benutzt = false; }        // ?auto=1: läuft gleich los, Hinweis „ziehen“ bleibt
 draw(); refreshText(true); refreshVals();
