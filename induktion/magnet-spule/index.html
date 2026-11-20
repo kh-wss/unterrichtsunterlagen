@@ -6,10 +6,12 @@
 <title>Spannungsinduktion</title>
 <meta name="description" content="Ein Stabmagnet wird in eine Spule hinein- und herausbewegt; ein Spannungsmesser mit Nullpunkt in der Mitte zeigt die induzierte Spannung. Magnet mit Maus oder Finger ziehen oder automatisch hin und her bewegen lassen.">
 <style>
-/* LAYOUT-NORM:begin v3 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+/* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
    Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
    gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
-   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit. */
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit.
+   v4 (20.11.2026): Die Vorschau ?buehne=1 passt die Bühne in jeden Rahmen ganz ein (Moodle-Rahmen mit fester Höhe).
+   v5 (20.11.2026): Bedienleiste in Kästen mit Überschrift – oben Steuerung links, Parameter rechts, darunter Ansicht. */
 :root{
   /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
   --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
@@ -67,12 +69,33 @@ sub,sup{font-size:.72em;line-height:0}
 #stage-svg .qr-knopf:focus{outline:none}
 #stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
 
-/* 4 Bedienleiste: höchstens drei Zeilen – 1 Lauf (und Wert), 2 Einstellen (nur wenn nötig), 3 Ansicht – dann „Tastatur“.
-   Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+/* 4 Bedienleiste in Kästen mit Überschrift auf dem Rahmen (v5, Festlegung der Lehrkraft 20.11.2026, layout.md 4):
+   .row 1: .kasten.steuerung links (Raster: Hauptknopf/Eingriff · Pause/Zurücksetzen · Tempo/Anzeige) | .kasten.parameter rechts
+   .row 2: Ansicht – Kästen nach Thema (Ebenen in der Bühne, Text darunter) mit Kästchen · Vollbild (#btn-fs) rechts außen
+   dann „Tastatur“. Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
 .card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
-.controls{display:grid;gap:6px;font-size:13.5px;line-height:1.35}
-.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.controls{display:grid;gap:12px;font-size:13.5px;line-height:1.35;padding-top:14px;container:leiste / inline-size}
+.controls>details.keys{margin-top:-5px}
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px 8px}
 .row .sp{flex:1 1 auto}
+.kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 auto;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+.kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);font-size:10.5px;line-height:13px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kasten .chk+.chk{margin-left:4px}
+.kasten .paar{display:flex;flex-wrap:wrap;gap:6px}
+.kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;justify-items:start;
+  gap:6px 10px;flex:0 1 auto}
+.kasten.steuerung:last-child{flex-grow:1}   /* ohne Parameter füllt die Steuerung die Zeile */
+.kasten.steuerung .zeile,.kasten.steuerung .zeile>.group{display:contents}   /* je .zeile: Knopf · Knopf · Überschrift · Auswahl */
+.kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+.kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;
+  flex:1 1 0;min-width:auto}   /* nimmt den Rest der Zeile neben der Steuerung; lange Auswahlreihen (.paar) brechen im Kasten um */
+#btn-fs{margin-left:auto;align-self:center}
+button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}  /* Ein/Aus-Knopf */
+/* Leiste 600–850 px breit (1280 × 720): Parameter-Überschrift über der Auswahl, damit Steuerung und Parameter nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){
+  .kasten.parameter{grid-template-columns:auto;gap:2px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:4px}}
 .group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
 .group.wert .group{flex-wrap:nowrap}
@@ -87,6 +110,7 @@ select{padding:2px 5px}
 input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
 input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
 .seg{display:inline-flex}
+.seg button,.kasten button{white-space:nowrap}
 .seg button{border-radius:0;margin-left:-1px}
 .seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
 .seg button:last-child{border-radius:0 5px 5px 0}
@@ -99,7 +123,12 @@ details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
 details.keys .hint{margin-top:6px}
 kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
 .sep{width:1px;align-self:stretch;background:var(--rule)}
-@media (max-width:640px){.sep{display:none}}
+@media (max-width:640px){.sep{display:none} .kasten{flex:1 1 100%}}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){   /* schmal: Steuerung als Zeilen statt Raster */
+  .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  .kasten.steuerung .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  .kasten.steuerung .zeile>.group{display:flex}
+  .kasten.steuerung .zeile>:empty{display:none}}
 
 /* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
 .diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
@@ -131,9 +160,12 @@ html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
 html.export .wrap>:not(.stage){display:none}
 
 /* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
-   16:9-Rahmen genau aus. Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und Texte entfallen. */
-html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
-html.buehne .wrap{width:100%;max-width:none;gap:0}
+   16:9-Rahmen genau aus und passt in jeden anders geformten Rahmen ganz hinein, mittig (v4: Moodle-Rahmen haben eine
+   feste Höhe, am Handy ist der Rahmen schmaler). Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und
+   Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden;height:100%}
+html.buehne body{display:grid;place-items:center}
+html.buehne .wrap{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));max-width:none;margin:0;gap:0}
 html.buehne .stage{border:0;border-radius:0}
 html.buehne .wrap>:not(.stage){display:none}
 
@@ -148,6 +180,9 @@ html.buehne .wrap>:not(.stage){display:none}
     overflow-x:hidden;overflow-y:auto;padding:8px 10px}
   html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
   html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{padding-top:14px}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten.parameter{grid-template-columns:auto}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten .sep{display:none}
 }
 
 /* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
@@ -201,39 +236,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
 .ek{padding:6px 10px 7px;border:1px solid var(--rule);border-radius:6px;font-size:14px;line-height:1.4;transition:background-color .2s,border-color .2s,box-shadow .2s}
 .ek b{display:block;font-size:14.5px;margin-bottom:2px}
 .ek.aktiv{background:var(--hl);border-color:var(--focus);box-shadow:inset 4px 0 0 var(--focus)}
-/* Bedienleiste in Kästen mit Überschrift auf dem Rahmen (Wunsch der Lehrkraft, 20.11.2026): Steuerung, Parameter,
-   Feld, Messwerte, Text. Die Überschrift ragt 7 px über den Rahmen, daher mehr Abstand oben und zwischen den Zeilen. */
-#controls{padding-top:14px;row-gap:12px}
-#controls>details.keys{margin-top:-5px}
-#controls .row{align-items:stretch;column-gap:8px}
-#controls .kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;min-width:0;
-  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
-#controls .kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);
-  font-size:10.5px;line-height:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-#controls .kasten .chk+.chk{margin-left:4px}
-#btn-fs{margin-left:auto;align-self:center}
-@media (orientation:landscape) and (max-height:520px){#controls .kasten .sep{display:none}}
-#controls .kasten{flex:1 1 auto}
-/* Steuerung als Raster in drei Spalten: Hauptknopf / Magnet umdrehen · Pause / Zurücksetzen · Tempo / Anzeige; schmal (Handy) untereinander.
-   Tabelle und Diagramm sind Ein/Aus-Knöpfe (aria-pressed), eingeschaltet dunkel wie die gewählte Stufe einer Auswahl. */
-#controls{container:leiste / inline-size}
-#controls .kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;
-  justify-items:start;gap:6px 10px;flex:3 1 auto}
-#controls .kasten .zeile,#controls .kasten.steuerung .group{display:contents}
-#controls .kasten .paar{display:flex;gap:6px}
-#controls .kasten.steuerung .zeile>.group>.cap{margin-left:6px}
-#controls button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
-#controls .kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;flex:1 1 auto}
-@media (max-width:640px),(orientation:landscape) and (max-height:520px){
-  #controls .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
-  #controls .kasten .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
-  #controls .kasten.steuerung .group{display:flex}
-}
-@media (orientation:landscape) and (max-height:520px){#controls .kasten.parameter{grid-template-columns:auto}}
-/* Leiste 600–850 px breit (z. B. 1280 × 720): Parameter mit Überschrift über der Auswahl, damit beide Kästen nebeneinander bleiben */
-@container leiste (min-width:600px) and (max-width:850px){#controls .kasten.parameter{grid-template-columns:auto;gap:2px 10px}
-  #controls .kasten.parameter .seg{margin-bottom:4px}}
-@media (max-width:640px){#controls .kasten{flex:1 1 100%}}
+/* Bedienleiste: Kästen, Steuerung und Parameter nach Layout-Norm v5 (Normblock 4), Festlegung der Lehrkraft 20.11.2026 */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .warn{margin:8px 0 0;color:var(--warn);font-weight:600;max-width:68ch}
 .m{font-family:var(--font-math);font-size:1.08em}
@@ -256,7 +259,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
          Zeilen; „Magnet umdrehen“ gehört zur Steuerung (Eingriff, kein Wert); Pause und Zurücksetzen links von Tempo,
          Tabelle und Diagramm als Ein/Aus-Knöpfe in der Steuerung. Darunter Feld · Text · Vollbild. -->
     <div class="row">                                   <!-- Zeile 1 · Steuerung | Parameter -->
-      <div class="kasten spalten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+      <div class="kasten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
         <div class="zeile">
           <button id="bAuto" class="primary" type="button"></button>
           <button id="bPause" type="button">Pause</button>
