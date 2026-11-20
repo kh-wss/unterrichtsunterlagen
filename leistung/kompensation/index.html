@@ -395,9 +395,11 @@ const CFG = {
     xA: 228, xK: 600, xM: 1036, xE: 1060,        // Leistungspfeile: Anfang am Netz, Kondensatorzweig, Ende am Motor; Ersatzschaltbild
     mess: [330, 885], mw: 190, mh: 172, my: 270, // Strommesser: Mitten, Breite, Höhe, Oberkante
     iPf: { y: 372, x2: 440, x1: 615, max: 128 }, // Strompfeile: Höhe, Anfang I2 und I1, größte Länge
-    R: [450, 570], L: [650, 960],                // Ersatzschaltbild: R und L (oben, unten); Abstand R–L vergrößert (Festlegung 20.11.2026)
+    R: [450, 570], L: [736, 874],                // Ersatzschaltbild: R und L (oben, unten); Abstand R–L vergrößert (Festlegung 20.11.2026)
+                                                 // L wie im Hausstil (CircuiTikZ american inductor: so lang wie R, 4 Bögen, Bogenhöhe ≈ halbe Breite von R),
+                                                 // etwas größer als R (Lehrkraft, 20.11.2026); 1. und 4. Bogen mittig auf yC und yN
     yP: 510, hPmax: 80,                          // Wirkleistungspfeil: Mitte = Mitte von R, größte Breite
-    yC: 650 + 310 / 3, yN: 650 + 2 * 310 / 3,    // Kondensator und sein Pfeil auf 1/3 von L, Pfeil aus dem Netz auf 2/3 von L
+    yC: 650 + 310 / 3, yN: 650 + 2 * 310 / 3,    // Kondensator und sein Pfeil auf den 1. Bogen von L, Pfeil aus dem Netz auf den 4. Bogen
     hQmax: 92,                                   // Blindleistungspfeile: größte Breite
     motor: { x: 990, y: 285, w: 372, h: 760 },   // gestrichelter Kasten „Motor“
     zb: { x0: 1440, wMax: 330, yTop: 488, yBot: 1040, kopf: 418, mitte: 1650 },   // Zeigerbild
@@ -626,7 +628,7 @@ txt(M.x + M.w / 2 + 40, M.y + 80, 'im Bemessungsbetrieb', { class: 'lbl-xs sans 
      der Umriss bleibt das schwarze Normzeichen. */
   el('rect', { x: x - 18, y: rY[0], width: 36, height: rY[1] - rY[0], fill: '#fff' }, gLeit);
   el('rect', { x: x - 18, y: rY[0], width: 36, height: rY[1] - rY[0], fill: C.P, 'fill-opacity': 0.4, stroke: C.ink, 'stroke-width': 3 }, gLeit);
-  const n = 4, rL = (lY[1] - lY[0]) / n / 2;                      // Spule mit vier Halbkreisen (Lehrkraft, 20.11.2026)
+  const n = 4, rL = (lY[1] - lY[0]) / n / 2;                      // Spule mit vier Halbkreisen, r = 17,25 (Hausstil, Lehrkraft 20.11.2026)
   el('path', { d: `M ${x} ${lY[0]}` + ` a ${rL} ${rL} 0 0 1 0 ${2 * rL}`.repeat(n), fill: C.Q, 'fill-opacity': 0.6, stroke: C.ink, 'stroke-width': 3 }, gLeit);
   txt(x + 30, (rY[0] + rY[1]) / 2 + 10, I('R'), { class: 'lbl' }, gLeit);
   txt(x + rL + 14, (lY[0] + lY[1]) / 2 + 10, I('L'), { class: 'lbl' }, gLeit);
@@ -860,7 +862,8 @@ function render() {
   tMotorHin.setAttribute('y', W ? 700 : 620);
 
   // Leistungspfeile (Festlegung der Lehrkraft, 20.11.2026): P genau auf Höhe der Mitte von R; der Kondensator und sein
-  // Blindleistungspfeil genau auf 1/3 der Höhe von L, der Blindleistungspfeil aus dem Netz (Q_L1 bzw. Q_L2) auf 2/3 von L.
+  // Blindleistungspfeil auf 1/3, der Blindleistungspfeil aus dem Netz (Q_L1 bzw. Q_L2) auf 2/3 der früheren Spulenhöhe;
+  // seit der Spule im Hausstil (20.11.2026) treffen sie mittig den 1. und den 4. Bogen.
   const hP = K.kQ * S.P, yC = G.yC, yN = G.yN;
   bP.set(G.xA, G.xM, G.yP, hP, false, true);
   const qNetzMotor = Math.max(m.Q2, 0), qKondMotor = Math.min(m.QC, m.Q1), qKondNetz = Math.max(-m.Q2, 0);
