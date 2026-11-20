@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blindleistungskompensation</title>
+<meta name="description" content="Motor am Einphasennetz mit einstellbarem Kondensator: Wirk- und Blindleistung als Energiepfeile, Strom vor und hinter dem Kondensator mit Strompfeilen und Strommessern, dazu Leistungsdreieck oder Zeigerbild der Ströme. Keine, teilweise, vollständige und Überkompensation per Knopf; U, P und cos φ₁ des Motors einstellbar.">
+<style>
+/* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+   Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
+   gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit.
+   v4 (20.11.2026): Die Vorschau ?buehne=1 passt die Bühne in jeden Rahmen ganz ein (Moodle-Rahmen mit fester Höhe).
+   v5 (20.11.2026): Bedienleiste in Kästen mit Überschrift – oben Steuerung links, Parameter rechts, darunter Ansicht. */
+:root{
+  /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
+  --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
+  --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
+  /* Bühne: immer weiß, ohne Karoraster – die Größenfarben der Fachkonventionen gelten für weißen Grund */
+  --stage:#ffffff; --ink:#1b2127;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-math:var(--font-ui);   /* Formeln in der Textschrift (Festlegung der Lehrkraft, 12.11.2026; fachkonventionen 3a) */
+  /* Bühnengröße = (Fensterhöhe − --reserve) · 16/9, höchstens 1920 px und höchstens die Seitenbreite.
+     --reserve: Ränder, Abstand und Bedienleiste. Derselbe Wert steht in scripts/pruefen.py (NORM). */
+  --reserve:250px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+    --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+  --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--page);color:var(--fg)}
+body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.45;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+sub,sup{font-size:.72em;line-height:0}
+
+/* 1 Seitenaufbau, immer in dieser Reihenfolge, alles gleich breit: Bühne (#stage) → Bedienleiste (#controls) →
+   Zusatzbereiche (.card, .info, optional) → Modellhinweise (.notes). Über der Bühne steht nichts. */
+.wrap{width:100%;max-width:min(1920px,max(min(100%,720px),calc((100dvh - var(--reserve)) * 16 / 9)));
+  margin:0 auto;display:grid;gap:12px}
+
+/* 2 Bühne: immer 16:9, logisch 1920 × 1080 (SVG-viewBox; Canvas darunter, SVG mit Titel und QR-Code darüber) */
+.stage{position:relative;background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.stage svg,.stage canvas{display:block;width:100%;height:100%}
+.stage canvas + svg{position:absolute;inset:0}
+.stage:fullscreen{border:0;border-radius:0;aspect-ratio:auto;width:100vw;height:100vh;max-width:none}   /* nur noch für Animationen vor v3 */
+
+/* 3 Schrift in der Bühne (Bühnenpixel bei 1920 Breite): Formelzeichen kursiv (.i), Einheiten, Zahlen, Indizes aufrecht */
+#stage-svg text{font-family:var(--font-math);fill:var(--ink)}
+#stage-svg .t-main{font-size:60px;font-weight:700}     /* Titel, oben rechts neben dem QR-Code */
+#stage-svg .t-panel{font-size:34px;font-weight:700}    /* Bereichsüberschrift */
+#stage-svg .ro{font-size:38px}                         /* Momentanwerte */
+#stage-svg .lbl{font-size:30px}                        /* Formelzeichen an Pfeilen und Bauteilen */
+#stage-svg .lbl-s{font-size:25px}
+#stage-svg .lbl-xs{font-size:22px}                     /* kleinste erlaubte Beschriftung */
+#stage-svg .sans{font-family:var(--font-ui)}
+#stage-svg .i{font-style:italic}
+#stage-svg .muted{fill:#58636e}
+#stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .qr-cap{font-family:var(--font-ui);font-size:22px}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
+
+/* 4 Bedienleiste in Kästen mit Überschrift auf dem Rahmen (v5, Festlegung der Lehrkraft 20.11.2026, layout.md 4):
+   .row 1: .kasten.steuerung links (Raster: Hauptknopf/Eingriff · Pause/Zurücksetzen · Tempo/Anzeige) | .kasten.parameter rechts
+   .row 2: Ansicht – Kästen nach Thema (Ebenen in der Bühne, Text darunter) mit Kästchen · Vollbild (#btn-fs) rechts außen
+   dann „Tastatur“. Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+.card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.controls{display:grid;gap:12px;font-size:13.5px;line-height:1.35;padding-top:14px;container:leiste / inline-size}
+.controls>details.keys{margin-top:-5px}
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px 8px}
+.row .sp{flex:1 1 auto}
+.kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 auto;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+.kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);font-size:10.5px;line-height:13px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kasten .chk+.chk{margin-left:4px}
+.kasten .paar{display:flex;flex-wrap:wrap;gap:6px}
+.kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;justify-items:start;
+  gap:6px 10px;flex:0 1 auto}
+.kasten.steuerung:last-child{flex-grow:1}   /* ohne Parameter füllt die Steuerung die Zeile */
+.kasten.steuerung .zeile,.kasten.steuerung .zeile>.group{display:contents}   /* je .zeile: Knopf · Knopf · Überschrift · Auswahl */
+.kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+.kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;
+  flex:1 1 0;min-width:auto}   /* nimmt den Rest der Zeile neben der Steuerung; lange Auswahlreihen (.paar) brechen im Kasten um */
+#btn-fs{margin-left:auto;align-self:center}
+button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}  /* Ein/Aus-Knopf */
+/* Leiste 600–850 px breit (1280 × 720): Parameter-Überschrift über der Auswahl, damit Steuerung und Parameter nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){
+  .kasten.parameter{grid-template-columns:auto;gap:2px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:4px}}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
+.group.wert .group{flex-wrap:nowrap}
+.group.wert input[type=range]{min-width:100px}
+.cap{font-size:12px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
+button{padding:3px 9px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:9em;font-weight:600}
+button.primary:hover{opacity:.92}
+select{padding:2px 5px}
+input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
+.seg{display:inline-flex}
+.seg button,.kasten button{white-space:nowrap}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
+.seg button:last-child{border-radius:0 5px 5px 0}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:14px;height:14px;margin:0}
+:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.keys .hint{margin-top:6px}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+.sep{width:1px;align-self:stretch;background:var(--rule)}
+@media (max-width:640px){.sep{display:none} .kasten{flex:1 1 100%}}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){   /* schmal: Steuerung als Zeilen statt Raster */
+  .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  .kasten.steuerung .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  .kasten.steuerung .zeile>.group{display:flex}
+  .kasten.steuerung .zeile>:empty{display:none}}
+
+/* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
+.diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
+.diag text{font-family:var(--font-math);fill:var(--ink)}           /* Schriftstufen wie in der Bühne (Bühnenpixel bei 1920) */
+.diag .lbl{font-size:30px} .diag .lbl-s{font-size:25px} .diag .lbl-xs{font-size:22px}
+.diag .sans{font-family:var(--font-ui)} .diag .i{font-style:italic} .diag .muted{fill:#58636e}
+.diag .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+.info{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.info{grid-template-columns:1fr}}
+.info h2{margin:0;font-size:19px}
+.info h3,.card h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#pText{margin:8px 0 0;max-width:68ch}
+.formulas{margin-top:10px;padding:10px 12px;border-left:3px solid var(--rule);background:var(--btn);border-radius:0 6px 6px 0;display:grid;gap:8px;font-family:var(--font-math);font-size:17px}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px;line-height:1.15}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 3px}
+.vals table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.vals td{padding:4px 0;border-bottom:1px solid var(--rule)}
+.vals td:last-child{text-align:right;font-weight:600}
+.vals tr:last-child td{border-bottom:0}
+
+/* 6 Modellhinweise: immer zuletzt, aufklappbar */
+.notes summary{cursor:pointer;font-weight:600}
+.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
+
+/* 7 Export (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
+html.export .wrap>:not(.stage){display:none}
+
+/* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
+   16:9-Rahmen genau aus und passt in jeden anders geformten Rahmen ganz hinein, mittig (v4: Moodle-Rahmen haben eine
+   feste Höhe, am Handy ist der Rahmen schmaler). Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und
+   Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden;height:100%}
+html.buehne body{display:grid;place-items:center}
+html.buehne .wrap{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));max-width:none;margin:0;gap:0}
+html.buehne .stage{border:0;border-radius:0}
+html.buehne .wrap>:not(.stage){display:none}
+
+/* 9 Handy quer (Fenster flach und höchstens 520 px hoch): Bühne links, so groß wie es die Höhe erlaubt; Bedienleiste
+   rechts daneben, bei Bedarf mit eigenem Rollbalken; alles Weitere darunter. Nicht in Vorschau und Export. */
+@media (orientation:landscape) and (max-height:520px){
+  html:not(.buehne):not(.export):not(.vollbild) .wrap{max-width:none;
+    grid-template-columns:min(calc((100dvh - 32px) * 16 / 9),calc(100% - 272px)) minmax(260px,1fr);align-items:start}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>*{grid-column:1 / -1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.stage{grid-column:1;grid-row:1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{grid-column:2;grid-row:1;min-width:0;max-height:calc(100dvh - 32px);
+    overflow-x:hidden;overflow-y:auto;padding:8px 10px}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{padding-top:14px}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten.parameter{grid-template-columns:auto}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten .sep{display:none}
+}
+
+/* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
+   sichtbar sind nur die Bühne und – wenn eingeschaltet – das Diagramm (#diagCard) darunter. Die Bühne bleibt 16:9 und wird
+   so groß, dass beides auf den Bildschirm passt (mit Diagramm: 1920 × 1480 Bühnenpixel zusammen). Ohne Vollbild-Schnittstelle
+   (iPhone, eingebettete Ansicht) füllt dieselbe Ansicht das Fenster; dann führt .vb-ende zurück.
+   Festlegung der Lehrkraft, 12.11.2026: „Vollbild nimmt ein eingeschaltetes Diagramm mit.“ */
+html.vollbild,html.vollbild body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.vollbild .wrap{position:fixed;inset:0;z-index:20;max-width:none;width:auto;margin:0;gap:0;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;--vb-h:1080}
+html.vollbild .wrap:has(>#diagCard:not([hidden])){--vb-h:1480}
+html.vollbild .wrap>*{display:none}
+html.vollbild .wrap>.stage{display:block;flex:none;border:0;border-radius:0;width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild .wrap>#diagCard:not([hidden]){display:block;flex:none;border:0;border-radius:0;padding:0;background:#fff;
+  width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild #diagCard h3{display:none}
+html.vollbild #diagCard .diag{border:0;border-radius:0}
+.vb-ende{display:none}
+html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:21;opacity:.8}
+/* LAYOUT-NORM:end */
+
+/* Nur diese Animation: Größenfarben nach fachkonventionen, Abschnitt 6 (Festlegung der Lehrkraft, 14.11.2026:
+   Wirkleistung grün, Blindleistung orange, Scheinleistung lila – wie die Leiterfarben; U blau, I rot). */
+:root{ --u:#0070C0; --i:#FF0000; --p:#00B050; --q:#FFC000; --s:#7030A0; }
+#stage-svg .fett{font-weight:700}
+#stage-svg .c-u{fill:#0070C0}
+#stage-svg .c-i{fill:#FF0000}
+#stage-svg .c-p{fill:#00A04A}
+#stage-svg .c-q{fill:#d99a00}
+#stage-svg .c-s{fill:#7030A0}
+.formeln{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:7px 28px;align-items:start;font-family:var(--font-math);font-size:16px;line-height:1.5}
+.formeln .z{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .35em}
+.formeln .sw{display:inline-block;width:22px;height:5px;border-radius:2px;align-self:center;margin-right:4px;background:var(--rule)}
+.formeln .sp2{display:grid;gap:7px;align-content:start}
+.formeln .kopf{font-family:var(--font-ui);font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.formeln .hin{grid-column:1 / -1;font-family:var(--font-ui);font-size:13px;color:var(--muted)}
+button:disabled{opacity:.45;cursor:default}
+/* Bedienleiste dieser Animation (Layout-Norm v5, Kästen; Festlegung der Lehrkraft 20.11.2026): vier Kästen in einer Zeile,
+   jeder unter seinem Teil der Bühne – Steuerung (unter dem Netz, schmal: Abspielen über Zurücksetzen, darunter Tempo) ·
+   Kondensator · Motor · Zeigerbild. Abweichungen von der Norm: Steuerung als eine Spalte statt Raster; Zeigerbild als
+   eigener Kasten; bei 600–850 px Leistenbreite bleiben die Überschriften der Parameter neben der Auswahl. */
+.kasten.steuerung.spalte{display:flex;flex-direction:column;align-items:stretch;justify-content:center;flex:0 0 auto}
+.kasten.steuerung.spalte .zeile{display:flex;align-items:center;gap:6px 10px}
+.kasten.steuerung.spalte .zeile>button{flex:1 1 auto}
+.kasten.steuerung.spalte .zeile>.group{display:flex;align-items:center;gap:6px 10px}
+.kasten.steuerung.spalte .zeile>.group>.cap{margin-left:0}
+/* Kästen unter der Bühne ausgerichtet (Lehrkraft, 20.11.2026: Motorparameter unter den Motorblock).
+   Bühne und Leiste sind gleich breit (W); Innenabstand der Leiste p = 15 px, Lücke g = 8 px, Inhaltsbreite C = W − 2p.
+   Motorblock der Bühne: x = 990 … 1362 von 1920 → 0,515625 W … 0,709375 W
+   → Motor-Kasten: links 0,515625 W − p ≈ 51,5625 % C, Breite 0,19375 C + 0,3875 p ≈ 19,375 % + 5 px
+   → Zeigerbild-Kasten: von dort + g bis zum Rand, Breite 0,290625 C − 0,4188 p − g ≈ 29,0625 % − 14 px
+   Steuerung fest --st breit; Kondensator bis zum Motor-Kasten: 51,5625 % + 0,5 px − --st − 2 g; Zeigerbild nimmt den Rest.
+   Braucht der Kondensator-Kasten mehr Platz (sehr schmale Leiste), rückt der Motor-Kasten um die Differenz nach rechts. */
+#controls{--st:152px}
+@container leiste (min-width:641px){
+  .kasten.steuerung.spalte{flex:0 0 var(--st);min-width:min-content}
+  #k-kond{flex:0 0 calc(51.5625% + 0.5px - var(--st) - 16px);min-width:min-content}
+  #k-motor{flex:0 1 calc(19.375% + 5px);min-width:min-content}
+  #k-zb{flex:1 1 0;min-width:min-content}
+}
+/* schmale Leiste (Beamer 1366 × 768, 1280 × 720): Steuerungs- und Kondensatorkasten enger, damit der Motor-Kasten an seinem Platz bleibt */
+@container leiste (min-width:641px) and (max-width:1100px){
+  .kasten.steuerung.spalte,#k-kond{--st:140px}      /* am Kasten setzen: #controls ist selbst der Container */
+  #k-kond input[type=range]{flex:0 0 60px;width:60px;min-width:60px}
+  #k-kond input[type=number]{width:4.2em}
+  #k-kond{column-gap:6px}
+  #presets button{padding:3px 5px}
+  .kasten.steuerung.spalte .zeile>.group{gap:6px}
+  #seg-tempo button{padding:3px 7px}
+}
+.stapel{display:flex;flex-direction:column;gap:6px;width:100%}
+.stapel button{width:100%}
+#presets{display:grid;grid-template-columns:auto auto;gap:6px}
+@container leiste (min-width:600px) and (max-width:1100px){
+  .kasten.parameter{grid-template-columns:auto auto;gap:6px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:0}}
+@container leiste (max-width:640px){#k-kond,#k-motor,#k-zb{flex:1 1 100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 1 Bühne: 16:9, logisch 1920 × 1080. Über ihr steht nichts. -->
+  <div class="stage" id="stage">
+    <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">Blindleistungskompensation</title>
+      <desc id="svg-desc">Ein Motor, im Ersatzschaltbild Wirkwiderstand und Spule, hängt am Einphasennetz L1 und N. Ein Kondensator parallel zum Motor übernimmt einen Teil der Blindleistung. Pfeile zwischen den Leitungen zeigen, wie die Wirkleistung zum Motor fließt und die Blindleistung hin und her pendelt. Strompfeile und Strommesser zeigen den Strom in der Zuleitung vor dem Kondensator und hinter ihm. Rechts das Leistungsdreieck oder das Zeigerbild der Ströme.</desc>
+    </svg>
+  </div>
+
+  <!-- 2 Bedienleiste in Kästen (Layout-Norm v5, layout.md 4). Festlegungen der Lehrkraft, 20.11.2026 (Auswahlrunde):
+       Knöpfe keine/teilweise/vollständig/Über als Parameter im Kasten „Kondensator“; Zeigerbild als Knöpfe
+       Leistungen | Ströme | aus unter „Anzeige“ in der Steuerung; Parameter in zwei Kästen Kondensator | Motor
+       (statt eines Kastens „Parameter“ – Gruppierung nach Bauteilen); Formeln und Berechnung beim Öffnen aus. -->
+  <div class="controls" id="controls">
+    <div class="row">                                   <!-- Zeile 1: Steuerung links, Parameter rechts -->
+      <!-- Festlegung der Lehrkraft, 20.11.2026: „Zeigerbild als 4. Spalte, Zurücksetzen dann unter Abspielen … damit sollte auch
+           der Block Motorparameter wieder unter den Motor rutschen“ – die Kästen stehen unter ihren Teilen der Bühne:
+           Steuerung (Netz) · Kondensator · Motor · Zeigerbild. -->
+      <div class="kasten steuerung spalte" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <div class="zeile"><button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button></div>
+        <div class="zeile"><button id="btn-reset" type="button">Zurücksetzen</button></div>
+        <div class="zeile">
+          <div class="group voll" role="group" aria-label="Tempo"><span class="cap">Tempo</span>
+            <!-- Festlegung der Lehrkraft, 20.11.2026: „Tempo einfach schnell, mittel, langsam und das schnellste deutlich schneller
+                 als aktuell“ (vorher 8 s je Periode). Wert = Dauer einer Periode von u und i in s; die Energie pendelt in der
+                 halben Zeit hin und zurück. Die Zeitlupe steht in der Bühne. -->
+            <!-- Nachtrag der Lehrkraft: „oder Tempo 1, 2, 3“ – gewählt, weil kürzer; 1 = langsam, 3 = schnell (Stufen wie beim Gang) -->
+            <span class="seg" id="seg-tempo"><button type="button" data-v="16" title="langsam: Energie hin und zurück in 8 s">1</button><button type="button" data-v="6" title="mittel: Energie hin und zurück in 3 s">2</button><button type="button" data-v="2" title="schnell: Energie hin und zurück in 1 s">3</button></span>
+          </div>
+        </div>
+      </div>
+      <div class="kasten parameter" id="k-kond" role="group" aria-labelledby="lg-kond"><span class="lg" id="lg-kond">Kondensator</span>
+        <label class="cap" for="num-c"><i>C</i> in µF</label>
+        <div class="group wert">
+          <input id="rng-c" type="range" aria-label="Kapazität C in Mikrofarad">
+          <input id="num-c" type="number">
+        </div>
+        <!-- Überschrift „Kompensation“ (Lehrkraft, 20.11.2026: „keine, teilweise, vollständig, Über bezieht sich auf Kompensation,
+             das geht aus den Bedienelementen nicht hervor“) -->
+        <span class="cap">Kompensation</span>
+        <div class="paar" id="presets" role="group" aria-label="Kompensation wählen: keine, teilweise, vollständig oder Überkompensation">
+          <button type="button" class="ein" data-v="keine" title="C = 0">keine</button><button type="button" class="ein" data-v="teil" title="cos φ₂ = 0,95 induktiv">teilweise</button><button type="button" class="ein" data-v="voll" title="Q_C = Q_L1, cos φ₂ = 1">vollständig</button><button type="button" class="ein" data-v="ueber" title="Überkompensation: Q_C = 2 · Q_L1">Über</button>
+        </div>
+        <!-- Schrittknöpfe entfallen (Platz in der Bedienleiste, Layout-Norm v5): ← → verstellen C um 1 µF, mit Umschalt um 10 µF. -->
+      </div>
+      <div class="kasten parameter" id="k-motor" role="group" aria-labelledby="lg-motor"><span class="lg" id="lg-motor">Motor</span>
+        <label class="cap" for="num-U"><i>U</i> in V</label><input id="num-U" type="number" min="100" max="400" step="1">
+        <label class="cap" for="num-P"><i>P</i> in kW</label><input id="num-P" type="number" min="0.1" max="10" step="0.1" title="aufgenommene Wirkleistung">
+        <label class="cap" for="num-cos">cos <i>φ</i><sub>1</sub></label><input id="num-cos" type="number" min="0.4" max="0.95" step="0.01">
+      </div>
+      <div class="kasten" id="k-zb" role="group" aria-labelledby="lg-zb"><span class="lg" id="lg-zb">Zeigerbild</span>
+        <div class="stapel" id="seg-zb"><button type="button" class="ein" data-v="P">Leistungen</button><button type="button" class="ein" data-v="I">Ströme</button><button type="button" class="ein" data-v="aus">aus</button></div>
+      </div>
+    </div>
+    <div class="row">                                   <!-- Zeile 2: Ansicht (Kästchen), rechts außen Vollbild -->
+      <div class="kasten" role="group" aria-labelledby="lg-ebenen"><span class="lg" id="lg-ebenen">Ebenen</span>
+        <label class="chk" for="chk-mess"><input id="chk-mess" type="checkbox" checked>Strommesser</label>
+        <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox" checked>Werte</label>
+      </div>
+      <div class="kasten" role="group" aria-labelledby="lg-text"><span class="lg" id="lg-text">Text</span>
+        <label class="chk" for="chk-form"><input id="chk-form" type="checkbox">Formeln</label>
+        <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox">Berechnung</label>
+      </div>
+      <button type="button" id="btn-fs">Vollbild</button>
+    </div>
+    <details class="keys">
+      <summary>Tastatur und Verlinken</summary>
+      <div class="hint">
+        <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> <i>C</i> um 1 µF · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> um 10 µF · <kbd>0</kbd> keine · <kbd>1</kbd> teilweise · <kbd>2</kbd> vollständig · <kbd>3</kbd> Über · <kbd>Pos1</kbd> <i>C</i> = 0 · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
+        Verlinken: <code>#c83-2</code> für <i>C</i> = 83,2 µF, davor z.&nbsp;B. <code>?U=230&amp;P=2&amp;cos=0.7&amp;zbart=I&amp;zb=1&amp;mess=0</code>; <code>?auto=0</code> startet ohne Bewegung.
+      </div>
+    </details>
+  </div>
+
+  <!-- 3 Zusatzbereich: Formeln und Berechnung (einzeln ausblendbar), zuletzt die Modellhinweise -->
+  <div class="card" id="formCard" hidden>
+    <h3>Formeln</h3>
+    <div class="formeln" id="formeln"></div>
+  </div>
+
+  <details class="card notes">
+    <summary>Modell und Vereinfachungen</summary>
+    <ul>
+      <li>Einphasennetz L1/N mit fester Spannung <i>U</i> und <i>f</i> = 50&#8239;Hz (ideale Quelle). Die Leitungen haben keinen Widerstand. Deshalb liegt am Motor immer dieselbe Spannung, egal wie groß <i>C</i> ist. In echten Leitungen sinkt mit der Kompensation der Spannungsfall, die Spannung am Motor steigt dann etwas.</li>
+      <li>Motor im Bemessungsbetrieb, im Ersatzschaltbild als Reihenschaltung aus <i>R</i> (Wirkleistung) und <i>L</i> (Blindleistung). <i>P</i> ist die <b>aufgenommene</b> Wirkleistung. Nur dann ist <i>I</i><sub>1</sub> = <i>P</i> / (<i>U</i> · cos <i>φ</i><sub>1</sub>) der Bemessungsstrom. Auf dem Leistungsschild steht dagegen die abgegebene Leistung <i>P</i><sub>N</sub> = <i>η</i> · <i>P</i>. Beispiel: <i>P</i><sub>N</sub> = 1,6&#8239;kW, <i>η</i> = 0,8 → <i>P</i> = 1,6&#8239;kW / 0,8 = 2&#8239;kW (Festlegung der Lehrkraft, 20.11.2026).</li>
+      <li>Der Motor merkt vom Kondensator nichts: <i>P</i>, <i>Q</i><sub>L1</sub>, cos <i>φ</i><sub>1</sub> und <i>I</i><sub>1</sub> bleiben gleich. Der Kondensator (verlustfrei) sitzt direkt am Motor (Einzelkompensation) und liefert <i>Q</i><sub>C</sub> = <i>U</i>² · <i>ω</i> · <i>C</i>. Vor dem Kondensator fließt <i>I</i><sub>2</sub>, hinter ihm <i>I</i><sub>1</sub>.</li>
+      <li>Knotensatz mit Zeigern: <i>I</i><sub>2</sub> ist die Zeigersumme aus <i>I</i><sub>1</sub> und <i>I</i><sub>C</sub>. Die Beträge lassen sich nicht einfach abziehen (<i>I</i><sub>2</sub> ≠ <i>I</i><sub>1</sub> − <i>I</i><sub>C</sub>). Der Wirkanteil <i>I</i><sub>w</sub> = <i>P</i> / <i>U</i> ist vor und hinter dem Kondensator gleich.</li>
+      <li>Direktwahl: „teilweise“ kompensiert auf cos <i>φ</i><sub>2</sub> = 0,95 induktiv, „vollständig“ auf cos <i>φ</i><sub>2</sub> = 1, „Über“ stellt <i>Q</i><sub>C</sub> = 2 · <i>Q</i><sub>L1</sub> ein – dann ist der Strom in der Zuleitung wieder so groß wie ohne Kondensator, nur kapazitiv. Ändert man die Motorwerte nach einem Klick auf einen dieser Knöpfe, wird <i>C</i> passend nachgeführt; sonst bleibt <i>C</i> stehen.</li>
+      <li>Leistungspfeile zwischen den Leitungen: Breite ∝ <i>P</i> bzw. <i>Q</i>, für beide derselbe Maßstab. Die Blöcke darin sind ein Bild für den Energiefluss <i>p</i> = <i>P</i> · (1 − cos 2<i>ωt</i>) − <i>Q</i> · sin 2<i>ωt</i>: Die Wirkleistung fließt pulsierend immer zum Motor, die Blindleistung pendelt mit doppelter Netzfrequenz hin und her (dunkel: zum Blindwiderstand, hell: zurück). Zwischen Kondensator und Motor pendelt sie im Gegentakt: Baut der Motor sein Magnetfeld auf, entlädt sich der Kondensator.</li>
+      <li>Zeitlupe: Die Energie pendelt mit der doppelten Netzfrequenz, 2 · 50&#8239;Hz = 100&#8239;Hz. Einmal hin und zurück dauert in Wirklichkeit 10&#8239;ms, hier 1, 3 oder 8&#8239;s (Tempo 3, 2, 1; Zeitlupe 1 : 100 bis 1 : 800). Eine Periode von Spannung und Strom (20&#8239;ms) umfasst zwei solche Pendelbewegungen; Spannung und Strom selbst zeigt diese Animation nicht.</li>
+      <li>Strompfeile: Länge ∝ Effektivwert, ein Maßstab für alle Ströme. Strommesser zeigen Effektivwerte, ohne Nachlauf (echte Geräte laufen kurz nach); der Messbereich passt sich den Motorwerten an.</li>
+      <li>Zeigerbild: Festzeiger mit Effektivwerten. Der Maßstab hängt nur von den Motorwerten ab, damit sich beim Verstellen von <i>C</i> nur die Größen hinter dem Kondensator ändern. Im Leistungsdreieck stehen <i>Q</i><sub>C</sub> und <i>Q</i><sub>L2</sub> rechts neben <i>Q</i><sub>L1</sub> übereinander: <i>Q</i><sub>L1</sub> = <i>Q</i><sub>C</sub> + <i>Q</i><sub>L2</sub> (Festlegung der Lehrkraft, 20.11.2026). Bei Überkompensation steht <i>Q</i><sub>C2</sub> neben dem unteren Teil von <i>Q</i><sub>C</sub>: <i>Q</i><sub>C</sub> = <i>Q</i><sub>L1</sub> + <i>Q</i><sub>C2</sub>.</li>
+      <li>Freileitungsmast und Motor sind Sinnbilder für Netz und Motor; gerechnet wird mit der Schaltung daneben.</li>
+    </ul>
+  </details>
+</div>
+
+<button type="button" class="vb-ende" id="vb-ende">Vollbild beenden</button>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const D = Math.PI / 180;
+
+/* ================= 1 Parameterblock =================
+   Alles, was die Lehrkraft später selbst ändern können soll, steht hier: Werte, Bereiche, Geometrie, Farben.
+   Festlegungen der Lehrkraft, 20.11.2026 (Auftrag und Auswahlrunden):
+   – Vorlage: Kompensation_Animation_V4.pptx (Schaltplan L1/N, Motor als R und L, Kondensator parallel, Leistungspfeile)
+   – Einphasennetz L1/N; P im Regler ist die AUFGENOMMENE Wirkleistung (I1 = Bemessungsstrom des Motors)
+   – nur C ist am Kondensator einstellbar; bei C = 0 wird der Kondensator nicht gezeichnet
+   – Motor einstellbar über U, P und cos φ1; am Motor ändert sich durch C nichts – das muss erkennbar sein
+   – Strom in der Zuleitung bis zum Kondensator ändert sich, ab dem Kondensator bleibt er I1
+   – Knöpfe keine · teilweise (cos φ2 = 0,95) · vollständig (cos φ2 = 1) · Über (Q_C = 2 · Q_L1), zusätzlich zum Regler
+   – Strompfeile immer; Strommesser ein- und ausblendbar, beim Öffnen an
+   – Schaltplan + Zeigerbild; Zeigerbild ein- und ausblendbar (beim Öffnen an), umschaltbar Leistungen / Ströme
+   – beim Öffnen läuft die Animation ohne Kompensation: Blindleistung pendelt zwischen Netz und Motor
+   – Formeln und Berechnung beim Öffnen aus (Festlegung 14.11.2026); Tempo beim Öffnen die schnellste Stufe */
+const CFG = {
+  f: 50,                                         // Netzfrequenz in Hz
+  start: { U: 230, P: 2000, cos: 0.70, C: 0 },   // Startwerte: U in V, aufgenommene Wirkleistung P in W, cos φ1, C in µF
+  grenzen: { U: [100, 400], P: [100, 10000], cos: [0.40, 0.95] },
+  cosTeil: 0.95,                                 // Knopf „teilweise“: cos φ2 = 0,95 induktiv
+  ueber: 2,                                      // Knopf „Über“: Q_C = 2 · Q_L1  →  I2 = I1, aber kapazitiv
+  cMaxFaktor: 2.2,                               // Reglerende: 2,2 · C_voll (auf zwei Stellen aufgerundet)
+  schritt: [-10, -1, 1, 10],                     // Schrittknöpfe in µF
+  hash: 'c',                                     // #c83-2 → C = 83,2 µF
+  g: {                                           // Geometrie in Bühnenpixeln (1920 × 1080)
+    yo: 400, yu: 990,                            // Leitung L1 (oben) und N (unten)
+    xT: 120, xU: 200,                            // Netzklemmen, Spannungspfeil
+    xA: 228, xK: 600, xM: 1036, xE: 1060,        // Leistungspfeile: Anfang am Netz, Kondensatorzweig, Ende am Motor; Ersatzschaltbild
+    mess: [330, 885], mw: 190, mh: 172, my: 270, // Strommesser: Mitten, Breite, Höhe, Oberkante
+    iPf: { y: 372, x2: 440, x1: 615, max: 128 }, // Strompfeile: Höhe, Anfang I2 und I1, größte Länge
+    R: [450, 570], L: [650, 960],                // Ersatzschaltbild: R und L (oben, unten); Abstand R–L vergrößert (Festlegung 20.11.2026)
+    yP: 510, hPmax: 80,                          // Wirkleistungspfeil: Mitte = Mitte von R, größte Breite
+    yC: 650 + 310 / 3, yN: 650 + 2 * 310 / 3,    // Kondensator und sein Pfeil auf 1/3 von L, Pfeil aus dem Netz auf 2/3 von L
+    hQmax: 92,                                   // Blindleistungspfeile: größte Breite
+    motor: { x: 990, y: 285, w: 372, h: 760 },   // gestrichelter Kasten „Motor“
+    zb: { x0: 1440, wMax: 330, yTop: 488, yBot: 1040, kopf: 418, mitte: 1650 },   // Zeigerbild
+    block: { teil: 120, weg: 70 },               // Energieblöcke: Abstand, Pendelweg
+  },
+  col: { u: '#0070C0', i: '#FF0000', P: '#00B050', Q: '#FFC000', S: '#7030A0',
+         qText: '#d99a00', pText: '#00A04A',
+         hin: '#E07B00', zur: '#FFD27A', pBlock: '#00B050', pRand: '#008a3e',
+         ink: '#1b2127', muted: '#58636e' },
+  messBereiche: [[1, 0.5], [2, 0.5], [5, 1], [10, 2], [15, 5], [25, 5], [40, 10], [50, 10], [100, 20], [150, 50], [250, 50]],   // [Endwert in A, Teilung]
+};
+
+/* ================= 2 Physikalisches Modell (rein, ohne Darstellung) =================
+   Einphasennetz, ideale Quelle: u = û · sin ωt, alle Werte Effektivwerte, Verbraucherzählpfeilsystem.
+   Motor (R-L-Reihenschaltung) im Bemessungsbetrieb:  I1 = P / (U · cos φ1),  Q_L1 = P · tan φ1,  S1 = P / cos φ1
+   Kondensator parallel zum Motor:                     Q_C = U² · ω · C,  I_C = U · ω · C
+   Zuleitung (vor dem Kondensator):                    Q2 = Q_L1 − Q_C   (> 0: induktiv = Q_L2, < 0: kapazitiv = Q_C2)
+                                                      tan φ2 = Q2 / P   (= tan φ1 − Q_C / P, aus Q_C = P · (tan φ1 − tan φ2))
+                                                      S2 = √(P² + Q2²),  I2 = S2 / U = P / (U · cos φ2)
+   φ > 0 heißt induktiv (Strom eilt nach). Knotensatz mit Zeigern: I2 = I1 + I_C (komplex), Wirkanteil I_w = P / U gleich.
+   Energiefluss (positiv = nach rechts, zum Motor):  Motor  p1 = P · (1 − cos 2ωt) − Q_L1 · sin 2ωt
+                                                     Kondensator  pC = + Q_C · sin 2ωt  (Gegentakt zum Motor)
+                                                     Netz  p2 = P · (1 − cos 2ωt) − Q2 · sin 2ωt */
+function model(par) {
+  const { U, P, cos, f } = par, C = par.C * 1e-6;            // C kommt in µF
+  const omega = 2 * Math.PI * f, phi1 = Math.acos(cos), tan1 = Math.tan(phi1);
+  const Q1 = P * tan1, S1 = P / cos, I1 = S1 / U, Iw = P / U, Ib1 = Q1 / U;
+  const QC = U * U * omega * C, IC = U * omega * C;
+  const n = (v) => (Math.abs(v) < 1e-9 * Math.max(1, Math.abs(Q1)) ? 0 : v);   // Rechenrauschen ist null
+  const Q2 = n(Q1 - QC), S2 = Math.hypot(P, Q2), I2 = S2 / U, cos2 = P / S2, phi2 = Math.atan2(Q2, P) / D, tan2 = Q2 / P;
+  const Cvoll = Q1 / (U * U * omega) * 1e6;                  // µF
+  const Cteil = cos < CFG.cosTeil - 1e-9 ? P * (tan1 - Math.tan(Math.acos(CFG.cosTeil))) / (U * U * omega) * 1e6 : null;
+  const Cueber = CFG.ueber * Cvoll;
+  const rel = QC / Q1;
+  const fall = par.C <= 0 ? 'keine' : Math.abs(rel - 1) <= 0.002 ? 'voll' : rel < 1 ? 'teil' : 'ueber';
+  const Z = U / I1, R = Z * cos, XL = Z * Math.sin(phi1), L = XL / omega;   // Ersatzschaltbild des Motors
+  return { omega, phi1: phi1 / D, tan1, Q1, S1, I1, Iw, Ib1, QC, IC, Q2, S2, I2, cos2, phi2, tan2,
+           Cvoll, Cteil, Cueber, fall, R, XL, L };
+}
+/* Energiefluss in einem Leitungsabschnitt (W), positiv = zum Motor hin */
+const flussWirk = (P, wt) => P * (1 - Math.cos(2 * wt * D));
+const flussBlind = (Q, wt) => -Q * Math.sin(2 * wt * D);
+
+/* ================= 3 Zustand =================
+   Beim Öffnen: ohne Kompensation (C = 0), läuft (Festlegung 20.11.2026); Messgeräte, Zeigerbild (Leistungen) und Werte an;
+   Formeln und Berechnung aus (Festlegung 14.11.2026). */
+const S = { C: CFG.start.C, U: CFG.start.U, P: CFG.start.P, cos: CFG.start.cos, preset: 'keine',
+            wt: 0, playing: false, dauer: 6,                // Tempo beim Öffnen: Stufe 2 = mittel, Energie hin und zurück in 3 s (Lehrkraft, 20.11.2026)
+            mess: true, zb: true, zbart: 'P', werte: true, form: false, rech: false, qr: false };
+const par = () => ({ U: S.U, P: S.P, cos: S.cos, f: CFG.f, C: S.C });
+
+/* ================= 4 Hilfen ================= */
+const $ = (s) => document.querySelector(s);
+const svg = $('#stage-svg');
+function el(tag, attrs = {}, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function txt(x, y, html, attrs = {}, parent = svg) { const t = el('text', { x, y, ...attrs }, parent); t.innerHTML = html; return t; }
+const I = (s) => `<tspan class="i">${s}</tspan>`;                                  // Formelzeichen kursiv
+const SUB = (s, size = 30, rest = '') => `<tspan dy="${size * 0.3}" font-size="${size * 0.7}">${s}</tspan>` + (rest ? `<tspan dy="${-size * 0.3}">${rest}</tspan>` : '');
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const show = (e, on) => { e.style.display = on ? '' : 'none'; };
+/* Formelzeichen mit Index und optional Wert: sym('Q', 'L1', '2,04 kvar', 30) → Q_L1 = 2,04 kvar */
+const sym = (z, idx, wert, size = 30) => I(z) + (idx ? SUB(idx, size, wert ? ` = ${wert}` : '') : (wert ? ` = ${wert}` : ''));
+
+/* Zahlen nach fachkonventionen, Abschnitt 4: Dezimalkomma, Einheitenvorsatz, höchstens 2 Nachkommastellen,
+   echtes Minuszeichen; Größen < 1 ohne Vorsatz mit 3. */
+function dez(v, nk) {
+  let s = Math.abs(v).toFixed(nk).replace('.', ',');
+  if (v < 0 && Number(s.replace(',', '.')) !== 0) s = '−' + s;
+  return s;
+}
+function fmtWert(v, einheit) {
+  if (!isFinite(v)) return '–';
+  const a = Math.abs(v);
+  if (a < 5e-13) return '0 ' + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let f = 1e-12, p = 'p';
+  for (const [fac, pf] of vors) if (a >= fac * 0.999995) { f = fac; p = pf; break; }
+  return dez(v / f, 2) + ' ' + p + einheit;
+}
+/* Laufende Werte mit drei geltenden Ziffern: „8,70 A“, „2,04 kvar“, „657 var“ (Festlegung der Lehrkraft, 12.11.2026, W). */
+function fmtLauf(v, einheit) {
+  if (!isFinite(v)) return '–';
+  if (Math.abs(v) < 5e-13) return '0 ' + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let i = vors.findIndex(([f]) => Math.abs(v) >= f * 0.9995); if (i < 0) i = vors.length - 1;
+  for (;;) {
+    const [f, p] = vors[i], m = v / f, a = Math.abs(m), nk = a >= 99.95 ? 0 : a >= 9.995 ? 1 : 2;
+    if (Math.abs(Number(m.toFixed(nk))) >= 1000 && i > 0) { i--; continue; }
+    return dez(m, nk) + ' ' + p + einheit;
+  }
+}
+/* Gegebene Werte erscheinen so, wie sie gegeben sind: „230 V“, „2 kW“, „0,7“ – ohne angehängte Nullen. */
+function fmtGegeben(v, einheit) {
+  return fmtWert(v, einheit).replace(/,(\d*?)0+ /, (m, z) => (z ? ',' + z : '') + ' ');
+}
+const fmtZahl = (v) => dez(v, 3);                                   // tan φ, cos φ
+const fmtCos = (v) => dez(Math.round(v * 1000) / 1000, 3).replace(/,?0+$/, '') || '0';   // gegebenes cos φ1: „0,7“
+const fmtGrad = (a) => { const r = Math.round(a * 100) / 100; return (Number.isInteger(r) ? dez(r, 0) : dez(r, 2)) + '°'; };
+const fmtUF = (c) => dez(Math.round(c * 10) / 10, 1).replace(/,0$/, '') + ' µF';               // Reglerwert C
+
+function arrowHead(x2, y2, ux, uy, L, W) {
+  const bx = x2 - ux * L, by = y2 - uy * L;
+  return `${x2},${y2} ${bx - uy * W},${by + ux * W} ${bx + uy * W},${by - ux * W}`;
+}
+/* Pfeil, dessen Länge einem Wert folgt; bei sehr kurzen Pfeilen schrumpft die Spitze mit. */
+function makeArrow(parent, color, sw, L, W) {
+  const g = el('g', {}, parent);
+  const line = el('line', { stroke: color, 'stroke-width': sw }, g);
+  const head = el('polygon', { fill: color }, g);
+  return {
+    g,
+    seg: [0, 0, 0, 0],
+    set(x1, y1, x2, y2) {
+      this.seg = [x1, y1, x2, y2];
+      const dx = x2 - x1, dy = y2 - y1, raw = Math.hypot(dx, dy), len = raw || 1, ux = dx / len, uy = dy / len;
+      const Lc = Math.min(L, raw * 0.6), Wc = W * Lc / L;
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2 - ux * Math.max(Lc - 1, 0)); line.setAttribute('y2', y2 - uy * Math.max(Lc - 1, 0));
+      head.setAttribute('points', arrowHead(x2, y2, ux, uy, Lc, Wc));
+      g.style.visibility = raw < 1.5 ? 'hidden' : '';
+    },
+  };
+}
+/* Blockpfeil (Energieblock), dir = +1 nach rechts; x = linke Kante */
+function pfeilForm(x, y, len, h, dir) {
+  const sh = h * 0.27, hh = h / 2, hl = Math.min(0.46 * len, 0.9 * h + 8), a = dir > 0 ? x : x + len, s = dir;
+  return [[a, y - sh], [a + s * (len - hl), y - sh], [a + s * (len - hl), y - hh], [a + s * len, y], [a + s * (len - hl), y + hh], [a + s * (len - hl), y + sh], [a, y + sh]]
+    .map((q) => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+}
+/* Leistungspfeil zwischen den Leitungen: Band von xa bis xb, Breite h, Spitze links und/oder rechts */
+const ueberstand = (h) => Math.max(7, 0.32 * h);              // so weit ragt die Spitze über das Band hinaus
+function bandForm(xa, xb, yc, h, links, rechts) {
+  const hh = h / 2, w = hh + ueberstand(h), L = Math.min(34, 0.45 * h + 16, (xb - xa) / 3);
+  const p = [];
+  if (links) p.push([xa, yc], [xa + L, yc - w], [xa + L, yc - hh]); else p.push([xa, yc - hh]);
+  if (rechts) p.push([xb - L, yc - hh], [xb - L, yc - w], [xb, yc], [xb - L, yc + w], [xb - L, yc + hh]); else p.push([xb, yc - hh], [xb, yc + hh]);
+  if (links) p.push([xa + L, yc + hh], [xa + L, yc + w]); else p.push([xa, yc + hh]);
+  return { pts: p.map((q) => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' '), xi: xa + (links ? L : 0), xj: xb - (rechts ? L : 0) };
+}
+/* Beschriftung ohne Überdeckung: erste Lage aus der Liste, die weder eine schon gesetzte Beschriftung noch eine Linie trifft */
+function rechteck(t) { const b = t.getBBox(); return { x: b.x - 4, y: b.y + 0.08 * b.height, w: b.width + 8, h: 0.86 * b.height }; }   // getBBox enthält Ober- und Unterlänge der Schrift: enger gefasst
+const schneidet = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+function trifftLinie(r, [x1, y1, x2, y2]) {
+  for (let k = 0; k <= 24; k++) { const x = x1 + (x2 - x1) * k / 24, y = y1 + (y2 - y1) * k / 24; if (x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h) return true; }
+  return false;
+}
+let platzFehler = [];
+/* echte Kreuzung zweier Strecken (Berühren an einem Ende zählt nicht) */
+function kreuzt([ax, ay, bx, by], [cx, cy, dx, dy]) {
+  const o = (px, py, qx, qy, rx, ry) => (qx - px) * (ry - py) - (qy - py) * (rx - px);
+  const d1 = o(cx, cy, dx, dy, ax, ay), d2 = o(cx, cy, dx, dy, bx, by), d3 = o(ax, ay, bx, by, cx, cy), d4 = o(ax, ay, bx, by, dx, dy);
+  return d1 * d2 < -1e-6 && d3 * d4 < -1e-6;
+}
+/* Eine Lage mit Bezugspunkt (Punkt auf dem eigenen Pfeil) gilt nur, wenn die Verbindung dorthin keine andere Linie kreuzt –
+   so springt keine Beschriftung auf die falsche Seite einer Nachbarlinie. */
+function platziere(t, lagen, belegt, linien, erlaubt = []) {
+  for (const [x, y, a, ax, ay] of lagen) {
+    t.setAttribute('x', x.toFixed(1)); t.setAttribute('y', y.toFixed(1)); t.setAttribute('text-anchor', a);
+    const r = rechteck(t);
+    if (belegt.some((q) => schneidet(r, q)) || linien.some((l) => trifftLinie(r, l))) continue;
+    if (ax !== undefined && linien.some((l) => !erlaubt.includes(l) && kreuzt([ax, ay, x, y], l))) continue;
+    belegt.push(r); return true;
+  }
+  const [x, y, a] = lagen[0];
+  t.setAttribute('x', x.toFixed(1)); t.setAttribute('y', y.toFixed(1)); t.setAttribute('text-anchor', a);
+  belegt.push(rechteck(t));
+  platzFehler.push(t.textContent);                               // für die Prüfung: keine freie Lage gefunden
+  return false;
+}
+
+/* ================= 5 Statische Zeichnung (einmal) =================
+   Reihenfolge der Gruppen = Reihenfolge der Ebenen: hinten → vorn. */
+const { g: G, col: C } = CFG;
+const defs = el('defs');
+const gBack = el('g', { id: 'back' });
+const gLeit = el('g', { id: 'leitungen' });
+const gKond = el('g', { id: 'kondensator' });
+const gBahn = el('g', { id: 'leistungspfeile' });
+const gMess = el('g', { id: 'messgeraete' });
+const gDyn = el('g', { id: 'dyn' });
+const gZB = el('g', { id: 'zeigerbild' });
+const gLbl = el('g', { id: 'labels' });
+
+const titel = txt(1872, 120, 'Blindleistungskompensation', { class: 't-main', 'text-anchor': 'end' }, gBack);   // rückt neben den QR-Code (syncUI)
+const tFall = txt(1872, 182, '', { class: 'lbl fett', 'text-anchor': 'end' }, gBack);
+const tCos = txt(1872, 226, '', { class: 'lbl-s', 'text-anchor': 'end' }, gBack);
+
+// Legende oben links: Energieblöcke in den Leistungspfeilen
+{
+  const zeile = (y, farbe, rand, dir, html) => {
+    el('polygon', { points: pfeilForm(44, y - 9, 62, 30, dir), fill: farbe, stroke: rand, 'stroke-width': 2.2, 'stroke-linejoin': 'round' }, gBack);
+    txt(122, y, html, { class: 'lbl-s sans' }, gBack);
+  };
+  zeile(66, C.pBlock, C.pRand, 1, `Wirkleistung ${I('P')}: Energie zum Motor`);
+  zeile(108, C.hin, C.zur, 1, `Blindleistung ${I('Q')}: Energie zum Blindwiderstand`);
+  zeile(150, C.zur, C.hin, -1, `Blindleistung ${I('Q')}: Energie zurück`);
+  txt(44, 194, 'Pfeilbreite ∝ Leistung', { class: 'lbl-xs sans muted' }, gBack);
+}
+const tZeitlupe = txt(44, 1052, '', { class: 'lbl-xs sans muted' }, gBack);
+
+// Leitungen: L1 oben, N unten; Netzklemmen links; Ersatzschaltbild des Motors rechts
+const draht = (d, p = gLeit) => el('path', { d, fill: 'none', stroke: C.ink, 'stroke-width': 3, 'stroke-linejoin': 'round' }, p);
+const klemme = (x, y, p = gLeit) => el('circle', { cx: x, cy: y, r: 7, fill: '#fff', stroke: C.ink, 'stroke-width': 2.5 }, p);
+draht(`M ${G.xT + 7} ${G.yo} H ${G.xE}`);
+draht(`M ${G.xT + 7} ${G.yu} H ${G.xE}`);
+klemme(G.xT, G.yo); klemme(G.xT, G.yu);
+txt(G.xT - 18, G.yo + 10, 'L1', { class: 'lbl', 'text-anchor': 'end' }, gLeit);
+txt(G.xT - 18, G.yu + 10, 'N', { class: 'lbl', 'text-anchor': 'end' }, gLeit);
+const aU = makeArrow(gLeit, C.u, 4, 22, 8); aU.set(G.xU, G.yo + 24, G.xU, G.yu - 24);
+const tU = txt(G.xU - 14, 860, '', { class: 'lbl c-u', 'text-anchor': 'end' }, gLbl);   // unter dem Netz-Bild
+
+// Motor: gestrichelter Kasten, darin das Ersatzschaltbild (erst R, dann L; darstellung.md 5) und die Bemessungswerte
+const M = G.motor;
+el('rect', { x: M.x, y: M.y, width: M.w, height: M.h, rx: 14, fill: '#f6f7f8', 'fill-opacity': 0.6, stroke: C.muted, 'stroke-width': 2.5, 'stroke-dasharray': '14 9' }, gBack);
+txt(M.x + M.w / 2 + 40, M.y + 48, 'Motor', { class: 't-panel', 'text-anchor': 'middle' }, gBack);
+txt(M.x + M.w / 2 + 40, M.y + 80, 'im Bemessungsbetrieb', { class: 'lbl-xs sans muted', 'text-anchor': 'middle' }, gBack);
+{
+  const x = G.xE, rY = G.R, lY = G.L;
+  draht(`M ${x} ${G.yo} V ${rY[0]} M ${x} ${rY[1]} V ${lY[0]} M ${x} ${lY[1]} V ${G.yu}`);
+  /* Festlegung der Lehrkraft (wie „Wirk-, Blind- und Scheingrößen“, 18.11.2026): R grün getönt (P), Spule orange getönt (Q);
+     der Umriss bleibt das schwarze Normzeichen. */
+  el('rect', { x: x - 18, y: rY[0], width: 36, height: rY[1] - rY[0], fill: '#fff' }, gLeit);
+  el('rect', { x: x - 18, y: rY[0], width: 36, height: rY[1] - rY[0], fill: C.P, 'fill-opacity': 0.4, stroke: C.ink, 'stroke-width': 3 }, gLeit);
+  { const n = 6, r = (lY[1] - lY[0]) / n / 2;                     // Spule mit sechs Bögen
+    el('path', { d: `M ${x} ${lY[0]}` + ` a ${r} ${r} 0 0 1 0 ${2 * r}`.repeat(n), fill: C.Q, 'fill-opacity': 0.6, stroke: C.ink, 'stroke-width': 3 }, gLeit); }
+  txt(x + 30, (rY[0] + rY[1]) / 2 + 10, I('R'), { class: 'lbl' }, gLeit);
+  txt(x + 40, (lY[0] + lY[1]) / 2 + 10, I('L'), { class: 'lbl' }, gLeit);
+  for (const [y, n] of [[G.yo, 'U1'], [G.yu, 'U2']]) {
+    el('circle', { cx: x, cy: y, r: 6, fill: '#fff', stroke: C.ink, 'stroke-width': 2.5 }, gLeit);
+    txt(x + 14, y + (n === 'U1' ? -12 : 28), n, { class: 'lbl-xs sans' }, gLeit);
+  }
+}
+/* Bilder für Netz und Motor (Festlegung der Lehrkraft, 20.11.2026: „Die Veranschaulichung von Netz und Motor fehlt mir, die
+   ich in meiner Animation hatte (sinngemäß)“ – in der PPT-Vorlage Fotos). Hier gezeichnet: Freileitungsmast zwischen den
+   Netzklemmen, Motor in Seitenansicht unten im Motorkasten. */
+{
+  const g = el('g', { id: 'netz-bild' }, gBack), c = '#5b6570', cx = 100, yTop = 478, yFuss = 722;
+  const L = (d, w = 2.5) => el('path', { d, fill: 'none', stroke: c, 'stroke-width': w, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, g);
+  const b = (y) => 7 + (y - yTop) / (yFuss - yTop) * 40;          // halbe Breite des Mastschafts
+  L(`M ${cx - b(yTop)} ${yTop} L ${cx - b(yFuss)} ${yFuss} M ${cx + b(yTop)} ${yTop} L ${cx + b(yFuss)} ${yFuss}`, 3.2);
+  const stufen = [yTop, 528, 585, 640, 684, yFuss];
+  let d = '';
+  for (let k = 0; k < stufen.length - 1; k++) {
+    const y0 = stufen[k], y1 = stufen[k + 1];
+    d += `M ${cx - b(y0)} ${y0} L ${cx + b(y1)} ${y1} M ${cx + b(y0)} ${y0} L ${cx - b(y1)} ${y1} M ${cx - b(y1)} ${y1} H ${cx + b(y1)} `;
+  }
+  L(d, 1.5);
+  L(`M ${cx - b(yTop)} ${yTop} L ${cx} ${yTop - 20} L ${cx + b(yTop)} ${yTop}`, 2.5);
+  for (const [y, w] of [[508, 66], [562, 56]]) {                  // Traversen mit Isolatoren und durchhängenden Leiterseilen
+    L(`M ${cx - w} ${y} H ${cx + w} M ${cx - w} ${y} L ${cx - b(y + 22)} ${y + 22} M ${cx + w} ${y} L ${cx + b(y + 22)} ${y + 22}`, 2.5);
+    for (const sg of [-1, 1]) {
+      const xi = cx + sg * (w - 6), ye = y + 20;
+      L(`M ${xi} ${y} V ${ye - 4}`, 4);
+      el('circle', { cx: xi, cy: ye, r: 3.5, fill: c }, g);
+      L(sg < 0 ? `M ${xi} ${ye} Q ${(xi - 8) / 2} ${ye + 26} -8 ${ye + 10}` : `M ${xi} ${ye} Q ${(xi + 186) / 2} ${ye + 22} 186 ${ye + 6}`, 1.6);
+    }
+  }
+  L(`M ${cx - 70} ${yFuss} H ${cx + 70}`, 2);
+  txt(cx, yFuss + 40, 'Netz', { class: 'lbl fett', 'text-anchor': 'middle' }, g);
+}
+{
+  const blau = '#2f5d94', hell = '#5584bd', dunkel = '#1f3f66', grau = '#8d969e';
+  const g = el('g', { id: 'motor-bild', transform: `translate(${M.x + 148} 790) scale(0.86)` }, gBack);   // Seitenansicht, Welle nach rechts
+  const yM = 96;
+  el('rect', { x: 58, y: yM + 60, width: 36, height: 22, rx: 3, fill: dunkel }, g);                     // Füße
+  el('rect', { x: 140, y: yM + 60, width: 36, height: 22, rx: 3, fill: dunkel }, g);
+  el('path', { d: `M 40 ${yM - 60} L 4 ${yM - 50} L 4 ${yM + 50} L 40 ${yM + 60} Z`, fill: '#cfd5db', stroke: grau, 'stroke-width': 2 }, g);   // Lüfterhaube
+  for (let k = 0; k < 4; k++) el('line', { x1: 12 + 7 * k, y1: yM - 44 + 2 * k, x2: 12 + 7 * k, y2: yM + 44 - 2 * k, stroke: grau, 'stroke-width': 2 }, g);
+  el('rect', { x: 40, y: yM - 68, width: 152, height: 136, rx: 12, fill: blau }, g);                   // Gehäuse
+  for (let k = -3; k <= 3; k++) el('rect', { x: 46, y: yM + 18 * k - 4, width: 140, height: 8, rx: 4, fill: hell }, g);   // Kühlrippen
+  el('rect', { x: 192, y: yM - 56, width: 16, height: 112, rx: 5, fill: dunkel }, g);                  // Lagerschild
+  el('rect', { x: 208, y: yM - 11, width: 42, height: 22, rx: 4, fill: '#c3c9cf', stroke: grau, 'stroke-width': 2 }, g);   // Welle
+  el('line', { x1: 222, y1: yM - 11, x2: 244, y2: yM - 11, stroke: grau, 'stroke-width': 3 }, g);     // Passfedernut
+  el('rect', { x: 88, y: yM - 102, width: 66, height: 36, rx: 5, fill: blau, stroke: dunkel, 'stroke-width': 2 }, g);   // Klemmenkasten
+  el('rect', { x: 150, y: yM - 26, width: 30, height: 24, rx: 2, fill: '#eef1f4', stroke: dunkel, 'stroke-width': 1 }, g);   // Leistungsschild
+}
+const tMotor = [0, 1, 2, 3, 4].map((k) => txt(M.x + 140, 480 + 40 * k, '', { class: 'lbl-s' }, gBack));
+const tMotorHin = txt(M.x + 140, 700, 'unabhängig von C', { class: 'lbl-xs sans muted' }, gBack);
+
+// Kondensatorzweig (nur bei C > 0): Abzweig an L1 und N, Kondensator mit zwei Platten, orange getönt (Q)
+const kDraht = draht('', gKond);
+const kTon = el('rect', { width: 60, height: 14, fill: C.Q, 'fill-opacity': 0.6 }, gKond);
+const kPlatten = el('path', { stroke: C.ink, 'stroke-width': 5, fill: 'none' }, gKond);
+const kPunkte = [G.yo, G.yu].map((y) => el('circle', { cx: G.xK, cy: y, r: 7, fill: C.ink }, gKond));
+const tC = txt(G.xK - 44, 0, '', { class: 'lbl', 'text-anchor': 'end' }, gLbl);
+const tQC = txt(G.xK - 44, 0, '', { class: 'lbl-s c-q', 'text-anchor': 'end' }, gLbl);
+
+/* ---- Leistungspfeile (Bahnen) mit Energieblöcken ---- */
+let bahnNr = 0;
+function makeBahn(art) {
+  const id = 'bahn' + (++bahnNr), g = el('g', { id }, gBahn);
+  const band = el('polygon', { 'stroke-width': 2.5, 'stroke-linejoin': 'round',
+    fill: art === 'P' ? C.P : C.Q, 'fill-opacity': art === 'P' ? 0.2 : 0.25, stroke: art === 'P' ? C.P : C.qText }, g);
+  const cp = el('clipPath', { id: 'clip-' + id }, defs), cr = el('rect', {}, cp);
+  const gb = el('g', { 'clip-path': `url(#clip-${id})` }, g);
+  const bloecke = Array.from({ length: 10 }, () => el('polygon', { 'stroke-width': 2, 'stroke-linejoin': 'round' }, gb));
+  const B = { g, art, xi: 0, xj: 0, yc: 0, h: 0, Q: 0, sgn: 1 };
+  B.set = (xa, xb, yc, h, links, rechts) => {
+    const an = h >= 2.5 && xb - xa > 20;
+    show(g, an);
+    Object.assign(B, { an, yc, h });
+    if (!an) return;
+    const f = bandForm(xa, xb, yc, h, links, rechts);
+    band.setAttribute('points', f.pts);
+    B.xi = f.xi; B.xj = f.xj;
+    cr.setAttribute('x', f.xi); cr.setAttribute('y', yc - h / 2 + 1.5); cr.setAttribute('width', Math.max(f.xj - f.xi, 0)); cr.setAttribute('height', Math.max(h - 3, 0));
+  };
+  /* Blöcke: Wirkleistung wandert pulsierend nach rechts; Blindleistung pendelt, Größe ∝ |sin 2ωt|, Lage ∝ gespeicherte Energie */
+  B.zeit = (wt) => {
+    if (!B.an) return;
+    const T = G.block.teil, len = clamp(1.3 * B.h, 26, 64), r = wt * D;
+    let off, hb, dir, fill, rand;
+    if (art === 'P') {
+      off = (T * (r - 0.5 * Math.sin(2 * r)) / Math.PI) % T;   // Weg ∝ ∫ P · (1 − cos 2ωt) dt
+      hb = 0.72 * B.h; dir = 1; fill = C.pBlock; rand = C.pRand;
+    } else {
+      const v = -B.sgn * Math.sin(2 * r);                       // Fluss nach rechts ∝ −Q · sin 2ωt
+      off = G.block.weg * (1 + B.sgn * Math.cos(2 * r)) / 2;    // Weg ∝ ∫ Fluss dt
+      hb = 0.72 * B.h * Math.abs(Math.sin(2 * r)); dir = v >= 0 ? 1 : -1;
+      fill = dir > 0 ? C.hin : C.zur; rand = dir > 0 ? C.zur : C.hin;
+    }
+    bloecke.forEach((e, k) => {
+      const x = B.xi - T + off + k * T;
+      const sichtbar = hb >= 2 && x < B.xj && x + len > B.xi;
+      show(e, sichtbar);
+      if (!sichtbar) return;
+      e.setAttribute('points', pfeilForm(x, B.yc, len, hb, dir));
+      e.setAttribute('fill', fill); e.setAttribute('stroke', rand);
+    });
+  };
+  return B;
+}
+const bP = makeBahn('P');
+const bQ1 = makeBahn('Q');      // Netz → Motor (ohne bzw. mit teilweiser Kompensation: der Rest, den das Netz liefert)
+const bQ2 = makeBahn('Q');      // Kondensator → Motor
+const bQL = makeBahn('Q');      // Kondensator → Netz (Überkompensation)
+const tP = txt(0, 0, '', { class: 'lbl c-p', 'text-anchor': 'middle' }, gLbl);
+const tQnetz = txt(0, 0, '', { class: 'lbl c-q' }, gLbl);
+const tQlinks = txt(0, 0, '', { class: 'lbl c-q' }, gLbl);
+const tQrechts = txt(0, 0, '', { class: 'lbl c-q' }, gLbl);
+
+/* ---- Strommesser (Drehspul-/Dreheisengerät, Vorderansicht) in L1: vor dem Kondensator (I2) und vor dem Motor (I1) ---- */
+function makeMesser(cx) {
+  const g = el('g', {}, gMess), x = cx - G.mw / 2, y = G.my, w = G.mw, h = G.mh;
+  el('rect', { x: x + 6, y: y + 8, width: w, height: h, rx: 16, fill: '#00000014' }, g);
+  el('rect', { x, y, width: w, height: h, rx: 16, fill: '#eef0f2', stroke: '#8d969e', 'stroke-width': 3 }, g);
+  el('rect', { x: x + 10, y: y + 8, width: w - 20, height: 114, rx: 9, fill: '#fffdf6', stroke: '#b9c0c6', 'stroke-width': 2 }, g);
+  for (const xx of [x, x + w]) el('circle', { cx: xx, cy: G.yo, r: 8, fill: '#2d343a' }, g);
+  txt(cx, y + h - 14, 'A', { class: 'lbl-s sans fett', 'text-anchor': 'middle' }, g);
+  const skala = el('g', {}, g);
+  const zeiger = el('line', { stroke: C.ink, 'stroke-width': 3.5, 'stroke-linecap': 'round' }, g);
+  const px = cx, py = y + 112;
+  el('circle', { cx: px, cy: py, r: 8, fill: '#3d4650' }, g);
+  const winkel = 50, rS = 66, rZ = 86;
+  let bereich = 0;
+  return {
+    g,
+    skala(endwert, teil) {
+      if (endwert === bereich) return;
+      bereich = endwert; skala.innerHTML = '';
+      el('path', { d: `M ${px - rS * Math.sin(winkel * D)} ${py - rS * Math.cos(winkel * D)} A ${rS} ${rS} 0 0 1 ${px + rS * Math.sin(winkel * D)} ${py - rS * Math.cos(winkel * D)}`, fill: 'none', stroke: C.ink, 'stroke-width': 1.6 }, skala);
+      const nT = Math.round(endwert / teil);
+      for (let k = 0; k <= 2 * nT; k++) {
+        const a = (-winkel + 2 * winkel * k / (2 * nT)) * D, gross = k % 2 === 0, l = gross ? 11 : 6;
+        el('line', { x1: px + rS * Math.sin(a), y1: py - rS * Math.cos(a), x2: px + (rS + l) * Math.sin(a), y2: py - (rS + l) * Math.cos(a), stroke: C.ink, 'stroke-width': gross ? 2 : 1.3 }, skala);
+        if (gross) txt(px + rZ * Math.sin(a), py - rZ * Math.cos(a), dez(teil * k / 2, teil < 1 ? 1 : 0).replace(/,0$/, ''), { class: 'lbl-xs sans', 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 19 }, skala);
+      }
+    },
+    wert(i) {
+      const a = (-winkel + 2 * winkel * clamp(i / bereich, 0, 1.03)) * D, l = rS + 2;
+      zeiger.setAttribute('x1', px - 14 * Math.sin(a)); zeiger.setAttribute('y1', py + 14 * Math.cos(a));
+      zeiger.setAttribute('x2', px + l * Math.sin(a)); zeiger.setAttribute('y2', py - l * Math.cos(a));
+    },
+  };
+}
+const mess2 = makeMesser(G.mess[0]), mess1 = makeMesser(G.mess[1]);
+
+/* ---- Strompfeile (immer sichtbar; Festlegung 20.11.2026): Länge ∝ Effektivwert, ein Maßstab ---- */
+const aI2 = makeArrow(gDyn, C.i, 4, 20, 7.5), aI1 = makeArrow(gDyn, C.i, 4, 20, 7.5), aIC = makeArrow(gDyn, C.i, 4, 20, 7.5);
+const tI2 = txt(G.iPf.x2, G.iPf.y - 22, '', { class: 'lbl c-i' }, gLbl);   // linksbündig über dem Pfeilanfang: rechts steht der nächste Strommesser
+const tI1 = txt(G.iPf.x1, G.iPf.y - 22, '', { class: 'lbl c-i' }, gLbl);
+const tIC = txt(G.xK + 24, 0, '', { class: 'lbl c-i' }, gLbl);
+const bruchIC = el('path', { stroke: C.i, 'stroke-width': 3, fill: 'none' }, gDyn);   // Bruchzeichen, wenn I_C nicht ganz hineinpasst
+
+/* ---- Zeigerbild rechts: Leistungsdreieck oder Ströme (Festzeiger, Effektivwerte) ---- */
+const Zb = G.zb;
+const tZbKopf = txt(Zb.mitte, Zb.kopf, '', { class: 't-panel', 'text-anchor': 'middle' }, gZB);
+const gZP = el('g', {}, gZB), gZI = el('g', {}, gZB);
+const zp = {
+  achse: el('line', { stroke: C.muted, 'stroke-width': 1.3, 'stroke-dasharray': '10 7' }, gZP),
+  bogen1: el('path', { fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gZP), bogen2: el('path', { fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gZP),
+  S1: makeArrow(gZP, C.S, 4, 24, 9), S2: makeArrow(gZP, C.S, 4, 24, 9),
+  P: makeArrow(gZP, C.P, 6, 26, 10), Q1: makeArrow(gZP, C.Q, 6, 26, 10), QC: makeArrow(gZP, C.Q, 4.5, 24, 9), Q2: makeArrow(gZP, C.Q, 4.5, 24, 9),
+  ecke: el('path', { fill: 'none', stroke: C.ink, 'stroke-width': 1.8 }, gZP), punkt: el('circle', { r: 2.8, fill: C.ink }, gZP),
+};
+const MI = { 'dominant-baseline': 'central' };
+const zpT = { P: txt(0, 0, sym('P'), { class: 'lbl c-p', ...MI }, gZP), Q1: txt(0, 0, sym('Q', 'L1'), { class: 'lbl c-q', ...MI }, gZP),
+  QC: txt(0, 0, sym('Q', 'C'), { class: 'lbl c-q', ...MI }, gZP), Q2: txt(0, 0, '', { class: 'lbl c-q', ...MI }, gZP),
+  S1: txt(0, 0, sym('S', '1'), { class: 'lbl c-s', ...MI }, gZP), S2: txt(0, 0, sym('S', '2'), { class: 'lbl c-s', ...MI }, gZP),
+  f1: txt(0, 0, sym('φ', '1'), { class: 'lbl halo', ...MI }, gZP), f2: txt(0, 0, sym('φ', '2'), { class: 'lbl halo', ...MI }, gZP) };
+const zi = {
+  w: el('line', { stroke: C.muted, 'stroke-width': 1.6, 'stroke-dasharray': '9 7' }, gZI),
+  bogen1: el('path', { fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gZI), bogen2: el('path', { fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gZI),
+  U: makeArrow(gZI, C.u, 4, 24, 9), I1: makeArrow(gZI, C.i, 5, 26, 10), IC: makeArrow(gZI, C.i, 5, 26, 10), I2: makeArrow(gZI, C.i, 5, 26, 10),
+};
+const ziT = { U: txt(0, 0, sym('U'), { class: 'lbl c-u', ...MI }, gZI), I1: txt(0, 0, sym('I', '1'), { class: 'lbl c-i', ...MI }, gZI),
+  IC: txt(0, 0, sym('I', 'C'), { class: 'lbl c-i', ...MI }, gZI), I2: txt(0, 0, sym('I', '2'), { class: 'lbl c-i', ...MI }, gZI),
+  Iw: txt(0, 0, sym('I', 'w'), { class: 'lbl-s muted' }, gZI),
+  f1: txt(0, 0, sym('φ', '1'), { class: 'lbl halo', ...MI }, gZI), f2: txt(0, 0, sym('φ', '2'), { class: 'lbl halo', ...MI }, gZI) };
+const bogen = (e, cx, cy, r, a0, a1) => {       // mathematischer Winkel in Grad, positiv = nach oben (SVG: y nach unten)
+  const p = (a) => [cx + r * Math.cos(a * D), cy - r * Math.sin(a * D)], [x0, y0] = p(a0), [x1, y1] = p(a1);
+  e.setAttribute('d', `M ${x0.toFixed(1)} ${y0.toFixed(1)} A ${r} ${r} 0 0 ${a1 > a0 ? 0 : 1} ${x1.toFixed(1)} ${y1.toFixed(1)}`);
+};
+
+/* ================= 6 Maßstäbe (hängen nur von den Motorwerten ab, nicht von C) ================= */
+function massstab(m) {
+  const cMax = (() => { const x = CFG.cMaxFaktor * m.Cvoll, st = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.ceil(x / st) * st; })();
+  const mMax = model({ ...par(), C: cMax });                       // größte Ströme und Leistungen im Reglerbereich
+  const iMax = Math.max(m.I1, mMax.I2);
+  const qMax = Math.max(m.Q1, mMax.QC - m.Q1);
+  const kQ = Math.min(G.hPmax / S.P, G.hQmax / qMax);              // px je W bzw. var (gleicher Maßstab für P und Q)
+  const kI = G.iPf.max / iMax;                                     // px je A
+  const mb = CFG.messBereiche.find(([e]) => e >= 1.05 * Math.max(iMax, 1e-9)) || CFG.messBereiche[CFG.messBereiche.length - 1];
+  const unten = Math.max(0, mMax.QC - m.Q1);                       // Zeigerbild: Platz für Q2 < 0
+  const kZ = Math.min(Zb.wMax / S.P, (Zb.yBot - Zb.yTop) / (m.Q1 + unten));
+  return { cMax, kQ, kI, mb, kZ, unten };
+}
+
+/* ================= 7 Darstellung: Zustand → Bild ================= */
+let K = null, kSchluessel = '';
+function render() {
+  const m = model(par());
+  const sch = `${S.U}|${S.P}|${S.cos}`;
+  if (sch !== kSchluessel) { K = massstab(m); kSchluessel = sch; mess1.skala(...K.mb); mess2.skala(...K.mb); }
+  const W = S.werte, mitC = S.C > 0, f = m.fall;
+
+  // Titelzeilen
+  tFall.textContent = { keine: 'ohne Kompensation', teil: 'teilweise Kompensation', voll: 'vollständige Kompensation', ueber: 'Überkompensation' }[f];
+  if (f !== 'keine') tFall.innerHTML += ': ' + sym('Q', 'C') + { teil: ' &lt; ', voll: ' = ', ueber: ' &gt; ' }[f] + sym('Q', 'L1');
+  const art = (phi) => (Math.abs(phi) < 0.05 ? '' : phi > 0 ? ' (induktiv)' : ' (kapazitiv)');
+  show(tCos, W);
+  tCos.innerHTML = mitC ? `Zuleitung: cos ${sym('φ', '2', dez(m.cos2, 2) + art(m.phi2), 25)}` : `Zuleitung: cos ${sym('φ', '1', fmtCos(S.cos) + art(m.phi1), 25)}`;
+  tZeitlupe.textContent = `Zeitlupe 1 : ${Math.round(S.dauer / 0.02)} – die Energie pendelt hier in ${S.dauer / 2} s hin und zurück, in Wirklichkeit in 10 ms`;
+
+  // Netzspannung
+  tU.innerHTML = sym('U', '', W ? fmtGegeben(S.U, 'V') : '');
+
+  // Motorkasten: gegebene Werte immer, berechnete mit „Werte“
+  tMotor[0].innerHTML = sym('U', '', fmtGegeben(S.U, 'V'), 25);
+  tMotor[1].innerHTML = sym('P', '', fmtGegeben(S.P, 'W'), 25); tMotor[1].setAttribute('class', 'lbl-s c-p');
+  tMotor[2].innerHTML = 'cos ' + sym('φ', '1', fmtCos(S.cos), 25);
+  tMotor[3].innerHTML = sym('Q', 'L1', fmtLauf(m.Q1, 'var'), 25); tMotor[3].setAttribute('class', 'lbl-s c-q');
+  tMotor[4].innerHTML = sym('I', '1', fmtLauf(m.I1, 'A'), 25); tMotor[4].setAttribute('class', 'lbl-s c-i fett');
+  show(tMotor[3], W); show(tMotor[4], W);
+  tMotorHin.setAttribute('y', W ? 700 : 620);
+
+  // Leistungspfeile (Festlegung der Lehrkraft, 20.11.2026): P genau auf Höhe der Mitte von R; der Kondensator und sein
+  // Blindleistungspfeil genau auf 1/3 der Höhe von L, der Blindleistungspfeil aus dem Netz (Q_L1 bzw. Q_L2) auf 2/3 von L.
+  const hP = K.kQ * S.P, yC = G.yC, yN = G.yN;
+  bP.set(G.xA, G.xM, G.yP, hP, false, true);
+  const qNetzMotor = Math.max(m.Q2, 0), qKondMotor = Math.min(m.QC, m.Q1), qKondNetz = Math.max(-m.Q2, 0);
+  const h1 = K.kQ * qNetzMotor, h2 = K.kQ * qKondMotor, hL = K.kQ * qKondNetz;
+  const xC1 = G.xK - 38, xC2 = G.xK + 38;
+  bQ1.set(G.xA, G.xM, yN, h1, true, true); bQ1.sgn = 1;              // Netz ↔ Motor
+  bQ2.set(xC2, G.xM, yC, h2, true, true); bQ2.sgn = 1;               // Kondensator ↔ Motor (im Gegentakt zum Kondensator, gleichsinnig mit dem Motor)
+  bQL.set(G.xA, xC1, yC, hL, true, true); bQL.sgn = -1;              // Kondensator ↔ Netz (Überkompensation): im Gegentakt zum Motor
+  const rand = (h) => (h >= 2.5 ? h / 2 + ueberstand(h) : 0);        // halbe Höhe samt Spitze
+  // Kondensator
+  show(gKond, mitC);
+  kDraht.setAttribute('d', `M ${G.xK} ${G.yo} V ${yC - 7} M ${G.xK} ${yC + 7} V ${G.yu}`);
+  kTon.setAttribute('x', G.xK - 30); kTon.setAttribute('y', yC - 7);
+  kPlatten.setAttribute('d', `M ${G.xK - 30} ${yC - 7} H ${G.xK + 30} M ${G.xK - 30} ${yC + 7} H ${G.xK + 30}`);
+  // Beschriftung der Leistungspfeile
+  tP.setAttribute('x', 505); tP.setAttribute('y', G.yP - hP / 2 - 16);   // zwischen den Strommessern, über dem Pfeil
+  tP.innerHTML = sym('P', '', W ? fmtGegeben(S.P, 'W') : '');
+  const qW = (v) => (W ? fmtLauf(v, 'var') : '');
+  tQnetz.setAttribute('x', G.xA + 12); tQnetz.setAttribute('y', yN + rand(h1) + 32);          // unter dem Pfeil aus dem Netz
+  tQnetz.innerHTML = f === 'keine' ? sym('Q', 'L1', qW(m.Q1)) : f === 'teil' ? sym('Q', 'L2', qW(m.Q2)) : '';
+  tQlinks.setAttribute('x', G.xA + 12); tQlinks.setAttribute('y', yC + rand(hL) + 32);        // Überkompensation: unter dem Pfeil Kondensator → Netz
+  tQlinks.innerHTML = f === 'ueber' ? sym('Q', 'C2', qW(-m.Q2)) : '';
+  tQrechts.setAttribute('x', 660); tQrechts.setAttribute('y', yC - rand(h2) - 14);           // über dem Pfeil Kondensator → Motor
+  tQrechts.innerHTML = f === 'teil' || f === 'voll' ? sym('Q', 'C', qW(m.QC)) : f === 'ueber' ? sym('Q', 'L1', qW(m.Q1)) : '';
+  // Kondensator: C immer, Q_C mit „Werte“ bei Überkompensation (sonst steht Q_C dort nirgends); links über dem Kondensator
+  const yCt = f === 'ueber' ? yC - rand(hL) - 52 : yC + 10;          // links neben dem Kondensator; bei Überkompensation über dem Pfeil zum Netz
+  tC.setAttribute('y', yCt); tQC.setAttribute('y', yCt + 35);
+  tC.innerHTML = sym('C', '', fmtUF(S.C)); show(tC, mitC);
+  tQC.innerHTML = sym('Q', 'C', fmtLauf(m.QC, 'var'), 25); show(tQC, mitC && W && f === 'ueber');
+
+  // Strompfeile: I2 vor dem Kondensator (ohne Kondensator heißt er I1), I1 dahinter, I_C im Kondensatorzweig
+  const l2 = K.kI * m.I2, l1 = K.kI * m.I1;
+  aI2.set(G.iPf.x2, G.iPf.y, G.iPf.x2 + l2, G.iPf.y);
+  aI1.set(G.iPf.x1, G.iPf.y, G.iPf.x1 + l1, G.iPf.y);
+  tI2.innerHTML = sym('I', mitC ? '2' : '1', W ? fmtLauf(m.I2, 'A') : '');
+  tI1.innerHTML = sym('I', '1', W ? fmtLauf(m.I1, 'A') : '');
+  // lange Werte („458 mA“): kleinere Schrift, damit die Beschriftung nicht an die nächste oder an den Strommesser stößt
+  for (const [t, grenze] of [[tI2, G.iPf.x1 - 12], [tI1, G.mess[1] - G.mw / 2 - 8]]) {
+    t.setAttribute('class', 'lbl c-i');
+    if (t.getBBox().width > 0 && t.getBBox().x + t.getBBox().width > grenze) t.setAttribute('class', 'lbl-s c-i');
+  }
+  // I_C: über dem Kondensator rechts neben dem Zweig (darunter läuft der Pfeil aus dem Netz)
+  show(aIC.g, mitC); show(tIC, mitC);
+  const yIC0 = G.yP + G.hPmax / 2 + 26, platz = yC - 30 - yIC0, lC = K.kI * m.IC, gekuerzt = lC > platz;
+  aIC.set(G.xK + 22, yIC0, G.xK + 22, yIC0 + Math.min(lC, platz));
+  show(bruchIC, mitC && gekuerzt);
+  if (gekuerzt) { const yb = yIC0 + platz * 0.45; bruchIC.setAttribute('d', `M ${G.xK + 10} ${yb + 6} L ${G.xK + 34} ${yb - 6} M ${G.xK + 10} ${yb + 14} L ${G.xK + 34} ${yb + 2}`); }
+  tIC.setAttribute('x', G.xK + 40); tIC.setAttribute('y', yIC0 + 30);   // oben am Pfeil: darunter steht die Beschriftung des Pfeils Kondensator → Motor
+  tIC.innerHTML = sym('I', 'C', W ? fmtLauf(m.IC, 'A') : '');
+
+  // Strommesser
+  show(gMess, S.mess);
+  mess2.wert(m.I2); mess1.wert(m.I1);
+
+  // Energieblöcke
+  zeitRender();
+
+  // Zeigerbild
+  show(gZB, S.zb);
+  if (S.zb) zeigerbild(m);
+
+  formeln(m);
+  syncUI(m);
+}
+function zeitRender() {
+  for (const b of [bP, bQ1, bQ2, bQL]) b.zeit(S.wt);
+}
+
+/* Beschriftung entlang eines Pfeils: Lagen neben der Mitte (und weiter außen), Seite s = +1 / −1 (Normale nach links bzw.
+   rechts der Pfeilrichtung); die Schrift ist senkrecht mittig gesetzt (dominant-baseline: central). */
+function neben(seg, seiten, d = 24, ts = [0.5, 0.38, 0.62, 0.26, 0.74]) {
+  const [x1, y1, x2, y2] = seg, dx = x2 - x1, dy = y2 - y1, l = Math.hypot(dx, dy) || 1, out = [];
+  for (const s of seiten) for (const dd of [d, d + 8]) for (const t of ts) {
+    const nx = -dy / l * s, ny = dx / l * s;
+    out.push([x1 + dx * t + nx * dd, y1 + dy * t + ny * dd, nx < -0.35 ? 'end' : nx > 0.35 ? 'start' : 'middle', x1 + dx * t, y1 + dy * t]);
+  }
+  return out;
+}
+/* Formelzeichen an der Pfeilspitze (Festlegung der Lehrkraft, 20.11.2026: „Formelzeichen eindeutiger an die Pfeilspitzen“) */
+const anSpitze = (seg, seiten, d = 22) => neben(seg, seiten, d, [0.84, 0.76, 0.9, 0.68, 0.58, 0.48]);
+let xGrenzeWinkel = Infinity;                                   // Winkelbeschriftung bleibt links von der Senkrechten im Dreieck
+function imWinkel(x0, y0, r, a0, a1, innen = false) {        // Lagen für φ im Winkelfeld: (innerhalb des Bogens,) dann außen, zuerst auf der Halbierenden
+  const out = [], p = (rr, f) => { const a = (a0 + (a1 - a0) * f) * D; return [x0 + rr * Math.cos(a), y0 - rr * Math.sin(a), 'middle']; };
+  if (innen) for (const rr of [r - 32, r - 42]) if (rr > 28) out.push(p(rr, 0.5));
+  for (let rr = r + 22; rr <= r + 230; rr += 12) for (const f of [0.5, 0.36, 0.64, 0.26, 0.74]) out.push(p(rr, f));
+  return out.filter(([x]) => x <= xGrenzeWinkel).concat(out.length ? [p(r + 22, 0.5)] : []);
+}
+const bogenLinien = (x0, y0, r, a0, a1) => Array.from({ length: 6 }, (_, k) => {
+  const p = (t) => [x0 + r * Math.cos((a0 + (a1 - a0) * t) * D), y0 - r * Math.sin((a0 + (a1 - a0) * t) * D)];
+  const [xa, ya] = p(k / 6), [xb, yb] = p((k + 1) / 6); return [xa, ya, xb, yb];
+});
+
+/* Bogen für φ2: klein, bei engem Winkel weiter außen, damit φ2 hineinpasst (höchstens bis kurz vor die Spitze) */
+const PHI_PLATZ = 56;                                          // so hoch (px) muss das Winkelfeld für „φ2“ sein
+const radiusPhi2 = (phi2, rMax) => clamp(PHI_PLATZ / Math.sin(Math.max(Math.abs(phi2), 1) * D), 80, Math.max(80, rMax));
+function zeigerbild(m) {
+  const k = K.kZ, x0 = Zb.x0, xP = x0 + k * S.P, istP = S.zbart === 'P';
+  show(gZP, istP); show(gZI, !istP);   // sichtbar schalten, bevor gemessen wird
+  tZbKopf.textContent = istP ? 'Leistungsdreieck' : 'Zeigerbild der Ströme';
+  const mitC = S.C > 0, belegt = [rechteck(tZbKopf)], linien = [];
+  platzFehler = [];
+  // φ2 nur, wenn es im Winkelfeld Platz hat (sonst Bogen und φ2 weglassen; cos φ2 steht oben in der Bühne)
+  const mitQ2 = mitC && Math.abs(m.Q2) * k >= 3, mitF2 = mitC && Math.abs(m.phi2) >= 3 && PHI_PLATZ / Math.sin(Math.abs(m.phi2) * D) <= 0.9 * k * S.P;
+  if (istP) {
+    const y0 = Zb.yTop + k * m.Q1, yQ1 = y0 - k * m.Q1, yQ2 = y0 - k * m.Q2;
+    xGrenzeWinkel = xP - 26;
+    zp.achse.setAttribute('x1', x0 - 20); zp.achse.setAttribute('x2', xP + 60); zp.achse.setAttribute('y1', y0); zp.achse.setAttribute('y2', y0);
+    zp.P.set(x0, y0, xP, y0); zp.Q1.set(xP, y0, xP, yQ1); zp.S1.set(x0, y0, xP, yQ1);
+    show(zp.S2.g, mitC); show(zp.QC.g, mitC); show(zp.Q2.g, mitQ2);
+    zp.S2.set(x0, y0, xP, yQ2);
+    zp.QC.set(xP + 30, yQ1, xP + 30, yQ2);                      // Q_C vom Ende von Q_L1 abwärts, leicht versetzt
+    // Rest Q2 (Festlegung der Lehrkraft, 20.11.2026: Q_L2 genau auf dem x-Wert von Q_C – Q_L1 = Q_C + Q_L2 sieht man dann direkt);
+    // Q_C2 (kapazitiv, nach unten) rechts neben dem unteren Teil von Q_C: Q_C = Q_L1 + Q_C2
+    const xQ2 = m.Q2 >= 0 ? xP + 30 : xP + 58;
+    zp.Q2.set(xQ2, y0, xQ2, yQ2);
+    // rechter Winkel zwischen P und Q_L1 als Viertelkreis mit Punkt (Festlegung der Lehrkraft, 18.11.2026)
+    const rr = 22, rw = k * S.P >= 40 && k * m.Q1 >= 40;
+    show(zp.ecke, rw); show(zp.punkt, rw);
+    zp.ecke.setAttribute('d', `M ${xP - rr} ${y0} A ${rr} ${rr} 0 0 1 ${xP} ${y0 - rr}`);
+    zp.punkt.setAttribute('cx', xP - rr * 0.42); zp.punkt.setAttribute('cy', y0 - rr * 0.42);
+    const r1 = Math.min(110, 0.5 * k * S.P), r2 = radiusPhi2(m.phi2, 0.9 * k * S.P);
+    bogen(zp.bogen1, x0, y0, r1, 0, m.phi1);
+    show(zp.bogen2, mitF2); bogen(zp.bogen2, x0, y0, r2, 0, m.phi2);
+    // Beschriftung ohne Überdeckung
+    linien.push(zp.P.seg, zp.Q1.seg, zp.S1.seg, [x0 - 20, y0, xP + 60, y0], ...bogenLinien(x0, y0, r1, 0, m.phi1));
+    if (mitC) linien.push(zp.S2.seg, zp.QC.seg);
+    if (rw) linien.push([xP - rr, y0, xP - 0.71 * rr, y0 - 0.71 * rr], [xP - 0.71 * rr, y0 - 0.71 * rr, xP, y0 - rr], [xP - rr, y0 - 1, xP, y0 - rr]);   // Zeichen für den rechten Winkel freihalten
+    if (mitQ2) linien.push(zp.Q2.seg);
+    if (mitF2) linien.push(...bogenLinien(x0, y0, r2, 0, m.phi2));
+    zpT.Q2.innerHTML = m.Q2 >= 0 ? sym('Q', 'L2') : sym('Q', 'C2');
+    show(zpT.QC, mitC); show(zpT.Q2, mitQ2); show(zpT.S2, mitC); show(zpT.f2, mitF2);   // vor dem Platzieren: getBBox braucht sichtbare Schrift
+    // erst die Winkel (sie brauchen den Platz im Winkelfeld), dann die Pfeile
+    if (mitF2) platziere(zpT.f2, imWinkel(x0, y0, r2, 0, m.phi2, true), belegt, linien);
+    if (mitC) platziere(zpT.QC, anSpitze(zp.QC.seg, [-1, 1], 20), belegt, linien);
+    if (mitQ2) platziere(zpT.Q2, anSpitze(zp.Q2.seg, m.Q2 >= 0 ? [1, -1] : [-1, 1], 20), belegt, linien);   // rechts daneben, nahe der Spitze
+    platziere(zpT.P, anSpitze(zp.P.seg, mitC && m.Q2 < 0 ? [-1, 1] : [1, -1], 24), belegt, linien);
+    platziere(zpT.S1, anSpitze(zp.S1.seg, [-1, 1], 24), belegt, linien);
+    if (mitC) platziere(zpT.S2, anSpitze(zp.S2.seg, [1, -1], 24), belegt, linien);
+    // φ1 nach den Pfeilen: sein Winkelfeld ist groß, die Beschriftung kann weiter nach außen ausweichen
+    platziere(zpT.f1, mitF2 && m.phi2 > 0 ? imWinkel(x0, y0, r1, m.phi2, m.phi1).concat(imWinkel(x0, y0, r1, 0, m.phi1)) : imWinkel(x0, y0, r1, 0, m.phi1), belegt, linien);
+    // Q_L1 zuletzt unter den senkrechten Pfeilen: sein Pfeil ist lang, seine Beschriftung kann ausweichen
+    platziere(zpT.Q1, anSpitze(zp.Q1.seg, [1], mitC ? 50 : 18), belegt, linien, [zp.QC.seg, zp.Q2.seg]);
+  } else {
+    // Ströme: gleiche Form wie das Leistungsdreieck, an der Waagerechten gespiegelt (I = S / U): nacheilend nach unten
+    const ki = k * S.U, y0 = Zb.yTop + k * K.unten, xW = x0 + ki * m.Iw, y1 = y0 + ki * m.Ib1, yI2 = y0 + k * m.Q2;
+    xGrenzeWinkel = xW - 26;
+    zi.U.set(x0, y0, Math.min(xW + 120, Zb.x0 + Zb.wMax + 110), y0);
+    zi.w.setAttribute('x1', xW); zi.w.setAttribute('x2', xW); zi.w.setAttribute('y1', y0); zi.w.setAttribute('y2', y1);
+    zi.I1.set(x0, y0, xW, y1);
+    show(zi.IC.g, mitC); show(zi.I2.g, mitC);
+    zi.IC.set(xW, y1, xW, yI2);                                 // I_C an die Spitze von I1 gesetzt: I2 = I1 + I_C
+    zi.I2.set(x0, y0, xW, yI2);
+    const r1 = Math.min(110, 0.5 * ki * m.Iw), r2 = radiusPhi2(m.phi2, 0.9 * ki * m.Iw);
+    bogen(zi.bogen1, x0, y0, r1, 0, -m.phi1);
+    show(zi.bogen2, mitF2); bogen(zi.bogen2, x0, y0, r2, 0, -m.phi2);
+    linien.push(zi.U.seg, zi.I1.seg, [xW, y0, xW, y1], ...bogenLinien(x0, y0, r1, 0, -m.phi1));
+    if (mitC) linien.push(zi.IC.seg, zi.I2.seg);
+    if (mitF2) linien.push(...bogenLinien(x0, y0, r2, 0, -m.phi2));
+    show(ziT.IC, mitC); show(ziT.I2, mitC); show(ziT.f2, mitF2);   // vor dem Platzieren: getBBox braucht sichtbare Schrift
+    platziere(ziT.U, [[zi.U.seg[2] - 8, y0 - 24, 'end']], belegt, linien);
+    platziere(ziT.Iw, [[xW + 8, y0 - 22, 'start'], [xW - 8, y0 - 22, 'end']], belegt, linien);
+    if (mitF2) platziere(ziT.f2, imWinkel(x0, y0, r2, 0, -m.phi2, true), belegt, linien);
+    platziere(ziT.f1, mitF2 && m.phi2 > 0 ? imWinkel(x0, y0, r1, -m.phi2, -m.phi1).concat(imWinkel(x0, y0, r1, 0, -m.phi1)) : imWinkel(x0, y0, r1, 0, -m.phi1), belegt, linien);
+    if (mitC) platziere(ziT.IC, anSpitze(zi.IC.seg, [1, -1], 22), belegt, linien);   // Pfeil zeigt nach oben: +1 = rechts
+    platziere(ziT.I1, anSpitze(zi.I1.seg, [1, -1], 24), belegt, linien);
+    if (mitC) platziere(ziT.I2, anSpitze(zi.I2.seg, [1, -1], 24), belegt, linien);
+  }
+}
+
+/* ---- Formeln und Berechnung (Karte unter der Bedienleiste; Formel → eingesetzte Werte → Ergebnis) ---- */
+const h = (s) => `<i>${s}</i>`, eh = (s) => s.replace(/(\d) /g, '$1 '), sub = (a, b) => `${h(a)}<sub>${b}</sub>`;
+const bruch = (a, b) => `<span class="fr"><span>${a}</span><span>${b}</span></span>`;
+const klammer = (s) => (s.startsWith('−') ? `(${s})` : s);
+function formeln(m) {
+  const card = $('#formCard'); card.hidden = !S.form;
+  if (!S.form) return;
+  const r = S.rech, L = (v, e) => eh(fmtLauf(v, e)), Gg = (v, e) => eh(fmtGegeben(v, e));
+  const z = (farbe, formel, rechnung) => `<div class="z"><span class="sw"${farbe ? ` style="background:${farbe}"` : ''}></span><span>${formel}</span>${r && rechnung ? `<span>${rechnung}</span>` : ''}</div>`;
+  const sU = Gg(S.U, 'V'), sP = Gg(S.P, 'W'), sCos = fmtCos(S.cos), sOm = L(m.omega, 's⁻¹'), sC = eh(fmtUF(S.C));
+  const ind = m.Q2 >= 0, q2n = ind ? sub('Q', 'L2') : sub('Q', 'C2');
+  const motor = '<div class="sp2"><div class="kopf">Motor (bleibt gleich)</div>' +
+    z(C.i, `${sub('I', '1')} = ${bruch(h('P'), `${h('U')} · cos ${sub('φ', '1')}`)}`, `= ${bruch(sP, `${sU} · ${sCos}`)} = ${L(m.I1, 'A')}`) +
+    z(C.Q, `${sub('Q', 'L1')} = ${h('P')} · tan ${sub('φ', '1')}`, `= ${sP} · ${fmtZahl(m.tan1)} = ${L(m.Q1, 'var')}`) +
+    z(C.S, `${sub('S', '1')} = ${h('U')} · ${sub('I', '1')}`, `= ${sU} · ${L(m.I1, 'A')} = ${L(m.S1, 'VA')}`) + '</div>';
+  const kond = '<div class="sp2"><div class="kopf">Kondensator</div>' +
+    z('', `${h('ω')} = 2π · ${h('f')}`, `= 2π · ${Gg(CFG.f, 'Hz')} = ${sOm}`) +
+    z(C.Q, `${sub('Q', 'C')} = ${h('U')}² · ${h('ω')} · ${h('C')}`, `= (${sU})² · ${sOm} · ${sC} = ${L(m.QC, 'var')}`) +
+    z(C.i, `${sub('I', 'C')} = ${h('U')} · ${h('ω')} · ${h('C')}`, `= ${sU} · ${sOm} · ${sC} = ${L(m.IC, 'A')}`) + '</div>';
+  const netz = '<div class="sp2"><div class="kopf">Zuleitung bis zum Kondensator</div>' +
+    z(C.Q, `${q2n} = ${ind ? '' : '−('}${sub('Q', 'L1')} − ${sub('Q', 'C')}${ind ? '' : ')'}`, `= ${ind ? '' : '−('}${L(m.Q1, 'var')} − ${L(m.QC, 'var')}${ind ? '' : ')'} = ${L(Math.abs(m.Q2), 'var')}${ind ? '' : ' (kapazitiv)'}`) +
+    z('', `${sub('Q', 'C')} = ${h('P')} · (tan ${sub('φ', '1')} − tan ${sub('φ', '2')}) → tan ${sub('φ', '2')} = tan ${sub('φ', '1')} − ${bruch(sub('Q', 'C'), h('P'))}`,
+      `= ${fmtZahl(m.tan1)} − ${bruch(L(m.QC, 'var'), sP)} = ${fmtZahl(m.tan2)} → cos ${sub('φ', '2')} = ${fmtZahl(m.cos2)}${Math.abs(m.phi2) < 0.05 ? '' : m.Q2 > 0 ? ' (induktiv)' : ' (kapazitiv)'}`) +
+    z(C.i, `${sub('I', '2')} = ${bruch(h('P'), `${h('U')} · cos ${sub('φ', '2')}`)}`, `= ${bruch(sP, `${sU} · ${fmtZahl(m.cos2)}`)} = ${L(m.I2, 'A')}`) + '</div>';
+  $('#formeln').innerHTML = motor + kond + netz +
+    `<div class="hin">${sub('I', '1')} und ${sub('I', '2')} folgen beide aus ${h('P')} = ${h('U')} · ${h('I')} · cos ${h('φ')} mit demselben ${h('P')} – nur cos ${h('φ')} ist vor und hinter dem Kondensator verschieden. ` +
+    `Die Ströme addieren sich als Zeiger: ${sub('I', '2')} ≠ ${sub('I', '1')} − ${sub('I', 'C')}.</div>`;
+}
+
+/* ===== QR-Code rechts oben in der Bühne (Festlegungen der Lehrkraft, 12.11.2026, Animation W) =====
+   Führt zur Adresse der Animation auf GitHub Pages (technik.md Abschnitt 8). Die Zeile `const QR = …;` erzeugt
+   python3 scripts/qr_buehne.py <Adresse> quelle.html  – null heißt: noch keine Adresse, die Ecke bleibt frei.
+   Beim Öffnen steht dort nur ein Platzhalter (QR-Symbol, „QR-Code“). Klick oder Enter darauf zeigt den QR-Code,
+   Klick auf den QR-Code blendet ihn wieder aus. ?qr=1 in der Adresse zeigt ihn gleich (Link für den Beamer).
+   Unter 800 px Fensterbreite fehlen beide (am Handy ist die Animation schon offen); im Export nur mit ?qr=1. */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/leistung/kompensation/", "n": 37, "d": "M0 0h7v1h-7zM8 0h1v1h-1zM10 0h3v1h-3zM14 0h2v1h-2zM17 0h3v1h-3zM21 0h1v1h-1zM23 0h1v1h-1zM25 0h4v1h-4zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM12 1h1v1h-1zM14 1h3v1h-3zM18 1h1v1h-1zM20 1h3v1h-3zM28 1h1v1h-1zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM10 2h8v1h-8zM19 2h3v1h-3zM24 2h1v1h-1zM26 2h1v1h-1zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h2v1h-2zM13 3h3v1h-3zM18 3h2v1h-2zM25 3h2v1h-2zM28 3h1v1h-1zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM10 4h3v1h-3zM21 4h4v1h-4zM26 4h3v1h-3zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM10 5h3v1h-3zM15 5h2v1h-2zM18 5h2v1h-2zM21 5h2v1h-2zM25 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM8 7h1v1h-1zM10 7h1v1h-1zM12 7h1v1h-1zM16 7h4v1h-4zM21 7h2v1h-2zM24 7h1v1h-1zM26 7h1v1h-1zM0 8h1v1h-1zM4 8h1v1h-1zM6 8h4v1h-4zM12 8h1v1h-1zM14 8h1v1h-1zM18 8h2v1h-2zM21 8h1v1h-1zM23 8h2v1h-2zM27 8h1v1h-1zM29 8h5v1h-5zM36 8h1v1h-1zM0 9h4v1h-4zM5 9h1v1h-1zM9 9h6v1h-6zM16 9h1v1h-1zM19 9h2v1h-2zM23 9h1v1h-1zM27 9h3v1h-3zM32 9h2v1h-2zM35 9h1v1h-1zM2 10h2v1h-2zM5 10h2v1h-2zM8 10h2v1h-2zM11 10h4v1h-4zM16 10h3v1h-3zM20 10h2v1h-2zM23 10h2v1h-2zM27 10h1v1h-1zM29 10h4v1h-4zM34 10h1v1h-1zM3 11h1v1h-1zM9 11h1v1h-1zM13 11h1v1h-1zM17 11h1v1h-1zM21 11h1v1h-1zM23 11h1v1h-1zM26 11h1v1h-1zM28 11h1v1h-1zM30 11h1v1h-1zM34 11h2v1h-2zM1 12h6v1h-6zM9 12h3v1h-3zM15 12h1v1h-1zM17 12h1v1h-1zM19 12h6v1h-6zM27 12h1v1h-1zM29 12h3v1h-3zM34 12h3v1h-3zM4 13h2v1h-2zM13 13h5v1h-5zM21 13h1v1h-1zM23 13h1v1h-1zM25 13h1v1h-1zM27 13h1v1h-1zM32 13h2v1h-2zM0 14h3v1h-3zM4 14h1v1h-1zM6 14h3v1h-3zM11 14h3v1h-3zM15 14h2v1h-2zM18 14h1v1h-1zM20 14h1v1h-1zM23 14h2v1h-2zM27 14h1v1h-1zM31 14h4v1h-4zM2 15h3v1h-3zM8 15h3v1h-3zM12 15h2v1h-2zM16 15h1v1h-1zM21 15h1v1h-1zM23 15h1v1h-1zM28 15h2v1h-2zM31 15h2v1h-2zM34 15h1v1h-1zM36 15h1v1h-1zM0 16h2v1h-2zM4 16h1v1h-1zM6 16h2v1h-2zM9 16h2v1h-2zM12 16h3v1h-3zM16 16h1v1h-1zM20 16h1v1h-1zM23 16h2v1h-2zM29 16h2v1h-2zM33 16h4v1h-4zM1 17h2v1h-2zM5 17h1v1h-1zM7 17h2v1h-2zM10 17h1v1h-1zM14 17h1v1h-1zM18 17h2v1h-2zM21 17h1v1h-1zM23 17h1v1h-1zM25 17h5v1h-5zM32 17h4v1h-4zM6 18h1v1h-1zM8 18h2v1h-2zM13 18h1v1h-1zM15 18h1v1h-1zM19 18h1v1h-1zM23 18h1v1h-1zM26 18h2v1h-2zM29 18h3v1h-3zM33 18h1v1h-1zM0 19h1v1h-1zM2 19h1v1h-1zM5 19h1v1h-1zM7 19h1v1h-1zM10 19h1v1h-1zM12 19h2v1h-2zM15 19h10v1h-10zM29 19h1v1h-1zM32 19h4v1h-4zM0 20h1v1h-1zM5 20h2v1h-2zM9 20h2v1h-2zM13 20h1v1h-1zM16 20h2v1h-2zM20 20h3v1h-3zM24 20h1v1h-1zM27 20h2v1h-2zM30 20h2v1h-2zM34 20h1v1h-1zM0 21h1v1h-1zM4 21h1v1h-1zM7 21h2v1h-2zM10 21h1v1h-1zM15 21h2v1h-2zM21 21h3v1h-3zM25 21h4v1h-4zM31 21h2v1h-2zM1 22h2v1h-2zM4 22h1v1h-1zM6 22h1v1h-1zM9 22h3v1h-3zM14 22h2v1h-2zM17 22h1v1h-1zM23 22h1v1h-1zM26 22h2v1h-2zM31 22h4v1h-4zM2 23h1v1h-1zM4 23h1v1h-1zM7 23h1v1h-1zM14 23h2v1h-2zM17 23h3v1h-3zM22 23h1v1h-1zM24 23h1v1h-1zM26 23h1v1h-1zM28 23h1v1h-1zM31 23h2v1h-2zM34 23h1v1h-1zM4 24h4v1h-4zM13 24h1v1h-1zM18 24h2v1h-2zM22 24h2v1h-2zM29 24h3v1h-3zM33 24h2v1h-2zM36 24h1v1h-1zM0 25h1v1h-1zM4 25h2v1h-2zM9 25h1v1h-1zM11 25h1v1h-1zM14 25h1v1h-1zM16 25h1v1h-1zM19 25h2v1h-2zM23 25h1v1h-1zM26 25h2v1h-2zM32 25h3v1h-3zM3 26h4v1h-4zM10 26h5v1h-5zM16 26h3v1h-3zM20 26h2v1h-2zM23 26h2v1h-2zM27 26h1v1h-1zM30 26h2v1h-2zM2 27h2v1h-2zM7 27h1v1h-1zM10 27h3v1h-3zM17 27h2v1h-2zM21 27h3v1h-3zM31 27h1v1h-1zM34 27h1v1h-1zM0 28h2v1h-2zM5 28h2v1h-2zM14 28h2v1h-2zM17 28h1v1h-1zM19 28h1v1h-1zM21 28h2v1h-2zM24 28h1v1h-1zM28 28h5v1h-5zM34 28h3v1h-3zM8 29h5v1h-5zM14 29h5v1h-5zM23 29h2v1h-2zM27 29h2v1h-2zM32 29h1v1h-1zM0 30h7v1h-7zM8 30h1v1h-1zM10 30h2v1h-2zM14 30h3v1h-3zM18 30h1v1h-1zM21 30h3v1h-3zM25 30h2v1h-2zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM9 31h4v1h-4zM15 31h1v1h-1zM19 31h1v1h-1zM21 31h1v1h-1zM28 31h1v1h-1zM32 31h4v1h-4zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM8 32h1v1h-1zM12 32h2v1h-2zM16 32h1v1h-1zM19 32h2v1h-2zM24 32h1v1h-1zM28 32h8v1h-8zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM10 33h1v1h-1zM12 33h1v1h-1zM14 33h1v1h-1zM17 33h3v1h-3zM22 33h2v1h-2zM25 33h1v1h-1zM27 33h5v1h-5zM33 33h2v1h-2zM36 33h1v1h-1zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM9 34h1v1h-1zM11 34h1v1h-1zM14 34h2v1h-2zM18 34h2v1h-2zM21 34h1v1h-1zM23 34h2v1h-2zM26 34h1v1h-1zM28 34h1v1h-1zM30 34h1v1h-1zM33 34h2v1h-2zM0 35h1v1h-1zM6 35h1v1h-1zM10 35h1v1h-1zM12 35h1v1h-1zM14 35h4v1h-4zM19 35h3v1h-3zM26 35h2v1h-2zM30 35h1v1h-1zM32 35h1v1h-1zM34 35h2v1h-2zM0 36h7v1h-7zM8 36h2v1h-2zM11 36h1v1h-1zM16 36h2v1h-2zM21 36h2v1h-2zM24 36h1v1h-1zM27 36h1v1h-1zM31 36h1v1h-1zM34 36h3v1h-3z"};
+const gQR = el('g', { id: 'qr', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code ausblenden' });
+const gQRPlatz = el('g', { id: 'qr-platz', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code anzeigen' });
+const QR_BOX = QR && (() => {
+  const m = 6, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
+  gQR.dataset.url = QR.url;
+  el('title', {}, gQR).textContent = 'Klicken: QR-Code ausblenden';
+  el('rect', { x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1 }, gQR);
+  el('path', { d: QR.d, fill: '#000', transform: `translate(${x0 + q} ${y0 + q}) scale(${m})`, 'shape-rendering': 'crispEdges' }, gQR);
+  txt(x0 + w / 2, y0 + w + 26, 'Am eigenen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  txt(x0 + w / 2, y0 + w + 52, 'Gerät öffnen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  const p = 96, px = 1900 - p, s = 3, o = Math.round((p - 21 * s) / 2);
+  el('title', {}, gQRPlatz).textContent = 'Klicken: QR-Code anzeigen';
+  el('rect', { x: px, y: y0, width: p, height: p, rx: 8, fill: '#fff', stroke: '#9aa3ad', 'stroke-width': 2, 'stroke-dasharray': '8 6' }, gQRPlatz);
+  let d = '';
+  for (const [cx, cy] of [[0, 0], [14, 0], [0, 14]]) d += `M${cx} ${cy}h7v7h-7zM${cx + 1} ${cy + 1}v5h5v-5zM${cx + 2} ${cy + 2}h3v3h-3z`;
+  for (const [x, y] of [[9, 1], [11, 2], [9, 4], [12, 4], [10, 6], [12, 8], [8, 9], [10, 10], [14, 9], [16, 10], [18, 9], [20, 11], [1, 9], [3, 10], [5, 9],
+    [2, 12], [9, 12], [11, 13], [15, 14], [17, 15], [19, 16], [14, 17], [16, 19], [18, 18], [20, 20], [9, 15], [11, 17], [9, 19], [12, 20]]) d += `M${x} ${y}h1v1h-1z`;
+  el('path', { d, fill: '#5b6570', 'fill-rule': 'evenodd', transform: `translate(${px + o} ${y0 + o}) scale(${s})`, 'shape-rendering': 'crispEdges' }, gQRPlatz);
+  txt(px + p / 2, y0 + p + 28, 'QR-Code', { class: 'qr-cap', 'text-anchor': 'middle' }, gQRPlatz);
+  return { x0, y0, w };
+})();
+const qrGross = () => window.innerWidth >= 800, qrExport = () => document.documentElement.classList.contains('export');
+function qrSichtbar() { return !!QR && S.qr && (qrGross() || qrExport()); }
+function qrPlatzSichtbar() { return !!QR && !S.qr && qrGross() && !qrExport(); }
+function qrUmschalten() {
+  S.qr = !S.qr; render();
+  const z = S.qr ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({ preventScroll: true });
+}
+for (const g of [gQR, gQRPlatz]) {
+  g.addEventListener('click', qrUmschalten);
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
+}
+
+/* ================= 8 Bedienung ================= */
+const btnPlay = $('#btn-play'), rng = $('#rng-c'), num = $('#num-c');
+const numU = $('#num-U'), numP = $('#num-P'), numCos = $('#num-cos');
+function syncUI(m = model(par())) {
+  rng.min = 0; rng.max = K.cMax; rng.step = 0.1; num.min = 0; num.max = K.cMax; num.step = 0.1;
+  rng.value = S.C;
+  if (document.activeElement !== num) num.value = Math.round(S.C * 10) / 10;
+  if (document.activeElement !== numU) numU.value = S.U;
+  if (document.activeElement !== numP) numP.value = Math.round(S.P / 100) / 10;
+  if (document.activeElement !== numCos) numCos.value = S.cos;
+  for (const b of document.querySelectorAll('#seg-tempo button')) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === S.dauer));
+  btnPlay.textContent = S.playing ? '❚❚ Pause' : '▶ Abspielen';
+  btnPlay.setAttribute('aria-pressed', String(S.playing));
+  for (const b of document.querySelectorAll('#presets button')) b.setAttribute('aria-pressed', String(b.dataset.v === m.fall));
+  $('#presets [data-v="teil"]').disabled = m.Cteil === null;
+  for (const b of document.querySelectorAll('#seg-zb button')) b.setAttribute('aria-pressed', String(b.dataset.v === 'aus' ? !S.zb : S.zb && b.dataset.v === S.zbart));
+  $('#chk-rech').disabled = !S.form;
+  show(gQR, qrSichtbar()); show(gQRPlatz, qrPlatzSichtbar());
+  const xT = (qrSichtbar() || qrPlatzSichtbar()) ? QR_BOX.x0 - 60 : 1872;    // springt beim Umschalten nicht
+  for (const t of [titel, tFall, tCos]) t.setAttribute('x', xT);
+}
+function cFuer(preset, m = model(par())) {
+  return { keine: 0, teil: m.Cteil, voll: m.Cvoll, ueber: m.Cueber }[preset];
+}
+function setC(v, schreiben = true) {
+  if (!Number.isFinite(v)) return;
+  S.C = clamp(v, 0, K ? K.cMax : 1e6);
+  S.preset = null;
+  render();
+  if (schreiben) writeHash();
+}
+function waehle(preset) {
+  const c = cFuer(preset);
+  if (c === null || c === undefined) return;
+  S.C = c; S.preset = preset;
+  render(); writeHash();
+}
+function setMotor(key, v) {
+  if (!Number.isFinite(v)) { syncUI(); return; }
+  const [lo, hi] = CFG.grenzen[key];
+  S[key] = clamp(v, lo, hi);
+  kSchluessel = '';                                            // Maßstäbe neu (hängen von den Motorwerten ab)
+  K = massstab(model(par()));
+  if (S.preset) S.C = cFuer(S.preset) ?? 0;                    // nach einem Knopf: C passend nachführen
+  if (S.preset === 'teil' && model(par()).Cteil === null) S.preset = null;
+  S.C = clamp(S.C, 0, K.cMax);
+  render();
+}
+function writeHash() {
+  try { history.replaceState(null, '', location.pathname + location.search + '#' + CFG.hash + String(Math.round(S.C * 10) / 10).replace('.', '-')); } catch (e) { /* Rahmen erlaubt es nicht */ }
+}
+function readStart() {
+  try {
+    const hh = new RegExp('^#' + CFG.hash + '(\\d+)(?:-(\\d+))?$').exec(location.hash || '');
+    if (hh) return parseFloat(hh[1] + (hh[2] ? '.' + hh[2] : ''));
+  } catch (e) { /* ignorieren */ }
+  return null;
+}
+let last = null;
+function tick(ts) {
+  if (!S.playing) { last = null; return; }
+  if (last !== null) {
+    S.wt = (S.wt + Math.min((ts - last) / 1000, 0.1) * 360 / S.dauer) % 360;
+    zeitRender();
+  }
+  last = ts;
+  requestAnimationFrame(tick);
+}
+function setPlay(an) {
+  if (an === S.playing) return;
+  S.playing = an; syncUI();
+  if (an) requestAnimationFrame(tick);
+}
+const togglePlay = () => setPlay(!S.playing);
+btnPlay.addEventListener('click', togglePlay);
+for (const b of document.querySelectorAll('#seg-tempo button')) b.addEventListener('click', () => { S.dauer = Number(b.dataset.v); render(); });
+rng.addEventListener('input', () => setC(parseFloat(rng.value)));
+num.addEventListener('change', () => setC(parseFloat(String(num.value).replace(',', '.'))));
+for (const d of (document.querySelector('#steps') ? CFG.schritt : [])) {   // Schrittknöpfe nur, wenn die Leiste sie vorsieht
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = (d > 0 ? '+' : '−') + Math.abs(d); b.title = `C um ${Math.abs(d)} µF ${d > 0 ? 'vergrößern' : 'verkleinern'}`;
+  b.addEventListener('click', () => setC(S.C + d));
+  $('#steps').appendChild(b);
+}
+for (const b of document.querySelectorAll('#presets button')) b.addEventListener('click', () => waehle(b.dataset.v));
+for (const b of document.querySelectorAll('#seg-zb button')) b.addEventListener('click', () => {   // Leistungen | Ströme | aus
+  if (b.dataset.v === 'aus') S.zb = false; else { S.zb = true; S.zbart = b.dataset.v; }
+  render();
+});
+numU.addEventListener('change', () => setMotor('U', parseFloat(String(numU.value).replace(',', '.'))));
+numP.addEventListener('change', () => setMotor('P', 1000 * parseFloat(String(numP.value).replace(',', '.'))));
+numCos.addEventListener('change', () => setMotor('cos', parseFloat(String(numCos.value).replace(',', '.'))));
+const SCHALTER = ['mess', 'werte', 'form', 'rech'];          // Schlüssel in S, zu jedem gehört <input id="chk-…">
+for (const key of SCHALTER) $('#chk-' + key).addEventListener('change', (e) => { S[key] = e.target.checked; render(); });
+/* Vollbild nach Normblock 10: die ganze Seite; sichtbar ist nur die Bühne. */
+function setVollbild(an) {
+  const html = document.documentElement;
+  html.classList.toggle('vollbild', an);
+  try {
+    if (an && !document.fullscreenElement) html.requestFullscreen?.().catch(() => {});
+    if (!an && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* nicht verfügbar: Ersatz über die Klasse */ }
+  render();
+}
+const toggleFullscreen = () => setVollbild(!document.documentElement.classList.contains('vollbild'));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.documentElement.classList.contains('vollbild')) setVollbild(false); });
+$('#btn-fs').addEventListener('click', toggleFullscreen);
+$('#vb-ende').addEventListener('click', () => setVollbild(false));
+function zuruecksetzen() {                                     // Startzustand: Motorwerte und C wie beim Öffnen, läuft
+  Object.assign(S, { U: CFG.start.U, P: CFG.start.P, cos: CFG.start.cos, wt: 0 });
+  kSchluessel = ''; K = massstab(model(par()));
+  S.C = CFG.start.C; S.preset = 'keine';
+  render(); writeHash(); setPlay(true);
+}
+$('#btn-reset').addEventListener('click', zuruecksetzen);
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  const inField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if (e.key === ' ' && !inField && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); return; }
+  if (inField && t.type !== 'checkbox') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setC(S.C + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 10 : 1)); }
+  else if (e.key === 'Home') { e.preventDefault(); setC(0); }
+  else if (['0', '1', '2', '3'].includes(e.key)) waehle(['keine', 'teil', 'voll', 'ueber'][Number(e.key)]);
+  else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  else if (e.key === 'Escape' && document.documentElement.classList.contains('vollbild')) setVollbild(false);
+});
+window.addEventListener('hashchange', () => { const v = readStart(); if (v !== null && v !== S.C) setC(v, false); });
+window.addEventListener('resize', () => syncUI());
+
+/* ================= 9 Schnittstelle für Prüfung und Export (Pflicht) ================= */
+const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
+if (params.has('export')) document.documentElement.classList.add('export');
+if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne
+for (const k of SCHALTER) if (params.has(k)) { S[k] = params.get(k) !== '0'; $('#chk-' + k).checked = S[k]; }
+if (params.get('zbart') === 'I' || params.get('zbart') === 'P') S.zbart = params.get('zbart');
+if (params.has('zb')) S.zb = params.get('zb') !== '0';
+for (const [k, f] of [['U', 1], ['P', 1000], ['cos', 1]]) if (params.has(k)) { const v = parseFloat(params.get(k).replace(',', '.')) * f; if (Number.isFinite(v)) S[k] = clamp(v, ...CFG.grenzen[k]); }
+if (params.has('qr')) S.qr = params.get('qr') !== '0';
+window.anim = {
+  bauart: 'stellgroesse',
+  cfg: CFG,
+  model,                                                        // reine Physik: anim.model({U, P, cos, f, C}) mit C in µF
+  par,
+  set(c) { setC(c, false); return S.C; },                       // C in µF
+  zeit(wt) { S.wt = ((wt % 360) + 360) % 360; zeitRender(); return S.wt; },   // Zeitpunkt ωt in Grad (Energieblöcke)
+  pause(an = true) { setPlay(!an); },
+  act(name) { if (name === 'reset') zuruecksetzen(); else waehle(name); },    // 'keine' | 'teil' | 'voll' | 'ueber' | 'reset'
+  opt(key, val) {
+    if (key in CFG.grenzen) setMotor(key, val);
+    else if (key === 'zbart') { S.zbart = val; render(); }
+    else { S[key] = val; const c = $('#chk-' + key); if (c) c.checked = !!val; render(); }
+  },
+  vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },
+  get platzFehler() { return platzFehler.slice(); },            // Beschriftungen im Zeigerbild ohne freie Lage
+  get state() {
+    const { playing, ...rest } = S;                              // Bedienzustand „läuft“ gehört nicht zum Bild
+    return { ...rest, ...model(par()), cMax: K.cMax, messbereich: K.mb[0],
+             hQnetzMotor: bQ1.an ? bQ1.h : 0, hQkondMotor: bQ2.an ? bQ2.h : 0, hQkondNetz: bQL.an ? bQL.h : 0, hP: bP.h,
+             lI2: aI2.seg[2] - aI2.seg[0], lI1: aI1.seg[2] - aI1.seg[0] };
+  },
+};
+
+/* ================= 10 Start ================= */
+K = massstab(model(par())); kSchluessel = `${S.U}|${S.P}|${S.cos}`; mess1.skala(...K.mb); mess2.skala(...K.mb);
+{ const v = readStart(); if (v !== null) { S.C = clamp(v, 0, K.cMax); S.preset = null; } }
+render();
+/* Beim Öffnen läuft die Animation (Festlegung der Lehrkraft, 20.11.2026: „läuft ohne Kompensation, Blindleistung zwischen
+   Netz und Motor“) – nicht im Export und nicht mit ?auto=0. */
+if (!params.has('export') && params.get('auto') !== '0') setPlay(true);
+})();
+</script>
+</body>
+</html>
