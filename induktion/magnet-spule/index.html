@@ -201,9 +201,20 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
 .ek{padding:6px 10px 7px;border:1px solid var(--rule);border-radius:6px;font-size:14px;line-height:1.4;transition:background-color .2s,border-color .2s,box-shadow .2s}
 .ek b{display:block;font-size:14.5px;margin-bottom:2px}
 .ek.aktiv{background:var(--hl);border-color:var(--focus);box-shadow:inset 4px 0 0 var(--focus)}
-/* Zeile 3 in Gruppen mit Überschrift (20.11.2026): Kästchen einer Gruppe etwas weiter auseinander; Vollbild bleibt rechts, auch wenn die Zeile umbricht */
-#controls .group[role=group] .chk+.chk{margin-left:6px}
-#btn-fs{margin-left:auto}
+/* Bedienleiste in Kästen mit Überschrift auf dem Rahmen (Wunsch der Lehrkraft, 20.11.2026): Steuerung, Parameter,
+   Feld, Messwerte, Text. Die Überschrift ragt 7 px über den Rahmen, daher mehr Abstand oben und zwischen den Zeilen. */
+#controls{padding-top:14px;row-gap:12px}
+#controls>details.keys{margin-top:-5px}
+#controls .row{align-items:stretch;column-gap:8px}
+#controls .kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+#controls .kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);
+  font-size:10.5px;line-height:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#controls .kasten .chk+.chk{margin-left:4px}
+#btn-fs{margin-left:auto;align-self:center}
+@media (orientation:landscape) and (max-height:520px){#controls .kasten .sep{display:none}}
+#controls .kasten{flex:1 1 auto}
+@media (max-width:640px){#controls .kasten{flex:1 1 100%}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .warn{margin:8px 0 0;color:var(--warn);font-weight:600;max-width:68ch}
 .m{font-family:var(--font-math);font-size:1.08em}
@@ -222,55 +233,57 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
 
   <!-- 2 Bedienleiste: unmittelbar unter der Bühne, drei Zeilen (Lauf · Einstellen · Ansicht), dann „Tastatur“ -->
   <div class="controls" id="controls" role="toolbar" aria-label="Bedienung">
+    <!-- Kästen mit Überschrift (Wunsch der Lehrkraft, 20.11.2026): Steuerung · Parameter · Feld · Messwerte · Text -->
     <div class="row">                                   <!-- Zeile 1 · Lauf -->
-      <button id="bAuto" class="primary" type="button"></button>
-      <div class="group"><span class="cap">Tempo</span>
-        <div class="seg" role="group" aria-label="Tempo der automatischen Bewegung">
-          <button type="button" data-tempo="4" aria-pressed="false">0,5×</button>
-          <button type="button" data-tempo="2" aria-pressed="true">1×</button>
-          <button type="button" data-tempo="1" aria-pressed="false">2×</button>
+      <div class="kasten" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <button id="bAuto" class="primary" type="button"></button>
+        <div class="group"><span class="cap">Tempo</span>
+          <div class="seg" role="group" aria-label="Tempo der automatischen Bewegung">
+            <button type="button" data-tempo="4" aria-pressed="false">0,5×</button>
+            <button type="button" data-tempo="2" aria-pressed="true">1×</button>
+            <button type="button" data-tempo="1" aria-pressed="false">2×</button>
+          </div>
         </div>
+        <button id="bPause" type="button">Pause</button>
+        <span class="sep"></span>
+        <button id="bReset" type="button">Zurücksetzen</button>
       </div>
-      <button id="bPause" type="button">Pause</button>
-      <span class="sep"></span>
-      <button id="bReset" type="button">Zurücksetzen</button>
     </div>
     <div class="row">                                   <!-- Zeile 2 · Einstellen -->
-      <button id="bFlip" type="button">Magnet umdrehen</button>
-      <span class="sep"></span>
-      <div class="group"><span class="cap">Windungen <i class="m">N</i></span>
-        <div class="seg" role="group" aria-label="Windungszahl">
-          <button type="button" data-n="300" aria-pressed="false">300</button>
-          <button type="button" data-n="600" aria-pressed="true">600</button>
-          <button type="button" data-n="1200" aria-pressed="false">1200</button>
+      <div class="kasten" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
+        <button id="bFlip" type="button">Magnet umdrehen</button>
+        <span class="sep"></span>
+        <div class="group"><span class="cap">Windungen <i class="m">N</i></span>
+          <div class="seg" role="group" aria-label="Windungszahl">
+            <button type="button" data-n="300" aria-pressed="false">300</button>
+            <button type="button" data-n="600" aria-pressed="true">600</button>
+            <button type="button" data-n="1200" aria-pressed="false">1200</button>
+          </div>
         </div>
-      </div>
-      <span class="sep"></span>
-      <div class="group"><span class="cap">Messbereich</span>
-        <div class="seg" role="group" aria-label="Messbereich">
-          <button type="button" data-bereich="0.1" aria-pressed="true">100 mV</button>
-          <button type="button" data-bereich="0.3" aria-pressed="false">300 mV</button>
-          <button type="button" data-bereich="1" aria-pressed="false">1 V</button>
+        <span class="sep"></span>
+        <div class="group"><span class="cap">Messbereich</span>
+          <div class="seg" role="group" aria-label="Messbereich">
+            <button type="button" data-bereich="0.1" aria-pressed="true">100 mV</button>
+            <button type="button" data-bereich="0.3" aria-pressed="false">300 mV</button>
+            <button type="button" data-bereich="1" aria-pressed="false">1 V</button>
+          </div>
         </div>
       </div>
     </div>
-    <div class="row">                                   <!-- Zeile 3 · Ansicht in drei Gruppen (20.11.2026), rechts außen Vollbild -->
-      <div class="group" role="group" aria-label="Feld"><span class="cap">Feld</span>
+    <div class="row">                                   <!-- Zeile 3 · Ansicht in drei Kästen, rechts außen Vollbild -->
+      <div class="kasten" role="group" aria-labelledby="lg-feld"><span class="lg" id="lg-feld">Feld</span>
         <label class="chk" for="chk-feld"><input id="chk-feld" type="checkbox">Feldlinien <i class="m">B</i></label>
         <label class="chk" for="chk-phi"><input id="chk-phi" type="checkbox">Fluss <i class="m">Φ</i></label>
       </div>
-      <span class="sep"></span>
-      <div class="group" role="group" aria-label="Werte"><span class="cap">Werte</span>
+      <div class="kasten" role="group" aria-labelledby="lg-werte"><span class="lg" id="lg-werte">Messwerte</span>
         <label class="chk" for="chk-werte" title="Momentanwerte als Tabelle"><input id="chk-werte" type="checkbox">Tabelle</label>
         <label class="chk" for="chk-diag"><input id="chk-diag" type="checkbox">Diagramm</label>
       </div>
-      <span class="sep"></span>
-      <div class="group" role="group" aria-label="Text unter der Bühne"><span class="cap">Text</span>
+      <div class="kasten" role="group" aria-labelledby="lg-text"><span class="lg" id="lg-text">Text</span>
         <label class="chk" for="chk-erkl"><input id="chk-erkl" type="checkbox">Erklärung</label>
         <label class="chk" for="chk-form"><input id="chk-form" type="checkbox">Formeln</label>
         <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox">Berechnung</label>
       </div>
-      <span class="sp"></span>
       <button type="button" id="btn-fs">Vollbild</button>
     </div>
     <details class="keys">
