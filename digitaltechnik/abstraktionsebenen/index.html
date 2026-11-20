@@ -1,0 +1,1728 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Abstraktionsebenen der Digitaltechnik</title>
+<meta name="description" content="Zoom vom Raumthermostat über Platine, Mikrocontroller oder Gatter-IC bis zum NAND-Gatter und seinen Transistoren (CMOS oder TTL). Zum Durchklicken, Hinein- und Herauszoomen; die Leiter zeigt Baueinheit und Abstraktionsebene.">
+<style>
+/* LAYOUT-NORM:begin v3 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+   Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
+   gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit. */
+:root{
+  /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
+  --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
+  --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
+  /* Bühne: immer weiß, ohne Karoraster – die Größenfarben der Fachkonventionen gelten für weißen Grund */
+  --stage:#ffffff; --ink:#1b2127;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-math:var(--font-ui);   /* Formeln in der Textschrift (Festlegung der Lehrkraft, 12.11.2026; fachkonventionen 3a) */
+  /* Bühnengröße = (Fensterhöhe − --reserve) · 16/9, höchstens 1920 px und höchstens die Seitenbreite.
+     --reserve: Ränder, Abstand und Bedienleiste. Derselbe Wert steht in scripts/pruefen.py (NORM). */
+  --reserve:250px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+    --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+  --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--page);color:var(--fg)}
+body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.45;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+sub,sup{font-size:.72em;line-height:0}
+
+/* 1 Seitenaufbau, immer in dieser Reihenfolge, alles gleich breit: Bühne (#stage) → Bedienleiste (#controls) →
+   Zusatzbereiche (.card, .info, optional) → Modellhinweise (.notes). Über der Bühne steht nichts. */
+.wrap{width:100%;max-width:min(1920px,max(min(100%,720px),calc((100dvh - var(--reserve)) * 16 / 9)));
+  margin:0 auto;display:grid;gap:12px}
+
+/* 2 Bühne: immer 16:9, logisch 1920 × 1080 (SVG-viewBox; Canvas darunter, SVG mit Titel und QR-Code darüber) */
+.stage{position:relative;background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.stage svg,.stage canvas{display:block;width:100%;height:100%}
+.stage canvas + svg{position:absolute;inset:0}
+.stage:fullscreen{border:0;border-radius:0;aspect-ratio:auto;width:100vw;height:100vh;max-width:none}   /* nur noch für Animationen vor v3 */
+
+/* 3 Schrift in der Bühne (Bühnenpixel bei 1920 Breite): Formelzeichen kursiv (.i), Einheiten, Zahlen, Indizes aufrecht */
+#stage-svg text{font-family:var(--font-math);fill:var(--ink)}
+#stage-svg .t-main{font-size:60px;font-weight:700}     /* Titel, oben rechts neben dem QR-Code */
+#stage-svg .t-panel{font-size:34px;font-weight:700}    /* Bereichsüberschrift */
+#stage-svg .ro{font-size:38px}                         /* Momentanwerte */
+#stage-svg .lbl{font-size:30px}                        /* Formelzeichen an Pfeilen und Bauteilen */
+#stage-svg .lbl-s{font-size:25px}
+#stage-svg .lbl-xs{font-size:22px}                     /* kleinste erlaubte Beschriftung */
+#stage-svg .sans{font-family:var(--font-ui)}
+#stage-svg .i{font-style:italic}
+#stage-svg .muted{fill:#58636e}
+#stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .qr-cap{font-family:var(--font-ui);font-size:22px}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
+
+/* 4 Bedienleiste: höchstens drei Zeilen – 1 Lauf (und Wert), 2 Einstellen (nur wenn nötig), 3 Ansicht – dann „Tastatur“.
+   Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+.card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.controls{display:grid;gap:6px;font-size:13.5px;line-height:1.35}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.row .sp{flex:1 1 auto}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
+.group.wert .group{flex-wrap:nowrap}
+.group.wert input[type=range]{min-width:100px}
+.cap{font-size:12px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
+button{padding:3px 9px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:9em;font-weight:600}
+button.primary:hover{opacity:.92}
+select{padding:2px 5px}
+input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
+.seg{display:inline-flex}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
+.seg button:last-child{border-radius:0 5px 5px 0}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:14px;height:14px;margin:0}
+:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.keys .hint{margin-top:6px}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+.sep{width:1px;align-self:stretch;background:var(--rule)}
+@media (max-width:640px){.sep{display:none}}
+
+/* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
+.diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
+.diag text{font-family:var(--font-math);fill:var(--ink)}           /* Schriftstufen wie in der Bühne (Bühnenpixel bei 1920) */
+.diag .lbl{font-size:30px} .diag .lbl-s{font-size:25px} .diag .lbl-xs{font-size:22px}
+.diag .sans{font-family:var(--font-ui)} .diag .i{font-style:italic} .diag .muted{fill:#58636e}
+.diag .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+.info{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.info{grid-template-columns:1fr}}
+.info h2{margin:0;font-size:19px}
+.info h3,.card h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#pText{margin:8px 0 0;max-width:68ch}
+.formulas{margin-top:10px;padding:10px 12px;border-left:3px solid var(--rule);background:var(--btn);border-radius:0 6px 6px 0;display:grid;gap:8px;font-family:var(--font-math);font-size:17px}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px;line-height:1.15}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 3px}
+.vals table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.vals td{padding:4px 0;border-bottom:1px solid var(--rule)}
+.vals td:last-child{text-align:right;font-weight:600}
+.vals tr:last-child td{border-bottom:0}
+
+/* 6 Modellhinweise: immer zuletzt, aufklappbar */
+.notes summary{cursor:pointer;font-weight:600}
+.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
+
+/* 7 Export (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
+html.export .wrap>:not(.stage){display:none}
+
+/* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
+   16:9-Rahmen genau aus. Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.buehne .wrap{width:100%;max-width:none;gap:0}
+html.buehne .stage{border:0;border-radius:0}
+html.buehne .wrap>:not(.stage){display:none}
+
+/* 9 Handy quer (Fenster flach und höchstens 520 px hoch): Bühne links, so groß wie es die Höhe erlaubt; Bedienleiste
+   rechts daneben, bei Bedarf mit eigenem Rollbalken; alles Weitere darunter. Nicht in Vorschau und Export. */
+@media (orientation:landscape) and (max-height:520px){
+  html:not(.buehne):not(.export):not(.vollbild) .wrap{max-width:none;
+    grid-template-columns:min(calc((100dvh - 32px) * 16 / 9),calc(100% - 272px)) minmax(260px,1fr);align-items:start}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>*{grid-column:1 / -1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.stage{grid-column:1;grid-row:1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{grid-column:2;grid-row:1;min-width:0;max-height:calc(100dvh - 32px);
+    overflow-x:hidden;overflow-y:auto;padding:8px 10px}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+}
+
+/* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
+   sichtbar sind nur die Bühne und – wenn eingeschaltet – das Diagramm (#diagCard) darunter. Die Bühne bleibt 16:9 und wird
+   so groß, dass beides auf den Bildschirm passt (mit Diagramm: 1920 × 1480 Bühnenpixel zusammen). Ohne Vollbild-Schnittstelle
+   (iPhone, eingebettete Ansicht) füllt dieselbe Ansicht das Fenster; dann führt .vb-ende zurück.
+   Festlegung der Lehrkraft, 12.11.2026: „Vollbild nimmt ein eingeschaltetes Diagramm mit.“ */
+html.vollbild,html.vollbild body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.vollbild .wrap{position:fixed;inset:0;z-index:20;max-width:none;width:auto;margin:0;gap:0;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;--vb-h:1080}
+html.vollbild .wrap:has(>#diagCard:not([hidden])){--vb-h:1480}
+html.vollbild .wrap>*{display:none}
+html.vollbild .wrap>.stage{display:block;flex:none;border:0;border-radius:0;width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild .wrap>#diagCard:not([hidden]){display:block;flex:none;border:0;border-radius:0;padding:0;background:#fff;
+  width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild #diagCard h3{display:none}
+html.vollbild #diagCard .diag{border:0;border-radius:0}
+.vb-ende{display:none}
+html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:21;opacity:.8}
+/* LAYOUT-NORM:end */
+
+/* Nur diese Animation: Größenfarbe Strom nach fachkonventionen, Abschnitt 6, und die Farbklassen der Bühne.
+   Seitenaufbau, Bühnengröße, Schrift in der Bühne, Bedienleiste und Export stehen im Normblock oben. */
+:root{ --i:#FF0000; }
+#stage-svg .c-i{fill:var(--i)}
+#stage-svg .fett{font-weight:700}
+#stage-svg .klick{cursor:pointer}
+#stage-svg .klick:focus{outline:none}
+#stage-svg .klick:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:5}
+#stage-svg .zeile{cursor:pointer}
+#stage-svg #feld{cursor:pointer}
+#stage-svg .nav-knopf:hover>circle{fill:#e9ecef}
+html.export #nav{display:none}
+#stage-svg .zeile:hover>rect{fill:#eef1f4}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 1 Bühne: 16:9, logisch 1920 × 1080. Über ihr steht nichts. -->
+  <div class="stage" id="stage">
+    <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">Abstraktionsebenen der Digitaltechnik</title>
+      <desc id="svg-desc">Zoom von einem Raumthermostat über Platine, Mikrocontroller oder Gatter-IC bis zum NAND-Gatter und seinen Transistoren. Links zeigt eine Leiter Baueinheit und Abstraktionsebene der aktuellen Ebene.</desc>
+    </svg>
+  </div>
+
+  <!-- 2 Bedienleiste: unmittelbar unter der Bühne, höchstens drei Zeilen, dann „Tastatur“ -->
+  <div class="controls" id="controls">
+    <div class="row">                                   <!-- Zeile 1 · Lauf und Wert -->
+      <!-- Festlegung der Lehrkraft, 20.11.2026: „bitte auch zum Durchklicken, nicht nur Schieber“ -->
+      <button id="btn-weiter" class="primary" type="button">Darstellung zeigen ▶</button>
+      <button id="btn-zurueck" type="button">◀ Zurück</button>
+      <!-- Festlegung der Lehrkraft, 20.11.2026: „und herauszoomen fehlt“ -->
+      <button id="btn-heraus" type="button">◀◀ Herauszoomen</button>
+      <button id="btn-play" type="button" aria-pressed="false">▶ Abspielen</button>
+      <label class="group" for="sel-speed"><span class="cap">Tempo</span>
+        <select id="sel-speed">
+          <option value="3">1 Ebene in 3 s</option>
+          <option value="6" selected>1 Ebene in 6 s</option>
+          <option value="12">1 Ebene in 12 s</option>
+        </select>
+      </label>
+      <button id="btn-reset" type="button">Zurücksetzen</button>
+      <div class="group wert">
+        <input id="rng-x" type="range" aria-label="Zoomstufe">
+        <label class="group" for="num-x"><span class="cap">Zoomstufe</span>
+          <input id="num-x" type="number">
+        </label>
+      </div>
+    </div>
+    <div class="row">                                   <!-- Zeile 2 · Einstellen -->
+      <div class="group"><span class="cap">Weg</span>
+        <div class="seg" role="group" aria-label="Weg nach unten" id="seg-weg">
+          <button type="button" data-weg="ic" aria-pressed="true">Gatter-IC</button>
+          <button type="button" data-weg="alu" aria-pressed="false">µC → ALU</button>
+          <button type="button" data-weg="reg" aria-pressed="false">µC → Register</button>
+        </div>
+      </div>
+      <div class="group"><span class="cap">Technik</span>
+        <div class="seg" role="group" aria-label="Gattertechnik" id="seg-tech">
+          <button type="button" data-tech="cmos" aria-pressed="true">CMOS</button>
+          <button type="button" data-tech="ttl" aria-pressed="false">TTL</button>
+        </div>
+      </div>
+      <div class="group"><span class="cap">Eingänge</span>
+        <button type="button" id="btn-a">A = 1</button>
+        <button type="button" id="btn-b">B = 1</button>
+      </div>
+      <label class="group" for="sel-ebene"><span class="cap">Ebene</span>
+        <select id="sel-ebene"></select>
+      </label>
+    </div>
+    <div class="row">                                   <!-- Zeile 3 · Ansicht -->
+      <label class="chk" for="chk-text"><input id="chk-text" type="checkbox" checked>Text zur Ebene</label>
+      <label class="chk" for="chk-sm"><input id="chk-sm" type="checkbox" checked>Schaltermodell</label>
+      <label class="chk" for="chk-strom"><input id="chk-strom" type="checkbox" checked>Ströme (TTL)</label>
+      <span class="sp"></span>
+      <button type="button" id="btn-fs">Vollbild</button>
+    </div>
+    <details class="keys">
+      <summary>Tastatur und Verlinken</summary>
+      <div class="hint">
+        <kbd>→</kbd> oder <kbd>Bild↓</kbd> weiter · <kbd>←</kbd> oder <kbd>Bild↑</kbd> zurück (auch mit Presenter) · <kbd>Umschalt</kbd>+<kbd>←</kbd> oder <kbd>H</kbd> herauszoomen · <kbd>Umschalt</kbd>+<kbd>→</kbd> ganze Ebene weiter ·
+        <kbd>Leertaste</kbd> Abspielen/Pause ·
+        <kbd>A</kbd> <kbd>B</kbd> Eingang umschalten · <kbd>Pos1</kbd> Anfang · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
+        Ein Klick in das Bild rechts führt weiter, auch im Vollbild; die Knöpfe links oben in der Bühne zoomen heraus, gehen zurück und weiter.
+        Abspielen zoomt bis zur untersten Ebene hinein und wieder heraus (Schleife).
+        Zeilen der Leiter links und die Eingänge in der Bühne lassen sich anklicken.
+        Ein Zustand lässt sich verlinken, z.&nbsp;B. <code>#alu.cmos.e7-6</code> (Weg, Technik, Zoomstufe 7,6).
+      </div>
+    </details>
+  </div>
+
+  <!-- 3 Zusatzbereiche (keine) und zuletzt die Modellhinweise -->
+  <details class="card notes">
+    <summary>Modell und Vereinfachungen</summary>
+    <ul>
+      <li><b>Zwei Achsen.</b> Die Baueinheiten (Gerät, Baugruppe, Bauelement) enden am Gehäuse des Bauelements. Im Bauelement gibt es nur noch Funktionseinheiten; dort zählen die Abstraktionsebenen (System, Register-Transfer, Logik, Gatter, Transistor) nach dem Y-Diagramm von Gajski und Kuhn (1983). Ein Gatter-IC ist ein Bauelement, dessen Inhalt schon auf der Gatterebene liegt; ein Mikrocontroller reicht von der Systemebene bis zum Transistor.</li>
+      <li><b>Beispielgerät.</b> Raumthermostat mit Steuerplatine. Das Gatter-IC (74HC00) bildet eine Hardware-Verriegelung: Relais nur ein, wenn Mikrocontroller UND Übertemperaturschutz freigeben (ein NAND und ein NAND als Inverter). Ausgedachtes, aber übliches Beispiel.</li>
+      <li><b>Mikrocontroller.</b> ATmega328P, laut Datenblatt ein CMOS-Mikrocontroller (Microchip/Atmel, „low-power CMOS 8-bit microcontroller“). Schaltzeichen vereinfacht: nur Gruppen von Anschlüssen. Der Chip ist eine Zeichnung, kein Foto; Lage und Größe der Blöcke sind ausgedacht.</li>
+      <li><b>ALU vereinfacht.</b> Gezeigt wird nur der Addierer (Ripple-Carry aus acht Volladdierern). Eine echte ALU kann mehr (logische Verknüpfungen, Schieben, Auswahl über Multiplexer).</li>
+      <li><b>Register vereinfacht.</b> Acht flankengesteuerte D-Flipflops mit gemeinsamem Steuerblock. Das D-Flipflop aus sechs NAND-Gattern ist ein Modell: CMOS-Chips bauen Flipflops meist als Master-Slave-Schaltung aus Transmission-Gates und Invertern – das Verhalten ist gleich.</li>
+      <li><b>NAND in CMOS.</b> Grundschaltung mit vier Transistoren. Ein 74HC00 hat laut Datenblatt zusätzlich gepufferte Eingänge und Schutzdioden („buffered inputs“, „clamp diodes“) – nicht gezeichnet. Im Ruhezustand fließt durch die Transistoren kein Strom; nur beim Umschalten fließt kurz ein Umladestrom.</li>
+      <li><b>NAND in TTL.</b> Schaltung nach dem Datenblatt SN7400 (Texas Instruments, SDLS025): Eingangstransistor mit zwei Emittern, Eingangsdioden, Phasenteiler, Gegentakt-Endstufe; Widerstände 4 kΩ, 1,6 kΩ, 1 kΩ, 130 Ω (Nennwerte). Ströme ohne Last am Ausgang, nur die Richtung, ohne Werte. Im Mikrocontroller gibt es kein TTL.</li>
+      <li><b>Schaltermodell.</b> Jeder Transistor als idealer Schalter: leitet oder sperrt. Die Schwellen, Zwischenzustände und Schaltzeiten sind weggelassen.</li>
+      <li><b>Versorgung.</b> Im Anschlussbild und auf der Gatterebene sind VCC und GND an jedes Gatter gezeichnet. In Logikplänen werden die Versorgungsanschlüsse üblicherweise weggelassen; jedes Gatter braucht sie trotzdem.</li>
+      <li><b>Pegel.</b> 1 = H (kräftige Linie), 0 = L (dünne graue Linie); positive Logik.</li>
+      <li><b>Symbole.</b> Gatter, Kippglied und Steuerblock nach DIN EN 60617-12; Transistoren nach DIN EN 60617-5 (Tabellenbuch S. 90–92). Die Blockschaltbilder sind frei gezeichnet (Rechtecke, Signalpfeile). Die Chip-Bilder zeigen Materialfarben, keine Größenfarben.</li>
+    </ul>
+  </details>
+</div>
+
+<button type="button" class="vb-ende" id="vb-ende">Vollbild beenden</button>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+
+/* ================= 1 Parameterblock =================
+   Festlegungen der Lehrkraft, 20.11.2026 (Auswahlrunden und Nachrichten im Chat):
+   - Gattertechnik: CMOS, TTL umschaltbar. Im µC gibt es nur CMOS; TTL erscheint dort mit Hinweis.
+   - Wege unter der CPU: ALU (Schaltnetz) und Register (Schaltwerk); dazu der Weg „Gatter-IC“
+     („ICs der Gatter nicht vergessen“).
+   - Oberste Ebene: Gerät (Raumthermostat).
+   - Start: steht bei den Gattern („steht bei gattern“).
+   - Reale Teile als gezeichnetes SVG; Bild und Darstellung werden überblendet.
+   - Pegel als Ziffer 1/0 und Linienstärke, ohne Farbe.
+   - Transistorebene: Schaltermodell neben jedem Transistor; bei TTL zusätzlich Ströme (rot).
+   - Boolesche Algebra: UND als Malpunkt ·, ODER als +, Negation als Strich darüber.
+   - Titel: „Abstraktionsebenen der Digitaltechnik“. */
+const CFG = {
+  titel: 'Abstraktionsebenen der Digitaltechnik',
+  feld: { x: 570, y: 372, w: 1330, h: 688 },        // Bildfeld in der Bühne (Bühnenpixel)
+  leiter: { x0: 22, x1: 552, kopf: 200, y0: 222, y1: 1058, spalten: [22, 240, 396, 552] },   // Zoomleiter links
+  kopf: { x: 570, y: 212, breite: 1010 },           // Ebenenüberschrift und Text (rechts bleibt die QR-Ecke frei)
+  phase: { bild: 0.3, ueber: 0.5, zoom: 0.7 },      // je Ebene: Bild bis 0,3 · Überblenden bis 0,5 · Darstellung bis 0,7 · dann Zoom
+  stopDar: 0.6,                                     // Zoomstufe „Darstellung“ innerhalb einer Ebene
+  start: { weg: 'ic', ebene: 'gatter', tech: 'cmos', a: 1, b: 1 },   // Festlegung 20.11.2026: steht bei den Gattern
+  dauer: 6,                                         // s je Ebene beim Abspielen
+  zielLuft: 1.15,                                   // Luft um den Zielausschnitt beim Hineinzoomen
+  pegel: { eins: ['#1b2127', 6], null: ['#9aa3ad', 3] },   // Festlegung 20.11.2026: 1 kräftig schwarz, 0 dünn grau
+  ink: '#1b2127', grau: '#58636e', hell: '#c6ccd2', strom: '#FF0000',
+  // Materialfarben der Chip- und Platinenbilder (keine Größenfarben; jede Fläche ist beschriftet)
+  m: {
+    die: '#b9bec3', dieRand: '#899097', pad: '#e3e5e7', padRand: '#99a0a6', bond: '#c9a64a',
+    speicher: '#a9aebd', speicherLinie: '#8f95a6', logik: '#b5b0a8', logik2: '#a39d94', logik3: '#cbc6be',
+    poly: '#b0705a', pdiff: '#e3cb9f', ndiff: '#c7d0a6', nwanne: '#efe9d9', metall: '#a9aeb4', kontakt: '#2a2d30',
+    lp: '#2e6a4e', lpRand: '#1d4634', kupfer: '#5ea57f', gehaeuse: '#24272a', pin: '#c7cbcf', pinRand: '#8d9399',
+    insel: '#c9cdd2', inselRand: '#8d9399', basis: '#dccca8', emitter: '#c4b083',
+  },
+  ttl: { R1: 4e3, R2: 1.6e3, R3: 1e3, R4: 130 },   // Ω, Nennwerte nach Datenblatt SN7400 (TI, SDLS025), „schematic“
+  qr: 'https://kh-wss.github.io/unterrichtsunterlagen/digitaltechnik/abstraktionsebenen/',
+};
+
+/* Wege nach unten und Ebenen. bau = Baueinheit (null: im Bauelement), abs = Abstraktionsebene. */
+const WEGE = {
+  ic:  { name: 'Gatter-IC',     ebenen: ['geraet', 'platine', 'gic', 'gatter', 'trans'] },
+  alu: { name: 'µC → ALU',      ebenen: ['geraet', 'platine', 'uc', 'ucin', 'cpu', 'add', 'va', 'gatter', 'trans'] },
+  reg: { name: 'µC → Register', ebenen: ['geraet', 'platine', 'uc', 'ucin', 'cpu', 'reg8', 'dff', 'gatter', 'trans'] },
+};
+const ABS = { sys: ['System'], rt: ['Register-', 'Transfer'], logik: ['Logik'], gatter: ['Gatter'], trans: ['Transistor'] };
+
+/* ================= 2 Modell (rein, ohne Darstellung) =================
+   NAND in positiver Logik: Y = 0 nur, wenn A = 1 und B = 1.
+   CMOS-Grundschaltung: P1 (Gate A) und P2 (Gate B) parallel zwischen VCC und Y – ein p-Kanal-Transistor
+   (Anreicherung) leitet bei 0 am Gate. N1 (Gate A) und N2 (Gate B) in Reihe zwischen Y und GND – ein
+   n-Kanal-Transistor leitet bei 1 am Gate. Im Ruhezustand leitet nie ein Pfad von VCC nach GND.
+   TTL (SN7400): Beide Eingänge H → T1 invers betrieben, Basisstrom über die Basis-Kollektor-Diode in T2,
+   T2 und T4 leiten, T3 sperrt → Y = L. Ein Eingang L → T1 gesättigt, Strom fließt aus dem Emitter zum
+   Eingang, T2 und T4 sperren, T3 leitet über R2 → Y = H.
+   Logik der übrigen Ebenen: Volladdierer aus 9 NAND, D-Flipflop aus 6 NAND (nur gezeichnet, nicht simuliert). */
+const nand = (...x) => (x.every((v) => v === 1) ? 0 : 1);
+function model(a, b) {
+  const y = nand(a, b);
+  return {
+    y,
+    cmos: { P1: a === 0, P2: b === 0, N1: a === 1, N2: b === 1 },          // true = leitet
+    ttl: y === 0 ? { T1: 'invers', T2: true, T3: false, T4: true } : { T1: 'gesättigt', T2: false, T3: true, T4: false },
+  };
+}
+// Volladdierer aus neun NAND (zum Nachrechnen): S = A ⊕ B ⊕ c, c_aus = A · B + c · (A ⊕ B)
+function volladdierer(a, b, c) {
+  const n1 = nand(a, b), n2 = nand(a, n1), n3 = nand(b, n1), x = nand(n2, n3);
+  const n5 = nand(x, c), n6 = nand(x, n5), n7 = nand(n5, c);
+  return { s: nand(n6, n7), co: nand(n5, n1) };
+}
+
+/* ================= 3 Zustand ================= */
+const S = { e: 0, weg: CFG.start.weg, tech: CFG.start.tech, a: CFG.start.a, b: CFG.start.b,
+  playing: false, dauer: CFG.dauer, text: true, sm: true, strom: true, qr: false };
+let spielRichtung = 1, spielHalt = 0;   // Abspielen: +1 hinein, −1 heraus; Haltezeit an den Enden in s
+
+/* ================= 4 Hilfen ================= */
+const $ = (s) => document.querySelector(s);
+const svg = $('#stage-svg');
+function el(tag, attrs = {}, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) if (v !== undefined && v !== null) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function txt(x, y, html, attrs = {}, parent = svg) { const t = el('text', { x, y, ...attrs }, parent); t.innerHTML = html; return t; }
+const I = (s) => `<tspan class="i">${s}</tspan>`;
+const SUB = (s, size = 30) => `<tspan dy="${size * 0.3}" font-size="${size * 0.7}">${s}</tspan><tspan dy="${-size * 0.3}">​</tspan>`;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const glatt = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const show = (e, on) => { e.style.display = on ? '' : 'none'; };
+function dez(v, nk) {
+  let s = Math.abs(v).toFixed(nk).replace('.', ',');
+  if (v < 0 && Number(s.replace(',', '.')) !== 0) s = '−' + s;
+  return s;
+}
+function fmtWert(v, einheit) {
+  const a = Math.abs(v);
+  if (a < 5e-13) return '0 ' + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let f = 1e-12, p = 'p';
+  for (const [fac, pf] of vors) if (a >= fac * 0.999995) { f = fac; p = pf; break; }
+  return dez(v / f, 2) + ' ' + p + einheit;
+}
+const fmtGegeben = (v, einheit) => fmtWert(v, einheit).replace(/,(\d*?)0+ /, (m, z) => (z ? ',' + z : '') + ' ');
+function rnd(seed) {   // fester Zufall (mulberry32): Texturen sehen bei jedem Laden gleich aus
+  let s = seed >>> 0;
+  return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function arrowHead(x2, y2, ux, uy, L, W) {
+  const bx = x2 - ux * L, by = y2 - uy * L;
+  return `${x2},${y2} ${bx - uy * W},${by + ux * W} ${bx + uy * W},${by - ux * W}`;
+}
+
+/* Zeichenbausteine (Koordinaten im Bildfeld, 1330 × 688) */
+const ink = CFG.ink, M = CFG.m;
+const Rk = (g, x, y, w, h, a = {}) => el('rect', { x, y, width: w, height: h, ...a }, g);
+const Kr = (g, cx, cy, r, a = {}) => el('circle', { cx, cy, r, ...a }, g);
+const Tx = (g, x, y, s, cls = 'lbl-s', a = {}) => {
+  if (a.fill) { a = { ...a, style: 'fill:' + a.fill + ';' + (a.style || '') }; delete a.fill; }
+  return txt(x, y, s, { class: cls, ...a }, g);
+};
+function Ln(g, pts, a = {}) {
+  return el('path', { d: 'M' + pts.map((p) => p[0] + ' ' + p[1]).join(' L '), fill: 'none', stroke: ink, 'stroke-width': 3,
+    'stroke-linejoin': 'round', 'stroke-linecap': 'round', ...a }, g);
+}
+const punkt = (g, x, y) => Kr(g, x, y, 6.5, { fill: ink });          // Knoten (Verbindungspunkt)
+function pfeil(g, pts, a = {}) {                                     // Signalpfeil im Blockschaltbild
+  const [x1, y1] = pts[pts.length - 2], [x2, y2] = pts[pts.length - 1];
+  const d = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / d, uy = (y2 - y1) / d;
+  const p = pts.slice(); p[p.length - 1] = [x2 - ux * 12, y2 - uy * 12];
+  const gr = el('g', {}, g);
+  Ln(gr, p, a);
+  el('polygon', { points: arrowHead(x2, y2, ux, uy, 20, 8), fill: a.stroke || ink }, gr);
+  return gr;
+}
+function block(g, x, y, w, h, zeilen, a = {}, cls = 'lbl-s') {
+  Rk(g, x, y, w, h, { fill: '#fff', stroke: ink, 'stroke-width': 3, ...a });
+  const lh = cls === 'lbl' ? 38 : 33;
+  zeilen.forEach((z, i) => Tx(g, x + w / 2, y + h / 2 + (i - (zeilen.length - 1) / 2) * lh + 9, z, cls, { 'text-anchor': 'middle' }));
+}
+function ueberstrich(t, g) {             // Strich über einem Text (Negation, aktiv-L-Anschluss)
+  const b = t.getBBox();
+  return Ln(g, [[b.x + 2, b.y + b.height * 0.12], [b.x + b.width - 2, b.y + b.height * 0.12]], { 'stroke-width': 2.4 });
+}
+/* NAND-Element nach DIN EN 60617-12 (Hausstil: \Gatter[neg]): Breite u, Eingangsabstand 0,75 u (zwei Eingänge)
+   bzw. 0,5 u (drei), Kennzeichen & oben, Negationskreis r = 0,09 u am Ausgang. (x, y1) = Eingang 1. */
+function nandSymbol(g, x, y1, u, n = 2, sw = 3) {
+  const gs = n === 1 ? 1 : n === 2 ? 0.75 : 0.5, top = y1 - gs * u / 2, h = n * gs * u, mid = top + h / 2;
+  Rk(g, x, top, u, h, { fill: '#fff', stroke: ink, 'stroke-width': sw });
+  Tx(g, x + u / 2, top + 0.2 * u + 0.3 * u, '&amp;', null, { 'font-size': Math.max(22, 0.36 * u), 'text-anchor': 'middle' });
+  Kr(g, x + u + 0.09 * u, mid, 0.09 * u, { fill: '#fff', stroke: ink, 'stroke-width': sw });
+  const e = []; for (let i = 0; i < n; i++) e.push([x, y1 + i * gs * u]);
+  return { e, a: [x + u + 0.18 * u, mid], top, h, mid };
+}
+/* Widerstand senkrecht (DIN EN 60617-4: Rechteck) zwischen y1 und y2 */
+function widerstand(g, x, y1, y2, lang = 80) {
+  const m = (y1 + y2) / 2;
+  Ln(g, [[x, y1], [x, y2]]);
+  Rk(g, x - 13, m - lang / 2, 26, lang, { fill: '#fff', stroke: ink, 'stroke-width': 3 });
+  return m;
+}
+/* Diode senkrecht von der Anode (yA) zur Katode (yK), Spitze und Strich auf der Katodenseite,
+   Linie durch das Dreieck (Hausstil D-) */
+function diode(g, x, yA, yK) {
+  const m = (yA + yK) / 2, s = 18, d = Math.sign(yK - yA);
+  Ln(g, [[x, yA], [x, yK]]);
+  el('polygon', { points: `${x - s},${m - d * s * 0.8} ${x + s},${m - d * s * 0.8} ${x},${m + d * s * 0.8}`, fill: 'none', stroke: ink, 'stroke-width': 3, 'stroke-linejoin': 'round' }, g);
+  Ln(g, [[x - s, m + d * s * 0.8], [x + s, m + d * s * 0.8]]);
+}
+/* NPN-Transistor ohne Umrahmung (DIN EN 60617-5, Tabellenbuch S. 90): Basisbalken senkrecht bei x,
+   Basis von links, Kollektor nach rechts oben, Emitter nach rechts unten mit Pfeil nach außen. */
+function npn(g, x, yc, s = 60) {
+  Ln(g, [[x, yc - 0.36 * s], [x, yc + 0.36 * s]], { 'stroke-width': 5 });
+  Ln(g, [[x - 0.7 * s, yc], [x, yc]]);
+  const c = [x + 0.5 * s, yc - 0.55 * s], e = [x + 0.5 * s, yc + 0.55 * s];
+  Ln(g, [[x, yc - 0.16 * s], c]);
+  Ln(g, [[x, yc + 0.16 * s], e]);
+  const ux = 0.5 * s, uy = 0.39 * s, d = Math.hypot(ux, uy), tx = x + ux * 0.8, ty = yc + 0.16 * s + uy * 0.8;
+  el('polygon', { points: arrowHead(tx, ty, ux / d, uy / d, 16, 6.5), fill: ink }, g);
+  return { b: [x - 0.7 * s, yc], c, e };
+}
+/* MOSFET, Anreicherungstyp, Substrat mit Source verbunden (DIN EN 60617-5, Tabellenbuch S. 90):
+   Kanal in drei Stücken (selbstsperrend), Gate-Anschluss an der Source-Seite, Substratpfeil zum Kanal hin
+   (n-Kanal) bzw. vom Kanal weg (p-Kanal). Anschlüsse rechts (spiegel: links). quelleOben: Source oben. */
+function mosfet(g, cx, cy, s, typ, quelleOben, spiegel = false) {
+  const dx = spiegel ? -1 : 1, xg = cx - dx * 0.22 * s, xt = cx + dx * 0.5 * s;
+  for (const [a, b] of [[-0.5, -0.27], [-0.115, 0.115], [0.27, 0.5]]) Ln(g, [[cx, cy + a * s], [cx, cy + b * s]], { 'stroke-width': 5, 'stroke-linecap': 'butt' });
+  Ln(g, [[xg, cy - 0.5 * s], [xg, cy + 0.5 * s]]);
+  const ys = quelleOben ? cy - 0.5 * s : cy + 0.5 * s;
+  const gate = [xg - dx * 0.55 * s, ys];
+  Ln(g, [[xg, ys], gate]);
+  const yo = cy - 0.385 * s, yu = cy + 0.385 * s, ysrc = quelleOben ? yo : yu;
+  Ln(g, [[cx, yo], [xt, yo]]); Ln(g, [[cx, yu], [xt, yu]]);
+  Ln(g, [[cx, cy], [xt, cy], [xt, ysrc]]);
+  if (typ === 'n') el('polygon', { points: arrowHead(cx + dx * 4, cy, -dx, 0, 18, 7), fill: ink }, g);
+  else el('polygon', { points: arrowHead(cx + dx * 0.36 * s, cy, dx, 0, 18, 7), fill: ink }, g);
+  return { gate, oben: [xt, yo], unten: [xt, yu] };
+}
+/* Schaltermodell: kleiner Schließer in einem hellen Kasten, offen = sperrt, geschlossen = leitet */
+function schalter(g, x, y) {
+  const k = el('g', {}, g);
+  Rk(k, x - 40, y - 58, 80, 120, { rx: 9, fill: '#f4f6f8', stroke: CFG.hell, 'stroke-width': 2 });
+  Ln(k, [[x, y - 48], [x, y - 30]]); Ln(k, [[x, y + 6], [x, y + 24]]);
+  Kr(k, x, y - 30, 4.5, { fill: ink }); Kr(k, x, y + 6, 4.5, { fill: ink });
+  const hebel = Ln(k, [[x, y + 6], [x, y - 30]], { 'stroke-width': 4 });
+  const wort = Tx(k, x, y + 50, '', 'lbl-xs', { 'text-anchor': 'middle' });
+  return {
+    k,
+    set(zu) {
+      hebel.setAttribute('d', zu ? `M${x} ${y + 6} L${x} ${y - 30}` : `M${x} ${y + 6} L${x + 22} ${y - 22}`);
+      wort.textContent = zu ? 'leitet' : 'sperrt';
+    },
+  };
+}
+function doppelpfeil(g, a, b, sw = 3) {      // Datenweg in beide Richtungen (Bus)
+  const ux = b[0] - a[0], uy = b[1] - a[1], d = Math.hypot(ux, uy), ex = ux / d, ey = uy / d, L = Math.min(18, d * 0.4);
+  Ln(g, [[a[0] + ex * L * 0.7, a[1] + ey * L * 0.7], [b[0] - ex * L * 0.7, b[1] - ey * L * 0.7]], { 'stroke-width': sw });
+  el('polygon', { points: arrowHead(b[0], b[1], ex, ey, L, L * 0.4), fill: ink }, g);
+  el('polygon', { points: arrowHead(a[0], a[1], -ex, -ey, L, L * 0.4), fill: ink }, g);
+}
+/* Pegel einer Leitung: 1 kräftig schwarz, 0 dünn grau (Festlegung 20.11.2026) */
+function setPegel(e, v) {
+  const [f, w] = v ? CFG.pegel.eins : CFG.pegel.null;
+  e.setAttribute('stroke', f); e.setAttribute('stroke-width', w);
+}
+/* Anklickbarer Eingang: gestrichelter Rahmen mit Ziffer (darstellung.md 5), dazu Knopf in der Bedienleiste */
+const eingaenge = [];
+function eingang(g, x, y, name, key, links = true) {
+  const k = el('g', { class: 'klick', role: 'button', tabindex: 0, 'aria-label': 'Eingang ' + name + ' umschalten' }, g);
+  Rk(k, x - 34, y - 32, 68, 64, { rx: 7, fill: '#fff', stroke: ink, 'stroke-width': 2.5, 'stroke-dasharray': '7 5' });
+  const z = Tx(k, x, y + 11, '', 'lbl fett', { 'text-anchor': 'middle' });
+  Tx(k, links ? x - 46 : x + 46, y + 11, name, 'lbl', { 'text-anchor': links ? 'end' : 'start' });
+  el('title', {}, k).textContent = 'Klicken: Eingang ' + name + ' umschalten';
+  k.addEventListener('click', (ev) => { ev.stopPropagation(); umschalten(key); });
+  k.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); umschalten(key); } });
+  eingaenge.push({ z, key });
+  return k;
+}
+function ausgang(g, x, y, name) {
+  Rk(g, x - 34, y - 32, 68, 64, { rx: 7, fill: '#fff', stroke: ink, 'stroke-width': 2.5 });
+  const z = Tx(g, x, y + 11, '', 'lbl fett', { 'text-anchor': 'middle' });
+  Tx(g, x + 46, y + 11, name, 'lbl', { 'text-anchor': 'start' });
+  return z;
+}
+/* Muster für Chip-Bilder (skalieren beim Zoomen mit) */
+const defs = el('defs');
+function muster(id, w, h, bau) { const p = el('pattern', { id, width: w, height: h, patternUnits: 'userSpaceOnUse' }, defs); bau(p); }
+muster('m-speicher', 16, 12, (p) => {
+  Rk(p, 0, 0, 16, 12, { fill: M.speicher });
+  Ln(p, [[0, 11], [16, 11]], { stroke: M.speicherLinie, 'stroke-width': 2, 'stroke-linecap': 'butt' });
+  Ln(p, [[15, 0], [15, 12]], { stroke: M.speicherLinie, 'stroke-width': 1.5, 'stroke-linecap': 'butt' });
+  Rk(p, 4, 3, 6, 4, { fill: M.speicherLinie });
+});
+muster('m-logik', 64, 48, (p) => {
+  Rk(p, 0, 0, 64, 48, { fill: M.logik });
+  const r = rnd(7);
+  for (let i = 0; i < 14; i++) Rk(p, Math.floor(r() * 56), Math.floor(r() * 42), 4 + Math.floor(r() * 12), 3 + Math.floor(r() * 6), { fill: r() < 0.5 ? M.logik2 : M.logik3 });
+});
+muster('m-schraffur', 14, 14, (p) => {
+  Rk(p, 0, 0, 14, 14, { fill: '#f6f7f8' });
+  Ln(p, [[0, 14], [14, 0]], { stroke: '#dde1e5', 'stroke-width': 2, 'stroke-linecap': 'butt' });
+});
+function chipGrund(g, x, y, w, h, pads, bond = true) {      // Die mit Pads und Bonddrähten
+  if (bond) {
+    const gb = el('g', {}, g);
+    for (const [px, py, dxr, dyr] of pads) Ln(gb, [[px, py], [px + dxr * 120, py + dyr * 120]], { stroke: M.bond, 'stroke-width': 3 });
+  }
+  Rk(g, x, y, w, h, { fill: M.die, stroke: M.dieRand, 'stroke-width': 3 });
+  for (const [px, py] of pads) Rk(g, px - 14, py - 14, 28, 28, { fill: M.pad, stroke: M.padRand, 'stroke-width': 2 });
+}
+function padRing(x, y, w, h, nx, ny) {       // Pad-Positionen am Rand: [x, y, Richtung x, Richtung y]
+  const p = [];
+  for (let i = 0; i < nx; i++) { const px = x + (i + 0.5) * w / nx; p.push([px, y + 26, 0, -1], [px, y + h - 26, 0, 1]); }
+  for (let j = 0; j < ny; j++) { const py = y + 60 + (j + 0.5) * (h - 120) / ny; p.push([x + 26, py, -1, 0], [x + w - 26, py, 1, 0]); }
+  return p;
+}
+/* Zellreihe aus Standardzellen (vereinfacht): Versorgungsbahnen oben und unten, Zellen mit p- und n-Gebiet
+   und Gate-Bahnen. Liefert die Zellgrenzen, damit eine Zelle hervorgehoben werden kann. */
+function zellreihe(g, x, y, w, h, seed, fest = []) {
+  const r = rnd(seed), grenzen = [];
+  Rk(g, x, y, w, h, { fill: M.logik3 });
+  let cx = x;
+  while (cx < x + w - 10) {
+    const vorgabe = fest.find((f) => f[0] >= cx - 1 && f[0] < cx + 140);
+    let cw = vorgabe ? vorgabe[0] - cx : 40 + Math.floor(r() * 90);
+    if (vorgabe && cw < 8) cw = vorgabe[1];
+    if (cx + cw > x + w) cw = x + w - cx;
+    if (cw >= 12) {
+      Rk(g, cx + 2, y + 14, cw - 4, h - 28, { fill: '#d6d2ca', stroke: '#a39d94', 'stroke-width': 1.5 });
+      Rk(g, cx + 6, y + 20, cw - 12, h * 0.32, { fill: M.pdiff });
+      Rk(g, cx + 6, y + h - 20 - h * 0.26, cw - 12, h * 0.26, { fill: M.ndiff });
+      const np = Math.max(1, Math.round(cw / 34));
+      for (let j = 1; j <= np; j++) { const px = cx + j * cw / (np + 1); Rk(g, px - 3.5, y + 16, 7, h - 32, { fill: M.poly }); }
+      grenzen.push([cx, cw]);
+    }
+    cx += cw;
+  }
+  Rk(g, x, y, w, 12, { fill: M.metall }); Rk(g, x, y + h - 12, w, 12, { fill: M.metall });
+  return grenzen;
+}
+function legende(g, x, y, eintraege) {       // Materialfarben benennen (Farbe trägt nie allein die Bedeutung)
+  eintraege.forEach(([farbe, name], i) => {
+    Rk(g, x, y + i * 40 - 20, 30, 24, { fill: farbe, stroke: '#7b838b', 'stroke-width': 1.5 });
+    Tx(g, x + 42, y + i * 40, name, 'lbl-xs');
+  });
+}
+
+/* ================= 5 Ebenen: Bild (reales Teil) und Darstellung =================
+   Jede Ebene zeichnet in ihr eigenes Feld 1330 × 688. ziel = Ausschnitt der Darstellung, in den gezoomt wird. */
+const W = CFG.feld.w, H = CFG.feld.h;
+const EBENEN = {};
+
+/* --- Gerät: Raumthermostat --- */
+EBENEN.geraet = {
+  name: ['Raumthermostat'], bau: 'Gerät', abs: 'sys',
+  titel: () => 'Gerät: Raumthermostat',
+  textBild: () => 'Das Gerät erfüllt eine Aufgabe für den Nutzer: Es misst die Raumtemperatur und schaltet die Heizung ein und aus.',
+  textDar: () => 'Das Blockschaltbild zerlegt das Gerät in Baugruppen und zeigt die Signalwege. Die Steuerplatine verarbeitet alle Signale.',
+  bild(g) {
+    Rk(g, 427, 84, 500, 550, { rx: 60, fill: '#000', opacity: 0.08 });
+    Rk(g, 415, 70, 500, 550, { rx: 60, fill: '#f3f4f5', stroke: '#8a949e', 'stroke-width': 3 });
+    Rk(g, 470, 130, 390, 220, { rx: 12, fill: '#d5dccf', stroke: '#7d8a80', 'stroke-width': 3 });
+    Tx(g, 665, 268, '21,5 °C', null, { 'font-size': 88, 'font-weight': 600, 'text-anchor': 'middle', fill: '#2b3530' });
+    Tx(g, 665, 326, 'Soll 22,0 °C', 'lbl-s', { 'text-anchor': 'middle', fill: '#2b3530' });
+    [['−', 545], ['OK', 665], ['+', 785]].forEach(([s, x]) => { Kr(g, x, 460, 44, { fill: '#e4e7ea', stroke: '#8a949e', 'stroke-width': 3 }); Tx(g, x, 470, s, 'lbl', { 'text-anchor': 'middle' }); });
+    Kr(g, 665, 562, 9, { fill: '#7a838c' });
+  },
+  dar(g) {
+    Rk(g, 40, 40, 1010, 600, { rx: 20, fill: 'none', stroke: CFG.grau, 'stroke-width': 2.5, 'stroke-dasharray': '14 9' });
+    Tx(g, 62, 80, 'Gerät: Raumthermostat', 'lbl-s muted');
+    block(g, 80, 110, 230, 110, ['Temperatur-', 'sensor']);
+    block(g, 80, 285, 230, 110, ['Tasten']);
+    block(g, 80, 460, 230, 110, ['Netzteil']);
+    block(g, 420, 210, 300, 270, ['Steuer-', 'platine'], {}, 'lbl');
+    block(g, 800, 110, 210, 110, ['Anzeige']);
+    block(g, 800, 285, 210, 110, ['Relais']);
+    block(g, 1110, 285, 190, 110, ['Heizung']);
+    pfeil(g, [[310, 165], [365, 165], [365, 260], [420, 260]]);
+    pfeil(g, [[310, 340], [420, 340]]);
+    pfeil(g, [[310, 515], [365, 515], [365, 430], [420, 430]]);
+    pfeil(g, [[720, 260], [760, 260], [760, 165], [800, 165]]);
+    pfeil(g, [[720, 340], [800, 340]]);
+    pfeil(g, [[1010, 340], [1110, 340]]);
+    return { ziel: { x: 420, y: 210, w: 300, h: 270, text: 'Steuerplatine' } };
+  },
+};
+
+/* --- Baugruppe: Steuerplatine --- */
+const PL = {   // gemeinsame Lage von Bauelement (Bild) und Block (Darstellung) – so passt die Überblendung
+  reg: [90, 120, 210, 100], qz: [90, 285, 210, 100], x1: [90, 470, 210, 120],
+  uc: [400, 170, 320, 320], gic: [830, 115, 230, 120], drv: [830, 330, 230, 120], x3: [1120, 330, 150, 120], x2: [400, 545, 320, 70],
+};
+const PL_WEGE = [   // Signalwege: im Bild Leiterbahnen, in der Darstellung Pfeile
+  [[300, 135], [830, 135]],
+  [[560, 135], [560, 170]],
+  [[300, 335], [400, 335]],
+  [[300, 500], [350, 500], [350, 440], [400, 440]],
+  [[195, 590], [195, 628], [790, 628], [790, 205], [830, 205]],
+  [[720, 180], [830, 180]],
+  [[945, 235], [945, 330]],
+  [[1060, 390], [1120, 390]],
+  [[560, 490], [560, 545]],
+];
+EBENEN.platine = {
+  name: ['Platine'], bau: 'Baugruppe', abs: 'sys',
+  titel: () => 'Baugruppe: Steuerplatine',
+  textBild: () => 'Auf der Leiterplatte sitzen die Bauelemente: Mikrocontroller (IC1), Gatter-IC (IC2), Quarz, Spannungsregler, Relais (K1) und Steckverbinder (X1 bis X3).',
+  textDar: () => 'Blockschaltbild der Baugruppe. Das Gatter-IC gibt das Relais nur frei, wenn der Mikrocontroller UND der Übertemperaturschutz es erlauben – unabhängig vom Programm.',
+  bild(g, ctx) {
+    Rk(g, 40, 50, 1250, 590, { rx: 16, fill: M.lp, stroke: M.lpRand, 'stroke-width': 3 });
+    for (const [x, y] of [[75, 85], [1255, 85], [75, 605], [1255, 605]]) { Kr(g, x, y, 17, { fill: '#c9cdd2' }); Kr(g, x, y, 9, { fill: '#fff' }); }
+    for (const w of PL_WEGE) Ln(g, w, { stroke: M.kupfer, 'stroke-width': 9 });
+    const ss = (x, y, s, a = 'start') => Tx(g, x, y, s, 'lbl-xs', { fill: '#e9efe9', 'text-anchor': a });
+    // Spannungsregler mit Kühlfahne, Elko
+    Rk(g, 140, 150, 100, 56, { rx: 4, fill: M.gehaeuse }); Rk(g, 155, 128, 70, 24, { fill: M.pin });
+    for (const x of [158, 183, 208]) Rk(g, x, 206, 12, 16, { fill: M.pin });
+    Kr(g, 272, 178, 22, { fill: '#3b4047', stroke: M.pin, 'stroke-width': 3 });
+    // Quarz mit zwei Kondensatoren
+    Rk(g, 120, 305, 150, 52, { rx: 26, fill: '#d3d7db', stroke: '#8a9097', 'stroke-width': 3 });
+    Rk(g, 128, 365, 26, 14, { fill: '#b9a27c' }); Rk(g, 236, 365, 26, 14, { fill: '#b9a27c' });
+    // Steckverbinder X1 (Stiftleiste 2 × 5)
+    Rk(g, 112, 495, 166, 72, { rx: 4, fill: '#1f2224' });
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 2; j++) Rk(g, 126 + i * 30, 510 + j * 30, 13, 13, { fill: '#d4b45a' });
+    ss(112, 488, 'X1');
+    // Mikrocontroller IC1 (TQFP-32)
+    const ux = 460, uy = 230, us = 200;
+    for (let i = 0; i < 8; i++) {
+      const o = 27 + i * 21;
+      Rk(g, ux - 22, uy + o - 5, 22, 10, { fill: M.pin }); Rk(g, ux + us, uy + o - 5, 22, 10, { fill: M.pin });
+      Rk(g, ux + o - 5, uy - 22, 10, 22, { fill: M.pin }); Rk(g, ux + o - 5, uy + us, 10, 22, { fill: M.pin });
+    }
+    Rk(g, ux, uy, us, us, { rx: 6, fill: M.gehaeuse });
+    Kr(g, ux + 20, uy + 20, 7, { fill: '#3c4146' });
+    ss(ux - 26, uy - 32, 'IC1');
+    // Gatter-IC IC2 (SO-14)
+    for (let i = 0; i < 7; i++) { Rk(g, 882 + i * 19, 138, 9, 16, { fill: M.pin }); Rk(g, 882 + i * 19, 210, 9, 16, { fill: M.pin }); }
+    Rk(g, 872, 152, 146, 60, { rx: 4, fill: M.gehaeuse });
+    Kr(g, 884, 200, 5, { fill: '#3c4146' });
+    ss(1026, 196, 'IC2');
+    // Relais K1 mit Treibertransistor und Freilaufdiode
+    Rk(g, 900, 345, 145, 92, { rx: 4, fill: '#e9e3d2', stroke: '#9c9584', 'stroke-width': 2 });
+    Tx(g, 972, 400, 'K1', 'lbl-s', { 'text-anchor': 'middle' });
+    Rk(g, 846, 400, 28, 18, { fill: M.gehaeuse }); Rk(g, 842, 356, 34, 16, { fill: M.gehaeuse }); Rk(g, 866, 356, 6, 16, { fill: '#c9cdd2' });
+    // Anschlussklemme X3, Flachbandstecker X2
+    Rk(g, 1140, 345, 110, 92, { rx: 4, fill: '#d0d4d8', stroke: '#8d9399', 'stroke-width': 2 });
+    Kr(g, 1172, 391, 15, { fill: '#8a9097' }); Kr(g, 1218, 391, 15, { fill: '#8a9097' });
+    ss(1140, 335, 'X3');
+    Rk(g, 430, 556, 260, 44, { rx: 4, fill: '#f1ede4', stroke: '#9c9584', 'stroke-width': 2 });
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 2; j++) Rk(g, 446 + i * 24, 564 + j * 16, 10, 8, { fill: '#2b2e31' });
+    ss(700, 600, 'X2');
+  },
+  dar(g, ctx) {
+    Rk(g, 40, 50, 1250, 590, { rx: 16, fill: 'none', stroke: CFG.grau, 'stroke-width': 2.5, 'stroke-dasharray': '14 9' });
+    Tx(g, 62, 92, 'Baugruppe: Steuerplatine', 'lbl-s muted');
+    const b = (k, z, cls) => block(g, ...PL[k], z, {}, cls);
+    b('reg', ['Spannungs-', 'regler 5 V']); b('qz', ['Takt', '(Quarz)']); b('x1', ['Anschluss', 'Sensor, Tasten']);
+    b('uc', ['Mikro-', 'controller'], 'lbl'); b('gic', ['Gatter-IC', ctx.tech === 'ttl' ? '7400' : '74HC00']);
+    b('drv', ['Relais', 'mit Treiber']); b('x3', ['Anschluss', 'Heizung']); b('x2', ['Anschluss Anzeige']);
+    pfeil(g, PL_WEGE[0]); punkt(g, 560, 135); pfeil(g, PL_WEGE[1]);
+    pfeil(g, PL_WEGE[2]); pfeil(g, PL_WEGE[3]); pfeil(g, PL_WEGE[4]); pfeil(g, PL_WEGE[5]);
+    pfeil(g, PL_WEGE[6]); pfeil(g, PL_WEGE[7]); pfeil(g, PL_WEGE[8]);
+    Tx(g, 806, 604, 'Schutz', 'lbl-xs muted');
+    Tx(g, 775, 172, 'Freigabe', 'lbl-xs muted', { 'text-anchor': 'middle' });
+    Tx(g, 440, 125, '5 V', 'lbl-xs muted', { 'text-anchor': 'middle' });
+    return { ziel: ctx.weg === 'ic' ? { x: 830, y: 115, w: 230, h: 120, text: 'Gatter-IC' } : { x: 400, y: 170, w: 320, h: 320, text: 'Mikrocontroller' } };
+  },
+};
+
+/* --- Bauelement: Mikrocontroller --- */
+EBENEN.uc = {
+  name: ['Mikrocontroller'], bau: 'Bauelement', abs: 'sys',
+  titel: () => 'Bauelement: Mikrocontroller',
+  textBild: () => 'Der Mikrocontroller im Gehäuse, hier ein ATmega328P im TQFP-Gehäuse mit 32 Anschlüssen. Von außen sind nur die Anschlüsse zugänglich.',
+  textDar: () => 'Das Schaltzeichen zeigt die Anschlüsse (vereinfacht): Versorgung, Takt, Reset und drei Ports. Was im Bauelement steckt, zeigen die nächsten Ebenen.',
+  bild(g) {
+    const x = 465, y = 140, s = 400;
+    for (let i = 0; i < 8; i++) {
+      const o = 46 + i * 44;
+      Rk(g, x - 50, y + o - 10, 50, 20, { fill: M.pin, stroke: M.pinRand, 'stroke-width': 1.5 });
+      Rk(g, x + s, y + o - 10, 50, 20, { fill: M.pin, stroke: M.pinRand, 'stroke-width': 1.5 });
+      Rk(g, x + o - 10, y - 50, 20, 50, { fill: M.pin, stroke: M.pinRand, 'stroke-width': 1.5 });
+      Rk(g, x + o - 10, y + s, 20, 50, { fill: M.pin, stroke: M.pinRand, 'stroke-width': 1.5 });
+    }
+    Rk(g, x, y, s, s, { rx: 10, fill: M.gehaeuse });
+    Kr(g, x + 38, y + 38, 13, { fill: '#3a3f44' });
+    Tx(g, x + s / 2, y + 205, 'ATmega328P', null, { 'font-size': 42, 'text-anchor': 'middle', fill: '#c7ccd1', 'font-weight': 600 });
+  },
+  dar(g) {
+    const x = 465, y = 140, s = 400;
+    Rk(g, x, y, s, s, { fill: '#fff', stroke: ink, 'stroke-width': 3 });
+    Tx(g, x + s / 2, y + 44, 'µC', 'lbl fett', { 'text-anchor': 'middle' });
+    [['VCC', 190], ['GND', 240], ['XTAL1', 320], ['XTAL2', 370]].forEach(([n, yy]) => { Ln(g, [[320, yy], [x, yy]]); Tx(g, x + 12, yy + 8, n, 'lbl-xs'); });
+    Ln(g, [[320, 470], [x - 19, 470]]); Kr(g, x - 9.5, 470, 9.5, { fill: '#fff', stroke: ink, 'stroke-width': 3 });
+    ueberstrich(Tx(g, x + 12, 478, 'RESET', 'lbl-xs'), g);
+    [['Port B', 'PB0 … PB7', 8, 190], ['Port C', 'PC0 … PC5', 6, 330], ['Port D', 'PD0 … PD7', 8, 470]].forEach(([n, pins, k, yy]) => {
+      Ln(g, [[x + s, yy], [1010, yy]], { 'stroke-width': 7 });
+      Ln(g, [[938, yy + 14], [952, yy - 14]], { 'stroke-width': 3 });
+      Tx(g, 945, yy - 22, String(k), 'lbl-xs', { 'text-anchor': 'middle' });
+      Tx(g, x + s - 12, yy + 8, pins, 'lbl-xs', { 'text-anchor': 'end' });
+      Tx(g, 1024, yy + 8, n, 'lbl-xs');
+    });
+    return { ziel: { x: 560, y: 262, w: 160, h: 170, text: 'Inneres' } };
+  },
+};
+
+/* --- Systemebene: Inneres des µC --- */
+const UCIN = { sram: [220, 110, 300, 200], eeprom: [560, 110, 200, 200], peri: [800, 110, 310, 200], flash: [220, 390, 230, 200], cpu: [560, 390, 340, 200], takt: [940, 390, 170, 200] };
+EBENEN.ucin = {
+  name: ['µC innen'], bau: null, abs: 'sys',
+  titel: () => 'Systemebene: Inneres des Mikrocontrollers',
+  textBild: () => 'Im Gehäuse liegt der Siliziumchip (Die). Regelmäßige Flächen sind Speicher, unregelmäßige Flächen sind Logik. Zeichnung vereinfacht.',
+  textDar: () => 'Blockschaltbild des Mikrocontrollers: CPU, Programmspeicher (Flash), Datenspeicher (SRAM), EEPROM und Peripherie. Ab hier gibt es keine Baueinheiten mehr, nur Funktionseinheiten.',
+  bild(g) {
+    chipGrund(g, 160, 50, 1010, 590, padRing(160, 50, 1010, 590, 12, 6));
+    Rk(g, ...UCIN.sram, { fill: 'url(#m-speicher)' }); Rk(g, ...UCIN.eeprom, { fill: 'url(#m-speicher)', opacity: 0.85 });
+    Rk(g, ...UCIN.flash, { fill: 'url(#m-speicher)' });
+    Rk(g, ...UCIN.cpu, { fill: 'url(#m-logik)' }); Rk(g, ...UCIN.peri, { fill: 'url(#m-logik)' }); Rk(g, ...UCIN.takt, { fill: 'url(#m-logik)' });
+    for (const [x, y, w] of [[820, 130, 120], [960, 130, 130], [820, 230, 270]]) Rk(g, x, y, w, 60, { fill: 'none', stroke: M.logik2, 'stroke-width': 3 });
+    Rk(g, 220, 330, 890, 30, { fill: M.metall, opacity: 0.8 });
+  },
+  dar(g) {
+    Rk(g, 160, 50, 1010, 590, { fill: 'none', stroke: CFG.grau, 'stroke-width': 2.5, 'stroke-dasharray': '14 9' });
+    const b = (k, z, cls) => block(g, ...UCIN[k], z, {}, cls);
+    b('sram', ['Datenspeicher', '(SRAM)']); b('eeprom', ['EEPROM']); b('peri', ['Peripherie:', 'Timer, ADC,', 'USART, I/O-Ports']);
+    b('flash', ['Programm-', 'speicher', '(Flash)']); b('cpu', ['CPU'], 'lbl'); b('takt', ['Takt,', 'Reset']);
+    Rk(g, 220, 330, 890, 30, { fill: '#eef1f4', stroke: ink, 'stroke-width': 2.5 });
+    Tx(g, 1100, 353, 'Datenbus', 'lbl-xs', { 'text-anchor': 'end' });
+    for (const x of [370, 660, 955]) doppelpfeil(g, [x, 310], [x, 330]);
+    doppelpfeil(g, [730, 360], [730, 390]);
+    pfeil(g, [[450, 490], [560, 490]]); Tx(g, 505, 478, 'Befehle', 'lbl-xs muted', { 'text-anchor': 'middle' });
+    pfeil(g, [[940, 490], [900, 490]]);
+    return { ziel: { x: 560, y: 390, w: 340, h: 200, text: 'CPU', lpos: 'unten' } };
+  },
+};
+
+/* --- Register-Transfer-Ebene: CPU --- */
+EBENEN.cpu = {
+  name: ['CPU'], bau: null, abs: 'rt',
+  titel: () => 'Register-Transfer-Ebene: CPU',
+  textBild: () => 'Ausschnitt der CPU auf dem Chip: Der Registerblock ist ein regelmäßiges Feld, daneben liegen ALU und Steuerwerk.',
+  textDar: () => 'Betrachtet werden Register und die Datenwege dazwischen. Die ALU verknüpft zwei Operanden; das Steuerwerk erzeugt aus dem Befehl die Steuersignale (gestrichelt).',
+  bild(g) {
+    Rk(g, 0, 0, W, H, { fill: M.die });
+    Rk(g, 30, 60, 210, 150, { fill: 'url(#m-speicher)' });
+    Rk(g, 40, 270, 190, 110, { fill: 'url(#m-logik)' }); Rk(g, 300, 90, 200, 110, { fill: 'url(#m-logik)' });
+    Rk(g, 300, 250, 200, 360, { fill: 'url(#m-logik)' });
+    Rk(g, 600, 70, 300, 270, { fill: 'url(#m-speicher)' });
+    for (let i = 0; i < 8; i++) Rk(g, 645 + i * 26, 430, 22, 150, { fill: i % 2 ? M.logik2 : M.logik3, stroke: M.logik2, 'stroke-width': 1.5 });
+    Rk(g, 1000, 490, 200, 100, { fill: 'url(#m-logik)' });
+    Rk(g, 900, 110, 420, 26, { fill: M.metall, opacity: 0.8 });
+    Rk(g, 600, 340, 300, 70, { fill: M.metall, opacity: 0.5 });
+  },
+  dar(g, ctx) {
+    block(g, 30, 60, 210, 150, ['Programm-', 'speicher'], { 'stroke-dasharray': '12 8', stroke: CFG.grau });
+    block(g, 40, 270, 190, 110, ['Befehls-', 'zähler']);
+    block(g, 300, 90, 200, 110, ['Befehls-', 'register']);
+    block(g, 300, 250, 200, 360, ['Steuer-', 'werk']);
+    Rk(g, 600, 70, 300, 270, { fill: '#fff', stroke: ink, 'stroke-width': 3 });
+    Tx(g, 750, 104, 'Registerblock', 'lbl-s', { 'text-anchor': 'middle' });
+    Tx(g, 750, 132, '32 Register × 8 Bit', 'lbl-xs muted', { 'text-anchor': 'middle' });
+    const zeilen = [['R0', 150], ['R1', 180], ['⋮', 214], ['R16', 240], ['⋮', 274], ['R31', 300]];
+    for (const [n, y] of zeilen) {
+      if (n === '⋮') { Tx(g, 772, y, '⋮', 'lbl-xs', { 'text-anchor': 'middle' }); continue; }
+      Rk(g, 668, y, 208, 26, { fill: '#f4f6f8', stroke: CFG.grau, 'stroke-width': 1.5 });
+      for (let i = 1; i < 8; i++) Ln(g, [[668 + i * 26, y], [668 + i * 26, y + 26]], { stroke: CFG.hell, 'stroke-width': 1.5 });
+      Tx(g, 658, y + 21, n, 'lbl-xs', { 'text-anchor': 'end' });
+    }
+    block(g, 640, 430, 220, 150, ['ALU'], {}, 'lbl');
+    block(g, 1000, 500, 200, 100, ['Status-', 'register']);
+    pfeil(g, [[135, 270], [135, 210]]); Tx(g, 145, 248, 'Adresse', 'lbl-xs muted');
+    pfeil(g, [[240, 145], [300, 145]]);
+    pfeil(g, [[400, 200], [400, 250]]);
+    pfeil(g, [[690, 340], [690, 430]]); pfeil(g, [[810, 340], [810, 430]]);
+    Tx(g, 680, 378, 'Op. 1', 'lbl-xs muted', { 'text-anchor': 'end' }); Tx(g, 820, 378, 'Op. 2', 'lbl-xs muted');
+    pfeil(g, [[860, 505], [950, 505], [950, 225], [900, 225]]); Tx(g, 960, 380, 'Ergebnis', 'lbl-xs muted');
+    pfeil(g, [[860, 560], [1000, 560]]);
+    doppelpfeil(g, [900, 120], [1300, 120]); Tx(g, 1100, 106, 'Datenbus', 'lbl-xs muted', { 'text-anchor': 'middle' });
+    const st = { stroke: CFG.grau, 'stroke-dasharray': '10 7', 'stroke-width': 2.5 };
+    pfeil(g, [[500, 300], [600, 300]], st); pfeil(g, [[500, 505], [640, 505]], st); pfeil(g, [[300, 325], [230, 325]], st);
+    return { ziel: ctx.weg === 'reg' ? { x: 610, y: 235, w: 284, h: 36, text: 'Register R16', lpos: [962, 262, 'start'] } : { x: 640, y: 430, w: 220, h: 150, text: 'ALU', lpos: 'unten' } };
+  },
+};
+
+/* --- Logikebene: 8-Bit-Addierer (Schaltnetz) --- */
+const vaX = (i) => 1140 - i * 150;
+EBENEN.add = {
+  name: ['Addierer 8 Bit'], bau: null, abs: 'logik',
+  titel: () => 'Logikebene: Schaltnetz 8-Bit-Addierer',
+  textBild: () => 'In der ALU liegen acht gleiche Rechenscheiben nebeneinander – eine je Bit (vereinfacht).',
+  textDar: () => 'Vereinfacht: Die ALU addiert nur. Acht Volladdierer, der Übertrag c läuft von Stelle zu Stelle. Schaltnetz: Die Ausgänge hängen nur von den aktuellen Eingängen ab.',
+  bild(g) {
+    Rk(g, 0, 0, W, H, { fill: M.die });
+    for (let i = 0; i < 8; i++) {
+      const x = vaX(i);
+      zellreihe(g, x - 10, 230, 140, 90, 100 + i); zellreihe(g, x - 10, 330, 140, 90, 200 + i);
+    }
+    Rk(g, 40, 160, 1250, 26, { fill: M.metall, opacity: 0.7 }); Rk(g, 40, 470, 1250, 26, { fill: M.metall, opacity: 0.7 });
+  },
+  dar(g) {
+    for (let i = 0; i < 8; i++) {
+      const x = vaX(i);
+      Rk(g, x, 250, 120, 150, { fill: '#fff', stroke: ink, 'stroke-width': 3 });
+      Tx(g, x + 60, 342, 'Σ', 'lbl', { 'text-anchor': 'middle' });
+      Ln(g, [[x + 30, 185], [x + 30, 250]]); Ln(g, [[x + 90, 185], [x + 90, 250]]); Ln(g, [[x + 60, 400], [x + 60, 465]]);
+      Tx(g, x + 30, 172, 'A' + SUB(i), 'lbl', { 'text-anchor': 'middle' });
+      Tx(g, x + 90, 172, 'B' + SUB(i), 'lbl', { 'text-anchor': 'middle' });
+      Tx(g, x + 60, 500, 'S' + SUB(i), 'lbl', { 'text-anchor': 'middle' });
+      Ln(g, [[x - 30, 325], [x, 325]]);
+      if (i > 0) Tx(g, x + 135, 308, 'c' + SUB(i), 'lbl', { 'text-anchor': 'middle' });
+    }
+    Ln(g, [[1260, 325], [1290, 325]]); Tx(g, 1300, 336, '0', 'lbl');
+    Tx(g, 40, 308, 'c' + SUB(8), 'lbl', { 'text-anchor': 'middle' });
+    Tx(g, 665, 590, 'Ripple-Carry-Addierer: S = A + B (8 Bit)', 'lbl-s muted', { 'text-anchor': 'middle' });
+    return { ziel: { x: 1105, y: 150, w: 205, h: 360, text: 'Volladdierer Bit 0' } };
+  },
+};
+
+/* --- Logikebene: Register 8 Bit (Schaltwerk), gemeinsamer Steuerblock nach DIN EN 60617-12 --- */
+EBENEN.reg8 = {
+  name: ['Register 8 Bit'], bau: null, abs: 'logik',
+  titel: () => 'Logikebene: Schaltwerk Register (8 Bit)',
+  textBild: () => 'Ein Register ist eine Zeile aus gleichen Speicherzellen – eine Zelle je Bit (vereinfacht).',
+  textDar: () => 'Ein Register aus acht D-Flipflops mit gemeinsamem Steuerblock (Takt C1). Schaltwerk: Die Ausgänge hängen vom gespeicherten Zustand ab; übernommen wird bei steigender Taktflanke.',
+  bild(g) {
+    Rk(g, 0, 0, W, H, { fill: M.die });
+    Rk(g, 545, 70, 240, 80, { fill: 'url(#m-logik)' });
+    for (let j = 0; j < 8; j++) zellreihe(g, 545, 150 + j * 64, 240, 64, 300 + j);
+    Rk(g, 420, 60, 30, 600, { fill: M.metall, opacity: 0.7 });
+  },
+  dar(g) {
+    const x = 545, w = 240;
+    el('polygon', { points: `${x},70 ${x + w},70 ${x + w},135 ${x + w - 16},135 ${x + w - 16},150 ${x + 16},150 ${x + 16},135 ${x},135`, fill: '#fff', stroke: ink, 'stroke-width': 3, 'stroke-linejoin': 'miter' }, g);
+    Ln(g, [[380, 105], [x, 105]]); Ln(g, [[x, 93], [x + 16, 105], [x, 117]], { 'stroke-width': 2.5 });
+    Tx(g, x + 24, 114, 'C1', 'lbl-xs'); Tx(g, 368, 115, 'C', 'lbl', { 'text-anchor': 'end' });
+    for (let j = 0; j < 8; j++) {
+      const y = 150 + j * 64, ym = y + 32;
+      Rk(g, x, y, w, 64, { fill: '#fff', stroke: ink, 'stroke-width': 3 });
+      Ln(g, [[380, ym], [x, ym]]); Ln(g, [[x + w, ym], [950, ym]]);
+      Tx(g, x + 12, ym + 8, j === 0 ? '1D' : '', 'lbl-xs');
+      Tx(g, 368, ym + 10, 'D' + SUB(j), 'lbl', { 'text-anchor': 'end' });
+      Tx(g, 962, ym + 10, 'Q' + SUB(j), 'lbl');
+    }
+    Tx(g, 1130, 300, 'Register R16', 'lbl-s', { 'text-anchor': 'middle' });
+    Tx(g, 1130, 334, 'Kennzeichen 1D', 'lbl-xs muted', { 'text-anchor': 'middle' });
+    Tx(g, 1130, 362, 'gilt für alle Zellen', 'lbl-xs muted', { 'text-anchor': 'middle' });
+    return { ziel: { x: 318, y: 60, w: 700, h: 160, text: 'D-Flipflop Bit 0' } };
+  },
+};
+
+/* --- Logikebene: Volladdierer aus 9 NAND (Bit 0: Eingänge A0, B0, c0; Ausgänge S0, c1) ---
+   Gatter [x, Eingang 1, Eingänge] und Netze (Leitungszüge) gelten für Bild und Darstellung: Im Bild sitzt an jeder
+   Gatterstelle eine NAND-Zelle, die Netze sind Metallbahnen – so passt die Überblendung. */
+const VA_G = [[230, 450], [440, 300], [440, 507.5], [600, 410], [780, 200], [950, 383.75], [950, 160], [1110, 270], [1110, 540]];
+const VA_N = [
+  [[60, 300], [440, 300]], [[170, 300], [170, 450], [230, 450]],
+  [[60, 560], [440, 560]], [[190, 560], [190, 502.5], [230, 502.5]],
+  [[60, 110], [920, 110], [920, 160], [950, 160]], [[740, 110], [740, 200], [780, 200]],
+  [[312.6, 476.25], [380, 476.25]], [[380, 352.5], [380, 650], [1080, 650], [1080, 592.5], [1110, 592.5]],
+  [[380, 352.5], [440, 352.5]], [[380, 507.5], [440, 507.5]],
+  [[522.6, 326.25], [565, 326.25], [565, 410], [600, 410]], [[522.6, 533.75], [565, 533.75], [565, 462.5], [600, 462.5]],
+  [[682.6, 436.25], [950, 436.25]], [[720, 436.25], [720, 252.5], [780, 252.5]],
+  [[862.6, 226.25], [900, 226.25]], [[900, 212.5], [900, 540], [1110, 540]], [[900, 212.5], [950, 212.5]], [[900, 383.75], [950, 383.75]],
+  [[1032.6, 186.25], [1070, 186.25], [1070, 270], [1110, 270]], [[1032.6, 410], [1080, 410], [1080, 322.5], [1110, 322.5]],
+  [[1192.6, 296.25], [1250, 296.25]], [[1192.6, 566.25], [1250, 566.25]],
+];
+const VA_P = [[170, 300], [190, 560], [740, 110], [380, 476.25], [380, 507.5], [720, 436.25], [900, 226.25], [900, 383.75]];
+const DFF_G = [[300, 160, 2], [540, 186.25, 2], [540, 380, 3], [300, 520, 2], [820, 212.5, 2], [820, 362.5, 2]];
+const DFF_N = [
+  [[382.6, 186.25], [540, 186.25]],
+  [[622.6, 212.5], [820, 212.5]], [[670, 212.5], [670, 100], [270, 100], [270, 212.5], [300, 212.5]],
+  [[670, 212.5], [670, 330], [500, 330], [500, 380], [540, 380]],
+  [[60, 300], [460, 300]], [[460, 238.75], [460, 415], [540, 415]], [[460, 238.75], [540, 238.75]],
+  [[60, 520], [300, 520]],
+  [[622.6, 415], [820, 415]], [[700, 415], [700, 610], [270, 610], [270, 572.5], [300, 572.5]],
+  [[382.6, 546.25], [420, 546.25]], [[420, 450], [420, 650], [230, 650], [230, 160], [300, 160]], [[420, 450], [540, 450]],
+  [[902.6, 238.75], [1100, 238.75]], [[950, 238.75], [950, 330], [790, 330], [790, 362.5], [820, 362.5]],
+  [[902.6, 388.75], [1100, 388.75]], [[975, 388.75], [975, 290], [800, 290], [800, 265], [820, 265]],
+];
+const DFF_P = [[670, 212.5], [460, 300], [700, 415], [420, 546.25], [950, 238.75], [975, 388.75]];
+function nandZelle(g, x, y1, u, n = 2) {     // NAND-Standardzelle an der Stelle des Gatters (vereinfacht)
+  const gs = n === 2 ? 0.75 : 0.5, top = y1 - gs * u / 2 - 8, h = n * gs * u + 16, w = u + 24;
+  Rk(g, x - 4, top, w, h, { fill: '#d6d2ca', stroke: '#a39d94', 'stroke-width': 2 });
+  Rk(g, x + 2, top + 10, w - 12, h * 0.34, { fill: M.pdiff });
+  Rk(g, x + 2, top + h - 10 - h * 0.3, w - 12, h * 0.3, { fill: M.ndiff });
+  for (let i = 1; i <= n; i++) Rk(g, x - 4 + i * w / (n + 1) - 4, top + 4, 8, h - 8, { fill: M.poly });
+  Rk(g, x - 4, top - 6, w, 8, { fill: M.metall }); Rk(g, x - 4, top + h - 2, w, 8, { fill: M.metall });
+}
+function chipNetze(g, gatter, netze, u) {    // Bild: Zellen und Metallbahnen auf dem Chip
+  Rk(g, 0, 0, W, H, { fill: M.die });
+  for (const n of netze) Ln(g, n, { stroke: '#cfd3d7', 'stroke-width': 9, 'stroke-linecap': 'square' });
+  for (const [x, y1, k] of gatter) nandZelle(g, x, y1, u, k || 2);
+}
+EBENEN.va = {
+  name: ['Volladdierer'], bau: null, abs: 'logik',
+  titel: () => 'Logikebene: Volladdierer aus NAND-Gattern',
+  textBild: () => 'Der Volladdierer einer Bitstelle auf dem Chip: neun gleiche NAND-Zellen, verbunden über Metallbahnen (vereinfacht).',
+  textDar: () => 'Volladdierer aus neun NAND-Gattern. Mit NAND allein lässt sich jede Verknüpfung aufbauen.',
+  bild(g) { chipNetze(g, VA_G, VA_N, 70); },
+  dar(g) {
+    for (const [x, y1] of VA_G) nandSymbol(g, x, y1, 70);
+    for (const n of VA_N) Ln(g, n);
+    for (const [x, y] of VA_P) punkt(g, x, y);
+    Tx(g, 48, 308, 'A' + SUB(0, 30), 'lbl', { 'text-anchor': 'end' }); Tx(g, 48, 568, 'B' + SUB(0, 30), 'lbl', { 'text-anchor': 'end' });
+    Tx(g, 48, 118, 'c' + SUB(0), 'lbl', { 'text-anchor': 'end' });
+    Tx(g, 1262, 304, 'S' + SUB(0), 'lbl'); Tx(g, 1262, 574, 'c' + SUB(1), 'lbl');
+    return { ziel: { x: 200, y: 412, w: 140, h: 128, text: 'ein NAND-Gatter' } };
+  },
+};
+
+/* --- Logikebene: D-Flipflop aus 6 NAND (Eingänge D, C; Ausgänge Q, Q̄) --- */
+EBENEN.dff = {
+  name: ['D-Flipflop'], bau: null, abs: 'logik',
+  titel: () => 'Logikebene: D-Flipflop aus NAND-Gattern',
+  textBild: () => 'Das D-Flipflop auf dem Chip: sechs NAND-Zellen, verbunden über Metallbahnen (vereinfacht).',
+  textDar: () => 'Flankengesteuertes D-Flipflop aus sechs NAND-Gattern (drei verkoppelte Speicher), ein Gatter mit drei Eingängen. Im echten Chip meist anders aufgebaut, das Verhalten ist gleich.',
+  bild(g) { chipNetze(g, DFF_G, DFF_N, 70); },
+  dar(g) {
+    // G1 = NAND(s4, s2) → s1 · G2 = NAND(s1, C) → s2 · G3 = NAND(s2, C, s4) → s3 · G4 = NAND(D, s3) → s4
+    // G5 = NAND(s2, Q̄) → Q · G6 = NAND(Q, s3) → Q̄
+    for (const [x, y1, k] of DFF_G) nandSymbol(g, x, y1, 70, k);
+    for (const n of DFF_N) Ln(g, n);
+    for (const [x, y] of DFF_P) punkt(g, x, y);
+    Tx(g, 48, 308, 'C', 'lbl', { 'text-anchor': 'end' }); Tx(g, 48, 528, 'D', 'lbl', { 'text-anchor': 'end' });
+    Tx(g, 1112, 247, 'Q', 'lbl'); ueberstrich(Tx(g, 1112, 397, 'Q', 'lbl'), g);
+    return { ziel: { x: 790, y: 168, w: 150, h: 130, text: 'ein NAND-Gatter' } };
+  },
+};
+
+/* --- Bauelement: Gatter-IC 74HC00 (CMOS) bzw. 7400 (TTL), Anschlussbild nach Datenblatt (TI) --- */
+const DIP = { x: 115, y: 200, w: 1100, h: 290, px: (i) => 195 + i * 160 };
+EBENEN.gic = {
+  name: ['Gatter-IC', '74HC00'], bau: 'Bauelement', abs: 'gatter',
+  nameF: (ctx) => ['Gatter-IC', ctx.tech === 'ttl' ? '7400' : '74HC00'],
+  titel: (ctx) => 'Bauelement: Gatter-IC ' + (ctx.tech === 'ttl' ? '7400 (TTL)' : '74HC00 (CMOS)'),
+  textBild: () => 'Ein Logik-IC im DIL-Gehäuse mit 14 Anschlüssen. Die Kerbe links und der Punkt markieren Anschluss 1.',
+  textDar: () => 'Anschlussbild (Draufsicht): vier NAND-Gatter, alle versorgt über VCC (Anschluss 14) und GND (Anschluss 7). Das IC ist ein Bauelement, sein Inhalt liegt schon auf der Gatterebene.',
+  bild(g, ctx) {
+    for (let i = 0; i < 7; i++) {
+      Rk(g, DIP.px(i) - 22, DIP.y - 58, 44, 58, { fill: M.pin, stroke: M.pinRand, 'stroke-width': 2 });
+      Rk(g, DIP.px(i) - 22, DIP.y + DIP.h, 44, 58, { fill: M.pin, stroke: M.pinRand, 'stroke-width': 2 });
+    }
+    Rk(g, DIP.x, DIP.y, DIP.w, DIP.h, { rx: 10, fill: M.gehaeuse });
+    el('path', { d: `M${DIP.x} ${DIP.y + DIP.h / 2 - 34} A34 34 0 0 1 ${DIP.x} ${DIP.y + DIP.h / 2 + 34} Z`, fill: '#121416' }, g);
+    Kr(g, DIP.x + 50, DIP.y + DIP.h - 46, 13, { fill: '#3a3f44' });
+    Tx(g, 665, 368, ctx.tech === 'ttl' ? '7400' : '74HC00', null, { 'font-size': 76, 'font-weight': 600, 'text-anchor': 'middle', fill: '#cfd4d8' });
+  },
+  dar(g, ctx) {
+    Rk(g, DIP.x, DIP.y, DIP.w, DIP.h, { rx: 10, fill: '#fff', stroke: ink, 'stroke-width': 3 });
+    el('path', { d: `M${DIP.x} ${DIP.y + DIP.h / 2 - 34} A34 34 0 0 1 ${DIP.x} ${DIP.y + DIP.h / 2 + 34}`, fill: 'none', stroke: ink, 'stroke-width': 3 }, g);
+    const unten = ['1A', '1B', '1Y', '2A', '2B', '2Y', 'GND'], oben = ['VCC', '4B', '4A', '4Y', '3B', '3A', '3Y'];
+    for (let i = 0; i < 7; i++) {
+      const x = DIP.px(i);
+      Ln(g, [[x, DIP.y - 60], [x, DIP.y]]); Ln(g, [[x, DIP.y + DIP.h], [x, DIP.y + DIP.h + 60]]);
+      Tx(g, x, DIP.y + DIP.h + 88, String(i + 1), 'lbl-xs', { 'text-anchor': 'middle' });
+      Tx(g, x, DIP.y + DIP.h + 116, unten[i], 'lbl-xs muted', { 'text-anchor': 'middle' });
+      Tx(g, x, DIP.y - 72, String(14 - i), 'lbl-xs', { 'text-anchor': 'middle' });
+      Tx(g, x, DIP.y - 100, oben[i], 'lbl-xs muted', { 'text-anchor': 'middle' });
+    }
+    const u = 60;
+    for (const s of [0, 480]) {   // Gatter 1 und 2 (unten): Eingänge von unten, Ausgang nach rechts unten
+      nandSymbol(g, 400 + s, 382.5, u);
+      Ln(g, [[195 + s, 490], [195 + s, 382.5], [400 + s, 382.5]]);
+      Ln(g, [[355 + s, 490], [355 + s, 427.5], [400 + s, 427.5]]);
+      Ln(g, [[470.8 + s, 405], [515 + s, 405], [515 + s, 490]]);
+    }
+    for (const s of [0, 480]) {   // Gatter 4 und 3 (oben): Eingänge von oben, Ausgang nach rechts oben
+      nandSymbol(g, 560 + s, 262.5, u);
+      Ln(g, [[515 + s, 200], [515 + s, 262.5], [560 + s, 262.5]]);
+      Ln(g, [[355 + s, 200], [355 + s, 307.5], [560 + s, 307.5]]);
+      Ln(g, [[630.8 + s, 285], [675 + s, 285], [675 + s, 200]]);
+    }
+    /* Versorgung (Festlegung der Lehrkraft, 20.11.2026: VCC und GND oben und unten mit den Gattern verbinden):
+       VCC von Anschluss 14 als Schiene am oberen Rand an die Oberseite jedes Gatters, GND von Anschluss 7 als
+       Schiene am unteren Rand an die Unterseite. Die Schienen kreuzen die Anschlussleitungen (Kreuzung ohne Punkt). */
+    Ln(g, [[195, 200], [195, 215], [1070, 215], [1070, 240]]);
+    Ln(g, [[590, 215], [590, 240]]); punkt(g, 590, 215);
+    Ln(g, [[330, 215], [330, 340], [430, 340], [430, 360]]); punkt(g, 330, 215);
+    Ln(g, [[810, 215], [810, 340], [910, 340], [910, 360]]); punkt(g, 810, 215);
+    Tx(g, 206, 243, 'VCC', 'lbl-xs');
+    Ln(g, [[1155, 490], [1155, 475], [430, 475], [430, 450]]);
+    Ln(g, [[910, 450], [910, 475]]); punkt(g, 910, 475);
+    Ln(g, [[590, 330], [590, 475]]); punkt(g, 590, 475);
+    Ln(g, [[1070, 330], [1070, 475]]); punkt(g, 1070, 475);
+    Tx(g, 1146, 464, 'GND', 'lbl-xs', { 'text-anchor': 'end' });
+    return { ziel: { x: 368, y: 328, w: 140, h: 160, text: 'Gatter 1', lpos: 'unten' } };
+  },
+};
+
+/* --- Gatterebene: NAND --- */
+const GT = { x: 470, y1: 300, u: 150 };
+EBENEN.gatter = {
+  name: ['NAND-Gatter'], bau: null, abs: 'gatter',
+  titel: () => 'Gatterebene: NAND-Gatter',
+  textBild: (ctx) => ctx.weg === 'ic' ? 'Der Chip im Gatter-IC (vereinfacht): vier gleiche Gatterzellen; Bonddrähte führen zu den Anschlüssen.'
+    : 'Auf dem Chip ist jedes Gatter eine kleine Zelle in einer Zellreihe (vereinfacht).',
+  textDar: () => 'Schaltzeichen nach DIN EN 60617-12 mit Versorgung VCC und GND, Gleichung und Wahrheitstabelle: Y = 0 nur, wenn A = 1 und B = 1. Eingänge A und B anklicken.',
+  bild(g, ctx) {
+    if (ctx.weg === 'ic') {
+      chipGrund(g, 250, 110, 830, 480, padRing(250, 110, 830, 480, 7, 0).filter((p) => p[3] !== 0));
+      Rk(g, 275, 190, 780, 20, { fill: M.metall }); Rk(g, 275, 512, 780, 20, { fill: M.metall });
+      [275, 465, 655, 845].forEach((x, i) => {
+        Rk(g, x, 230, 170, 240, { fill: '#d6d2ca', stroke: '#a39d94', 'stroke-width': 2 });
+        Rk(g, x + 15, 250, 140, 80, { fill: M.pdiff }); Rk(g, x + 15, 375, 140, 75, { fill: M.ndiff });
+        Rk(g, x + 55, 238, 12, 224, { fill: M.poly }); Rk(g, x + 103, 238, 12, 224, { fill: M.poly });
+        Tx(g, x + 85, 500, 'Gatter ' + [4, 1, 2, 3][i], 'lbl-xs', { 'text-anchor': 'middle' });
+      });
+      Rk(g, 462, 227, 176, 246, { fill: 'none', stroke: '#5b6570', 'stroke-width': 3 });
+    } else {
+      Rk(g, 0, 0, W, H, { fill: M.die });
+      zellreihe(g, 0, 0, W, 225, 61);
+      zellreihe(g, 0, 240, W, 230, 62, [[465, 170]]);
+      zellreihe(g, 0, 485, W, 225, 63);
+      Rk(g, 465, 240, 170, 230, { fill: 'none', stroke: '#2a2f35', 'stroke-width': 4 });
+    }
+  },
+  dar(g) {
+    const s = nandSymbol(g, GT.x, GT.y1, GT.u, 2, 4);
+    const la = Ln(g, [[290, s.e[0][1]], [GT.x, s.e[0][1]]]), lb = Ln(g, [[290, s.e[1][1]], [GT.x, s.e[1][1]]]);
+    const ly = Ln(g, [[s.a[0], s.a[1]], [800, s.a[1]]]);
+    eingang(g, 255, s.e[0][1], 'A', 'a'); eingang(g, 255, s.e[1][1], 'B', 'b');
+    const zy = ausgang(g, 834, s.a[1], 'Y');
+    // Versorgung oben und unten am Gatter (Festlegung der Lehrkraft, 20.11.2026)
+    const xm = GT.x + GT.u / 2;
+    Ln(g, [[xm, s.top], [xm, 172]], { 'stroke-width': 4 }); Tx(g, xm, 160, 'VCC', 'lbl', { 'text-anchor': 'middle' });
+    Ln(g, [[xm, s.top + s.h], [xm, 538]], { 'stroke-width': 4 }); Tx(g, xm, 572, 'GND', 'lbl', { 'text-anchor': 'middle' });
+    // Gleichung (Festlegung 20.11.2026: UND als ·, Negation als Strich darüber)
+    Tx(g, 1128, 560, 'Y =', 'ro', { 'text-anchor': 'end' });
+    ueberstrich(Tx(g, 1142, 560, 'A · B', 'ro'), g);
+    // Wahrheitstabelle
+    const tx = 1010, ty = 190, cw = 90, rh = 56;
+    const zeile = Rk(g, tx, ty + rh, 3 * cw, rh, { fill: '#e3e8ed' });
+    for (let r = 0; r <= 5; r++) Ln(g, [[tx, ty + r * rh], [tx + 3 * cw, ty + r * rh]], { 'stroke-width': r === 1 ? 3 : 1.5, stroke: r === 1 ? ink : CFG.grau });
+    for (let c = 0; c <= 3; c++) Ln(g, [[tx + c * cw, ty], [tx + c * cw, ty + 5 * rh]], { 'stroke-width': c === 2 ? 3 : 1.5, stroke: c === 2 ? ink : CFG.grau });
+    ['A', 'B', 'Y'].forEach((h, c) => Tx(g, tx + c * cw + cw / 2, ty + 38, h, 'lbl fett', { 'text-anchor': 'middle' }));
+    const zellen = [];
+    [[0, 0], [0, 1], [1, 0], [1, 1]].forEach(([a, b], r) => {
+      const z = [a, b, nand(a, b)].map((v, c) => Tx(g, tx + c * cw + cw / 2, ty + (r + 1) * rh + 39, String(v), 'lbl', { 'text-anchor': 'middle' }));
+      zellen.push(z);
+    });
+    return {
+      ziel: { x: 440, y: 215, w: 260, h: 285, text: 'Transistoren', lpos: [712, 238, 'start'] },
+      dyn: (st) => {
+        setPegel(la, st.a); setPegel(lb, st.b); setPegel(ly, st.y); zy.textContent = String(st.y);
+        const r = st.a * 2 + st.b;
+        zeile.setAttribute('y', ty + (r + 1) * rh);
+        zellen.forEach((z, i) => z.forEach((t) => t.classList.toggle('fett', i === r)));
+      },
+    };
+  },
+};
+
+/* --- Transistorebene: CMOS oder TTL --- */
+EBENEN.trans = {
+  name: ['Transistoren'], bau: null, abs: 'trans',
+  titel: (ctx) => ctx.tech === 'ttl' ? 'Transistorebene: NAND in TTL (7400)' : 'Transistorebene: NAND in CMOS',
+  textBild: (ctx) => ctx.tech === 'ttl' ? 'Ausschnitt eines TTL-Chips (vereinfacht): Transistoren, Widerstände und Dioden liegen in getrennten Inseln.'
+    : 'Layout der Gatterzelle von oben (vereinfacht): Wo eine Gate-Bahn aus Polysilizium ein p- oder n-Gebiet kreuzt, entsteht ein Transistor.',
+  textDar: (ctx) => ctx.tech === 'ttl'
+    ? (ctx.weg === 'ic' ? '' : 'Achtung: Im µC gibt es kein TTL – so sieht dasselbe Gatter als TTL-Baustein aus. ')
+      + 'Eingangstransistor T1 mit zwei Emittern, Phasenteiler T2, Gegentakt-Endstufe T3/T4 (Datenblatt SN7400). Rot: Ströme ohne Last am Ausgang.'
+    : 'Zwei p-Kanal-Transistoren parallel nach VCC, zwei n-Kanal-Transistoren in Reihe nach GND. Je Eingang leitet genau einer der beiden. Im Ruhezustand fließt kein Strom.',
+  bild(g, ctx) { if (ctx.tech === 'ttl') ttlBild(g); else cmosBild(g); },
+  dar(g, ctx) { return ctx.tech === 'ttl' ? ttlDar(g, ctx) : cmosDar(g); },
+};
+
+function cmosBild(g) {
+  Rk(g, 0, 0, W, H, { fill: M.die });
+  Rk(g, 400, 110, 620, 190, { fill: M.nwanne, stroke: '#cfc7b2', 'stroke-width': 2 });
+  Rk(g, 480, 160, 460, 90, { fill: M.pdiff });
+  Rk(g, 480, 400, 460, 90, { fill: M.ndiff });
+  Rk(g, 610, 128, 30, 437, { fill: M.poly }); Rk(g, 780, 128, 30, 437, { fill: M.poly });
+  Rk(g, 590, 515, 70, 50, { fill: M.poly }); Rk(g, 760, 515, 70, 50, { fill: M.poly });
+  const met = { fill: M.metall, opacity: 0.85 };
+  Rk(g, 400, 54, 620, 46, met); Rk(g, 400, 604, 620, 46, met);
+  Rk(g, 528, 100, 26, 110, met); Rk(g, 866, 100, 26, 110, met);
+  Rk(g, 697, 192, 26, 150, met); Rk(g, 528, 316, 195, 26, met); Rk(g, 528, 316, 26, 140, met);
+  Rk(g, 723, 316, 300, 26, met);
+  Rk(g, 866, 430, 26, 174, met);
+  for (const [x, y] of [[541, 205], [879, 205], [710, 205], [541, 445], [879, 445], [625, 540], [795, 540]]) Rk(g, x - 9, y - 9, 18, 18, { fill: M.kontakt });
+  Tx(g, 1010, 75 + 12, 'VCC', 'lbl-xs', { 'text-anchor': 'end' }); Tx(g, 1010, 627 + 12, 'GND', 'lbl-xs', { 'text-anchor': 'end' });
+  Tx(g, 580, 550, 'A', 'lbl-s', { 'text-anchor': 'end' }); Tx(g, 750, 550, 'B', 'lbl-s', { 'text-anchor': 'end' });
+  Tx(g, 1010, 337, 'Y', 'lbl-s', { 'text-anchor': 'end' });
+  for (const [x, y, s] of [[625, 150, 'P1'], [795, 150, 'P2'], [625, 392, 'N1'], [795, 392, 'N2']]) Tx(g, x, y, s, 'lbl-xs fett', { 'text-anchor': 'middle' });
+  legende(g, 1060, 150, [[M.pdiff, 'p-Gebiet'], [M.ndiff, 'n-Gebiet'], [M.nwanne, 'n-Wanne'], [M.poly, 'Gate (Poly-Si)'], [M.metall, 'Metall'], [M.kontakt, 'Kontakt']]);
+}
+
+function cmosDar(g) {
+  const ws = { 'stroke-width': 3 };
+  Ln(g, [[560, 120], [860, 120]], { 'stroke-width': 4 }); Tx(g, 710, 106, 'VCC', 'lbl-xs', { 'text-anchor': 'middle' });
+  Ln(g, [[640, 640], [860, 640]], { 'stroke-width': 4 }); Tx(g, 750, 676, 'GND', 'lbl-xs', { 'text-anchor': 'middle' });
+  const p1 = mosfet(g, 560, 200, 90, 'p', true), p2 = mosfet(g, 860, 200, 90, 'p', true, true);
+  const n1 = mosfet(g, 710, 410, 90, 'n', false), n2 = mosfet(g, 710, 545, 90, 'n', false);
+  Ln(g, [p1.oben, [p1.oben[0], 120]], ws); Ln(g, [p2.oben, [p2.oben[0], 120]], ws);
+  Ln(g, [n1.unten, n2.oben], ws); Ln(g, [n2.unten, [n2.unten[0], 640]], ws);
+  // Knoten Y
+  const ly = [Ln(g, [p1.unten, [p1.unten[0], 320], [p2.unten[0], 320], p2.unten]), Ln(g, [[n1.oben[0], 320], n1.oben]), Ln(g, [[p2.unten[0], 320], [1000, 320]])];
+  punkt(g, n1.oben[0], 320); punkt(g, p2.unten[0], 320);
+  // Eingang A → P1, N1; Eingang B → P2, N2 (eine Kreuzung ohne Punkt)
+  const la = [Ln(g, [[270, 300], [420, 300]]), Ln(g, [[420, 300], [420, p1.gate[1]], p1.gate]), Ln(g, [[420, 300], [420, n1.gate[1]], n1.gate])];
+  punkt(g, 420, 300);
+  const lb = [Ln(g, [[270, 590], n2.gate]), Ln(g, [[360, 590], [360, 60], [970, 60], [970, p2.gate[1]], p2.gate])];
+  punkt(g, 360, 590);
+  eingang(g, 236, 300, 'A', 'a'); eingang(g, 236, 590, 'B', 'b');
+  const zy = ausgang(g, 1034, 320, 'Y');
+  for (const [x, y, s, t, a] of [[528, 212, 'P1', 'p-Kanal', 'end'], [890, 212, 'P2', 'p-Kanal', 'start'], [680, 400, 'N1', 'n-Kanal', 'end'], [680, 535, 'N2', 'n-Kanal', 'end']]) {
+    Tx(g, x, y, s, 'lbl-xs fett', { 'text-anchor': a }); Tx(g, x, y + 28, t, 'lbl-xs muted', { 'text-anchor': a });
+  }
+  // leitender Pfad (hinterlegt)
+  const hl = el('g', { opacity: 0.16 }, g); g.insertBefore(hl, g.firstChild);
+  const hs = { stroke: ink, 'stroke-width': 24 };
+  const hP1 = Ln(hl, [[p1.oben[0], 120], p1.oben, p1.unten, [p1.unten[0], 320], [p2.unten[0], 320]], hs);
+  const hP2 = Ln(hl, [[p2.oben[0], 120], p2.oben, p2.unten, [p2.unten[0], 320]], hs);
+  const hN = Ln(hl, [[n1.oben[0], 320], n1.oben, n1.unten, n2.oben, n2.unten, [n2.unten[0], 640]], hs);
+  const hY = Ln(hl, [[n1.oben[0], 320], [1000, 320]], hs);
+  // Schaltermodell neben jedem Transistor
+  const gsm = el('g', {}, g);
+  const sP1 = schalter(gsm, 660, 200), sP2 = schalter(gsm, 760, 200), sN1 = schalter(gsm, 820, 410), sN2 = schalter(gsm, 820, 545);
+  Tx(gsm, 872, 420, 'Schaltermodell', 'lbl-xs muted');
+  return {
+    ziel: null,
+    dyn: (st) => {
+      la.forEach((e) => setPegel(e, st.a)); lb.forEach((e) => setPegel(e, st.b)); ly.forEach((e) => setPegel(e, st.y));
+      zy.textContent = String(st.y);
+      const c = st.m.cmos;
+      sP1.set(c.P1); sP2.set(c.P2); sN1.set(c.N1); sN2.set(c.N2);
+      show(gsm, st.sm);
+      show(hP1, st.y === 1 && c.P1); show(hP2, st.y === 1 && c.P2); show(hN, st.y === 0); show(hY, true);
+    },
+  };
+}
+
+function ttlBild(g) {
+  Rk(g, 0, 0, W, H, { fill: M.die });
+  const insel = (x, y, w, h, s) => { Rk(g, x, y, w, h, { fill: M.insel, stroke: M.inselRand, 'stroke-width': 3 }); if (s) Tx(g, x + 8, y + h + 26, s, 'lbl-xs fett halo'); };
+  const tr = (x, y, s, nE = 1) => {
+    insel(x - 50, y - 45, 100, 90, s);
+    Rk(g, x - 36, y - 32, 60, 64, { fill: M.basis });
+    for (let i = 0; i < nE; i++) Rk(g, x - 28 + i * 26, y - 12, 18, 24, { fill: M.emitter });
+    Rk(g, x + 30, y - 32, 12, 64, { fill: '#9aa0a6' });
+  };
+  const wid = (x, y1, y2, s) => { insel(x - 22, y1, 44, y2 - y1, s); Rk(g, x - 7, y1 + 10, 14, y2 - y1 - 20, { fill: M.basis }); };
+  wid(400, 105, 235, 'R1'); wid(590, 105, 235, 'R2'); wid(790, 70, 175, 'R4'); wid(590, 480, 610, 'R3');
+  tr(400, 300, 'T1', 2); tr(575, 340, 'T2'); tr(775, 250, 'T3'); tr(775, 460, 'T4');
+  insel(755, 315, 70, 60, 'D1'); Rk(g, 772, 330, 36, 30, { fill: M.basis });
+  insel(230, 455, 60, 60, 'D2'); insel(310, 455, 60, 60, 'D3');
+  const met = { stroke: '#e1e4e7', 'stroke-width': 14, opacity: 0.9, 'stroke-linecap': 'butt' };
+  Ln(g, [[260, 80], [1000, 80]], met); Ln(g, [[220, 640], [1000, 640]], met);
+  Ln(g, [[400, 235], [400, 260]], met); Ln(g, [[440, 330], [540, 340]], met); Ln(g, [[590, 235], [590, 300], [740, 250]], met);
+  Ln(g, [[600, 380], [600, 460], [740, 460]], met); Ln(g, [[790, 290], [790, 320]], met); Ln(g, [[790, 375], [790, 420], [1000, 400]], met);
+  Ln(g, [[150, 340], [360, 330]], met); Ln(g, [[150, 390], [380, 340]], met);
+  Tx(g, 1000, 430, 'Y', 'lbl-s', { 'text-anchor': 'end' }); Tx(g, 160, 330, 'A', 'lbl-s'); Tx(g, 160, 425, 'B', 'lbl-s');
+  legende(g, 1060, 170, [[M.insel, 'Insel (n-Gebiet)'], [M.basis, 'Basis / Widerstand'], [M.emitter, 'Emitter'], ['#e1e4e7', 'Metall']]);
+}
+
+function ttlDar(g, ctx) {
+  const R = CFG.ttl, ws = { 'stroke-width': 3 };
+  Ln(g, [[380, 80], [1000, 80]], { 'stroke-width': 4 }); Tx(g, 368, 88, 'VCC', 'lbl-xs', { 'text-anchor': 'end' });
+  Ln(g, [[200, 640], [1000, 640]], { 'stroke-width': 4 }); Tx(g, 188, 648, 'GND', 'lbl-xs', { 'text-anchor': 'end' });
+  // R1 und T1 (zwei Emitter, Basis oben)
+  widerstand(g, 400, 80, 250, 80);
+  Ln(g, [[360, 300], [440, 300]], { 'stroke-width': 5 });
+  Ln(g, [[400, 250], [400, 300]]);
+  Ln(g, [[425, 300], [455, 340]]);
+  const em = (x0, x1, y1) => { Ln(g, [[x0, 300], [x1, y1]]); const ux = x1 - x0, uy = y1 - 300, d = Math.hypot(ux, uy); el('polygon', { points: arrowHead(x0 + ux * 0.8, 300 + uy * 0.8, ux / d, uy / d, 15, 6), fill: ink }, g); };
+  em(377, 345, 338); em(393, 372, 356);
+  Tx(g, 352, 288, 'T1', 'lbl-xs fett', { 'text-anchor': 'end' });
+  const t1Text = Tx(g, 452, 270, '', 'lbl-xs muted');
+  // Eingänge A, B mit Eingangsdioden (Anode an GND)
+  const la = [Ln(g, [[270, 338], [345, 338]])], lb = [Ln(g, [[270, 430], [372, 430], [372, 356]])];
+  diode(g, 300, 640, 338); punkt(g, 300, 338); diode(g, 330, 640, 430); punkt(g, 330, 430);
+  Tx(g, 268, 560, 'D2', 'lbl-xs', { 'text-anchor': 'end' }); Tx(g, 362, 560, 'D3', 'lbl-xs');
+  eingang(g, 236, 338, 'A', 'a'); eingang(g, 236, 430, 'B', 'b');
+  // T2 mit R2 (Kollektor) und R3 (Emitter)
+  const t2 = npn(g, 560, 340, 60);
+  Ln(g, [[455, 340], t2.b]);
+  widerstand(g, 590, 80, t2.c[1], 80);
+  Ln(g, [t2.e, [590, 460]]); widerstand(g, 590, 460, 640, 70); punkt(g, 590, 460); punkt(g, 590, 250);
+  Tx(g, 520, 380, 'T2', 'lbl-xs fett', { 'text-anchor': 'end' });
+  // T3 mit R4, Diode D1; T4
+  const t3 = npn(g, 760, 250, 60), t4 = npn(g, 760, 460, 60);
+  Ln(g, [[590, 250], t3.b]); Ln(g, [[590, 460], t4.b]);
+  widerstand(g, 790, 80, t3.c[1], 60);
+  diode(g, 790, t3.e[1], 400);
+  Ln(g, [t4.c, [790, 400]]); Ln(g, [t4.e, [790, 640]]);
+  punkt(g, 790, 400);
+  const ly = [Ln(g, [[790, 400], [1000, 400]])];
+  const zy = ausgang(g, 1034, 400, 'Y');
+  Tx(g, 720, 222, 'T3', 'lbl-xs fett', { 'text-anchor': 'end' }); Tx(g, 720, 432, 'T4', 'lbl-xs fett', { 'text-anchor': 'end' });
+  Tx(g, 816, 350, 'D1', 'lbl-xs');
+  // Widerstandswerte als Gleichung (Nennwerte nach Datenblatt)
+  const rw = (x, y, n, v, a = 'end') => Tx(g, x, y, I('R') + SUB(n, 22) + ' = ' + fmtGegeben(v, 'Ω'), 'lbl-xs', { 'text-anchor': a });
+  rw(382, 172, 1, R.R1); rw(572, 172, 2, R.R2); rw(572, 558, 3, R.R3); rw(812, 132, 4, R.R4, 'start');
+  // Schaltermodell neben T2, T3, T4
+  const gsm = el('g', {}, g);
+  const s2 = schalter(gsm, 655, 340), s3 = schalter(gsm, 870, 230), s4 = schalter(gsm, 870, 500);
+  Tx(gsm, 920, 300, 'Schaltermodell', 'lbl-xs muted');
+  // Ströme (rot, Zählpfeil neben der Leitung): Richtung nach dem Zustand, ohne Werte
+  const gi = el('g', {}, g);
+  const strompfeil = (x1, y1, x2, y2, label, lx, ly2, anchor = 'start') => {
+    const p = el('g', {}, gi);
+    const ux = x2 - x1, uy = y2 - y1, d = Math.hypot(ux, uy);
+    Ln(p, [[x1, y1], [x2 - ux / d * 14, y2 - uy / d * 14]], { stroke: CFG.strom, 'stroke-width': 4 });
+    el('polygon', { points: arrowHead(x2, y2, ux / d, uy / d, 20, 8), fill: CFG.strom }, p);
+    Tx(p, lx, ly2, label, 'lbl-xs c-i halo', { 'text-anchor': anchor });
+    return p;
+  };
+  const iR1 = strompfeil(424, 205, 424, 245, I('I') + SUB(1, 22), 432, 236);
+  const iA = strompfeil(342, 320, 298, 320, I('I') + SUB('A', 22), 300, 308, 'start');
+  const iB = strompfeil(362, 412, 318, 412, I('I') + SUB('B', 22), 318, 400, 'start');
+  const iT2 = strompfeil(468, 322, 510, 322, I('I') + SUB(1, 22), 470, 304);
+  const iR2 = strompfeil(566, 196, 566, 236, I('I') + SUB(2, 22), 556, 228, 'end');
+  const iB4 = strompfeil(640, 482, 690, 482, I('I') + SUB('B4', 22), 640, 516);
+  const iR3 = strompfeil(614, 500, 614, 540, I('I') + SUB(3, 22), 622, 532);
+  // Hinweis im µC-Weg
+  const hinweis = el('g', {}, g);
+  if (ctx.weg !== 'ic') {
+    Rk(hinweis, 1000, 470, 320, 150, { rx: 10, fill: '#fff6e5', stroke: '#d4a64a', 'stroke-width': 2.5 });
+    ['Im µC gibt es kein TTL.', 'TTL-Gatter gibt es nur', 'als eigene Bausteine,', 'z. B. 7400.'].forEach((s, i) => Tx(hinweis, 1018, 506 + i * 30, s, 'lbl-xs'));
+  }
+  return {
+    ziel: null,
+    dyn: (st) => {
+      la.forEach((e) => setPegel(e, st.a)); lb.forEach((e) => setPegel(e, st.b)); ly.forEach((e) => setPegel(e, st.y));
+      zy.textContent = String(st.y);
+      const t = st.m.ttl;
+      s2.set(t.T2); s3.set(t.T3); s4.set(t.T4); show(gsm, st.sm);
+      t1Text.textContent = t.T1;
+      show(gi, st.strom);
+      show(iR1, true); show(iA, st.a === 0); show(iB, st.b === 0); show(iT2, st.y === 0);
+      show(iR2, st.y === 0); show(iB4, st.y === 0); show(iR3, st.y === 0);
+    },
+  };
+}
+
+/* ================= 6 Aufbau der Bühne (einmal) und der Ebenen (je Weg und Technik) ================= */
+const gTitel = el('g', { id: 'titel' });
+const titel = txt(1872, 120, CFG.titel, { class: 't-main', 'text-anchor': 'end' }, gTitel);
+const gLeiter = el('g', { id: 'leiter' });
+const gKopf = el('g', { id: 'kopf' });
+const tHead = txt(CFG.kopf.x, CFG.kopf.y, '', { class: 't-panel' }, gKopf);
+const tPhase = txt(CFG.kopf.x, CFG.kopf.y + 40, '', { class: 'lbl-s muted' }, gKopf);
+const gText = el('g', {}, gKopf);
+const tZeilen = [0, 1, 2].map((i) => txt(CFG.kopf.x, CFG.kopf.y + 78 + i * 34, '', { class: 'lbl-s' }, gText));
+const clip = el('clipPath', { id: 'clip-feld' }, defs); Rk(clip, 0, 0, W, H);
+const gFeld = el('g', { id: 'feld', transform: `translate(${CFG.feld.x} ${CFG.feld.y})`, 'clip-path': 'url(#clip-feld)' });
+let LV = [];        // Ebenen des aktuellen Wegs: { id, def, g, gBild, gDar, gZiel, ziel, dyn }
+// Durchklicken in der Bühne: Klick ins Bild führt weiter (Eingänge fangen ihren Klick selbst ab),
+// zwei Pfeilknöpfe links oben führen weiter und zurück – so geht es auch im Vollbild ohne Bedienleiste.
+gFeld.addEventListener('click', () => schritt('+A'));
+const gNav = el('g', { id: 'nav' });
+function navKnopf(cx, rechts, name, art) {
+  const k = el('g', { class: 'klick nav-knopf', role: 'button', tabindex: 0, 'aria-label': name }, gNav);
+  el('title', {}, k).textContent = name;
+  Kr(k, cx, 92, 38, { fill: '#fff', stroke: ink, 'stroke-width': 2.5 });
+  const d = rechts ? 1 : -1;
+  if (art === 'H') {   // Lupe mit Minus
+    Kr(k, cx - 5, 87, 15, { fill: 'none', stroke: ink, 'stroke-width': 4 });
+    Ln(k, [[cx + 6, 98], [cx + 18, 110]], { 'stroke-width': 6 });
+    Ln(k, [[cx - 13, 87], [cx + 3, 87]], { 'stroke-width': 4 });
+  } else el('polygon', { points: `${cx - d * 12},${72} ${cx + d * 18},${92} ${cx - d * 12},${112}`, fill: ink }, k);
+  Tx(k, cx, 158, name, 'lbl-xs muted', { 'text-anchor': 'middle' });
+  k.addEventListener('click', (ev) => { ev.stopPropagation(); schritt(art); });
+  k.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); schritt(art); } });
+  return k;
+}
+const gNavH = navKnopf(66, false, 'heraus', 'H'), gNavZ = navKnopf(168, false, 'zurück', '-A'), gNavW = navKnopf(270, true, 'weiter', '+A');
+let leiterZeilen = [], leiterMarke = null;
+
+let textVoll = true;          // passt der Ebenentext in drei Zeilen? (für die Prüfung)
+function setzeText(s) {     // Ebenentext auf höchstens drei Zeilen umbrechen (gemessen)
+  const w = s.split(' '); let z = 0;
+  tZeilen.forEach((t) => { t.textContent = ''; });
+  for (const wort of w) {
+    if (z > 2) break;
+    const t = tZeilen[z], alt = t.textContent;
+    t.textContent = alt ? alt + ' ' + wort : wort;
+    if (alt && t.getComputedTextLength() > CFG.kopf.breite) { t.textContent = alt; z++; if (z <= 2) tZeilen[z].textContent = wort; }
+  }
+  textVoll = tZeilen.map((t) => t.textContent).filter(Boolean).join(' ') === s.trim();
+}
+
+function bauen() {
+  gFeld.innerHTML = ''; eingaenge.length = 0;
+  el('title', {}, gFeld).textContent = 'Klicken: weiter';
+  const ctx = { weg: S.weg, tech: S.tech };
+  LV = WEGE[S.weg].ebenen.map((id) => {
+    const def = EBENEN[id];
+    const g = el('g', { 'data-ebene': id }, gFeld);
+    const gBild = el('g', {}, g), gDar = el('g', {}, g), gZiel = el('g', {}, g);
+    def.bild(gBild, ctx);
+    const r = def.dar(gDar, ctx) || {};
+    let ziel = r.ziel || null;
+    if (ziel) {
+      Rk(gZiel, ziel.x, ziel.y, ziel.w, ziel.h, { rx: 8, fill: 'rgba(27,33,39,0.05)', stroke: ink, 'stroke-width': 3.5, 'stroke-dasharray': '14 9' });
+      const [lx, ly, la] = Array.isArray(ziel.lpos) ? ziel.lpos
+        : ziel.lpos === 'unten' ? [ziel.x + ziel.w / 2, ziel.y + ziel.h + 30, 'middle'] : [ziel.x + ziel.w / 2, ziel.y - 14, 'middle'];
+      const t = Tx(gZiel, lx, ly, 'hinein: ' + ziel.text, 'lbl-xs halo', { 'text-anchor': la });
+      const b = t.getBBox();
+      if (b.x < 4) t.setAttribute('x', lx + 4 - b.x);
+      if (b.x + b.width > W - 4) t.setAttribute('x', lx - (b.x + b.width - W + 4));
+      if (b.y < 0) t.setAttribute('y', ziel.y + ziel.h + 30);
+    }
+    return { id, def, g, gBild, gDar, gZiel, ziel, dyn: r.dyn || null };
+  });
+  leiterBauen();
+  ebenenAuswahl();
+}
+
+function leiterBauen() {
+  gLeiter.innerHTML = '';
+  const Lc = CFG.leiter, sp = Lc.spalten, ids = WEGE[S.weg].ebenen, n = ids.length, h = (Lc.y1 - Lc.y0) / n;
+  const ctx = { weg: S.weg, tech: S.tech };
+  Tx(gLeiter, sp[0] + 10, Lc.kopf, 'Ebene', 'lbl-xs fett muted');
+  Tx(gLeiter, sp[1] + 10, Lc.kopf, 'Baueinheit', 'lbl-xs fett muted');
+  Tx(gLeiter, sp[2] + 10, Lc.kopf - 26, 'Abstraktions-', 'lbl-xs fett muted'); Tx(gLeiter, sp[2] + 10, Lc.kopf, 'ebene', 'lbl-xs fett muted');
+  leiterMarke = Rk(gLeiter, Lc.x0, Lc.y0, Lc.x1 - Lc.x0, h, { fill: '#dfe5ea' });
+  const pfeilM = el('polygon', { points: '', fill: ink }, gLeiter);
+  leiterMarke.pfeil = pfeilM;
+  leiterZeilen = [];
+  ids.forEach((id, i) => {
+    const d = EBENEN[id], y = Lc.y0 + i * h;
+    const zg = el('g', { class: 'zeile', role: 'button', tabindex: -1 }, gLeiter);
+    Rk(zg, sp[0], y, sp[1] - sp[0], h, { fill: 'transparent' });
+    const name = d.nameF ? d.nameF(ctx) : d.name;
+    const tt = name.map((s, j) => Tx(zg, sp[0] + 12, y + h / 2 + 9 + (j - (name.length - 1) / 2) * 32, s, 'lbl-s'));
+    zg.addEventListener('click', () => setX(i + CFG.stopDar));
+    el('title', {}, zg).textContent = 'Zur Ebene: ' + name.join(' ');
+    leiterZeilen.push(tt);
+    Ln(gLeiter, [[sp[0], y], [sp[1], y]], { stroke: CFG.hell, 'stroke-width': 1.5 });
+  });
+  // Spalte Baueinheit: je Zeile oder zusammengefasst „innerhalb des Bauelements“
+  let i = 0;
+  while (i < n) {
+    const d = EBENEN[ids[i]];
+    if (d.bau) {
+      const y = Lc.y0 + i * h;
+      Rk(gLeiter, sp[1], y, sp[2] - sp[1], h, { fill: 'none', stroke: CFG.hell, 'stroke-width': 1.5 });
+      Tx(gLeiter, sp[1] + 12, y + h / 2 + 9, d.bau, 'lbl-s');
+      i++;
+    } else {
+      let j = i; while (j < n && !EBENEN[ids[j]].bau) j++;
+      const y = Lc.y0 + i * h, hh = (j - i) * h;
+      Rk(gLeiter, sp[1], y, sp[2] - sp[1], hh, { fill: 'url(#m-schraffur)', stroke: CFG.hell, 'stroke-width': 1.5 });
+      ['innerhalb', 'des Bau-', 'elements'].forEach((s, k) => Tx(gLeiter, sp[1] + 12, y + hh / 2 + (k - 1) * 29 + 8, s, 'lbl-xs muted'));
+      i = j;
+    }
+  }
+  // Spalte Abstraktionsebene: gleiche Ebenen zusammengefasst
+  i = 0;
+  while (i < n) {
+    const k = EBENEN[ids[i]].abs; let j = i; while (j < n && EBENEN[ids[j]].abs === k) j++;
+    const y = Lc.y0 + i * h, hh = (j - i) * h;
+    Rk(gLeiter, sp[2], y, sp[3] - sp[2], hh, { fill: 'none', stroke: CFG.hell, 'stroke-width': 1.5 });
+    ABS[k].forEach((s, m) => Tx(gLeiter, sp[2] + 12, y + hh / 2 + 9 + (m - (ABS[k].length - 1) / 2) * 32, s, 'lbl-s'));
+    i = j;
+  }
+  Rk(gLeiter, sp[0], Lc.y0, sp[3] - sp[0], Lc.y1 - Lc.y0, { fill: 'none', stroke: CFG.grau, 'stroke-width': 2 });
+}
+
+/* ================= 7 Darstellung: Zustand → Bild =================
+   Zoomstufe e: Ebene k = ganzzahliger Teil, f = Rest. f < 0,3 Bild; bis 0,5 Überblenden; bis 0,7 Darstellung mit
+   markiertem Ausschnitt; danach Zoom in den Ausschnitt, die nächste Ebene wächst aus ihm heraus.
+   Zoom ohne Ruck: reine Streckung um den Fixpunkt P, Faktor s(t) = S^t (gleichmäßig empfundene Geschwindigkeit). */
+const maxE = () => LV.length - 1 + CFG.stopDar;
+function zoomMatrix(z, t) {
+  const S0 = Math.min(W / (z.w * CFG.zielLuft), H / (z.h * CFG.zielLuft));
+  const c0 = [W / 2, H / 2], c1 = [z.x + z.w / 2, z.y + z.h / 2];
+  const P = [(S0 * c1[0] - c0[0]) / (S0 - 1), (S0 * c1[1] - c0[1]) / (S0 - 1)];
+  const s = Math.pow(S0, t);
+  const akt = [s, 0, 0, s, (1 - s) * P[0], (1 - s) * P[1]];
+  const k = s / S0;   // nächste Ebene: Z_t(G(x)), G(x) = c1 + (x − c0)/S0
+  const nae = [k, 0, 0, k, s * c1[0] - k * c0[0] + (1 - s) * P[0], s * c1[1] - k * c0[1] + (1 - s) * P[1]];
+  return { akt: `matrix(${akt.join(' ')})`, nae: `matrix(${nae.join(' ')})` };
+}
+function phaseVon(e) {
+  const n = LV.length, k = Math.min(Math.floor(e + 1e-9), n - 1), f = e - k, P = CFG.phase;
+  const zoom = k < n - 1 && f > P.zoom ? glatt((f - P.zoom) / (1 - P.zoom)) : 0;
+  const name = zoom > 0 ? 'zoom' : f < P.bild ? 'bild' : f < P.ueber ? 'ueberblenden' : 'darstellung';
+  return { k, f, zoom, name };
+}
+let letzteE = null, zoomRichtung = 1;
+function render() {
+  if (letzteE !== null && Math.abs(S.e - letzteE) > 1e-9) zoomRichtung = S.e > letzteE ? 1 : -1;
+  letzteE = S.e;
+  const ph = phaseVon(S.e), { k, f, zoom } = ph, P = CFG.phase, m = model(S.a, S.b);
+  LV.forEach((lv, i) => {
+    const sicht = i === k || (i === k + 1 && zoom > 0);
+    show(lv.g, sicht);
+    if (!sicht) return;
+    if (i === k) {
+      const mix = glatt((f - P.bild) / (P.ueber - P.bild));
+      lv.gBild.setAttribute('opacity', zoom > 0 ? 0 : 1 - mix);
+      lv.gDar.setAttribute('opacity', zoom > 0 ? 1 - glatt((zoom - 0.3) / 0.5) : mix);
+      lv.g.setAttribute('transform', zoom > 0 ? zoomMatrix(lv.ziel, zoom).akt : '');
+      const zielAn = lv.ziel ? (zoom > 0 ? 1 - glatt(zoom / 0.4) : glatt((f - 0.45) / 0.15)) : 0;
+      lv.gZiel.setAttribute('opacity', zielAn); show(lv.gZiel, zielAn > 0.01);
+      show(lv.gBild, zoom === 0 && mix < 0.999); show(lv.gDar, mix > 0.001 || zoom > 0);
+    } else {
+      lv.g.setAttribute('transform', zoomMatrix(LV[k].ziel, zoom).nae);
+      lv.gBild.setAttribute('opacity', glatt((zoom - 0.1) / 0.5)); lv.gDar.setAttribute('opacity', 0);
+      show(lv.gBild, true); show(lv.gDar, false); show(lv.gZiel, false);
+    }
+    if (lv.dyn) lv.dyn({ a: S.a, b: S.b, y: m.y, m, sm: S.sm, strom: S.strom });
+  });
+  // Eingänge in der Bühne
+  for (const { z, key } of eingaenge) z.textContent = String(S[key]);
+  // Überschrift und Text
+  const ctx = { weg: S.weg, tech: S.tech }, akt = zoom > 0.5 ? Math.min(k + 1, LV.length - 1) : k, d = LV[akt].def;
+  tHead.textContent = d.titel(ctx);
+  const istBild = zoom > 0.5 || ph.name === 'bild' || (ph.name === 'ueberblenden' && f < (P.bild + P.ueber) / 2);
+  tPhase.textContent = `Ebene ${akt + 1} von ${LV.length} · ` + (zoom > 0 && zoom < 1 && (zoomRichtung < 0 || zoom <= 0.5) ? (zoomRichtung < 0 ? 'herauszoomen …' : 'hineinzoomen …') : istBild ? 'So sieht es aus' : 'So wird es dargestellt');
+  setzeText(istBild ? d.textBild(ctx) : d.textDar(ctx));
+  show(gText, S.text);
+  // Leiter: Markierung wandert beim Zoomen mit
+  const Lc = CFG.leiter, h = (Lc.y1 - Lc.y0) / LV.length, ym = Lc.y0 + (k + zoom) * h;
+  leiterMarke.setAttribute('y', ym);
+  leiterMarke.pfeil.setAttribute('points', `2,${ym + h / 2 - 14} ${Lc.x0 - 3},${ym + h / 2} 2,${ym + h / 2 + 14}`);
+  leiterZeilen.forEach((tt, i) => tt.forEach((t) => t.classList.toggle('fett', i === akt)));
+  syncUI();
+}
+
+/* ===== QR-Code rechts oben in der Bühne (Festlegungen der Lehrkraft, 12.11.2026, Animation W) ===== */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/digitaltechnik/abstraktionsebenen/", "n": 37, "d": "M0 0h7v1h-7zM9 0h1v1h-1zM12 0h1v1h-1zM14 0h1v1h-1zM16 0h4v1h-4zM21 0h3v1h-3zM26 0h2v1h-2zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h2v1h-2zM11 1h1v1h-1zM13 1h1v1h-1zM15 1h3v1h-3zM19 1h1v1h-1zM22 1h2v1h-2zM26 1h2v1h-2zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM14 2h1v1h-1zM16 2h1v1h-1zM18 2h3v1h-3zM23 2h2v1h-2zM28 2h1v1h-1zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h1v1h-1zM11 3h1v1h-1zM13 3h1v1h-1zM16 3h1v1h-1zM18 3h2v1h-2zM22 3h2v1h-2zM26 3h1v1h-1zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM10 4h3v1h-3zM19 4h1v1h-1zM23 4h5v1h-5zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h3v1h-3zM15 5h1v1h-1zM17 5h5v1h-5zM23 5h2v1h-2zM26 5h2v1h-2zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM9 7h10v1h-10zM21 7h2v1h-2zM24 7h2v1h-2zM28 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM4 8h1v1h-1zM6 8h1v1h-1zM9 8h2v1h-2zM12 8h1v1h-1zM16 8h2v1h-2zM20 8h2v1h-2zM23 8h1v1h-1zM25 8h1v1h-1zM27 8h2v1h-2zM32 8h1v1h-1zM35 8h1v1h-1zM1 9h2v1h-2zM5 9h1v1h-1zM7 9h1v1h-1zM10 9h1v1h-1zM15 9h3v1h-3zM20 9h2v1h-2zM24 9h1v1h-1zM28 9h1v1h-1zM30 9h1v1h-1zM36 9h1v1h-1zM3 10h1v1h-1zM5 10h2v1h-2zM9 10h1v1h-1zM14 10h3v1h-3zM24 10h1v1h-1zM26 10h1v1h-1zM31 10h6v1h-6zM0 11h1v1h-1zM3 11h1v1h-1zM7 11h2v1h-2zM12 11h3v1h-3zM16 11h2v1h-2zM19 11h8v1h-8zM30 11h3v1h-3zM35 11h1v1h-1zM1 12h2v1h-2zM4 12h4v1h-4zM9 12h1v1h-1zM11 12h1v1h-1zM13 12h5v1h-5zM20 12h2v1h-2zM24 12h2v1h-2zM28 12h3v1h-3zM35 12h2v1h-2zM0 13h2v1h-2zM4 13h1v1h-1zM11 13h2v1h-2zM14 13h1v1h-1zM16 13h1v1h-1zM18 13h1v1h-1zM20 13h1v1h-1zM24 13h1v1h-1zM26 13h1v1h-1zM29 13h2v1h-2zM35 13h2v1h-2zM4 14h6v1h-6zM14 14h1v1h-1zM16 14h2v1h-2zM21 14h2v1h-2zM26 14h1v1h-1zM29 14h3v1h-3zM34 14h3v1h-3zM0 15h2v1h-2zM4 15h2v1h-2zM7 15h1v1h-1zM10 15h1v1h-1zM17 15h1v1h-1zM19 15h1v1h-1zM21 15h3v1h-3zM25 15h2v1h-2zM29 15h1v1h-1zM32 15h1v1h-1zM36 15h1v1h-1zM4 16h1v1h-1zM6 16h3v1h-3zM12 16h2v1h-2zM17 16h1v1h-1zM19 16h3v1h-3zM23 16h1v1h-1zM25 16h1v1h-1zM28 16h3v1h-3zM33 16h1v1h-1zM35 16h2v1h-2zM1 17h1v1h-1zM3 17h1v1h-1zM5 17h1v1h-1zM10 17h2v1h-2zM13 17h1v1h-1zM15 17h1v1h-1zM17 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM24 17h2v1h-2zM28 17h3v1h-3zM34 17h1v1h-1zM36 17h1v1h-1zM2 18h3v1h-3zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h2v1h-2zM13 18h2v1h-2zM17 18h2v1h-2zM21 18h1v1h-1zM31 18h1v1h-1zM35 18h2v1h-2zM1 19h5v1h-5zM10 19h1v1h-1zM13 19h1v1h-1zM15 19h1v1h-1zM17 19h2v1h-2zM21 19h1v1h-1zM25 19h1v1h-1zM27 19h3v1h-3zM33 19h1v1h-1zM35 19h1v1h-1zM2 20h1v1h-1zM4 20h1v1h-1zM6 20h3v1h-3zM12 20h3v1h-3zM17 20h1v1h-1zM20 20h2v1h-2zM24 20h2v1h-2zM30 20h1v1h-1zM2 21h1v1h-1zM4 21h1v1h-1zM8 21h3v1h-3zM12 21h1v1h-1zM16 21h3v1h-3zM20 21h3v1h-3zM24 21h1v1h-1zM28 21h4v1h-4zM33 21h1v1h-1zM35 21h2v1h-2zM1 22h1v1h-1zM3 22h2v1h-2zM6 22h2v1h-2zM12 22h2v1h-2zM20 22h1v1h-1zM24 22h3v1h-3zM30 22h2v1h-2zM34 22h3v1h-3zM0 23h2v1h-2zM3 23h1v1h-1zM8 23h2v1h-2zM13 23h1v1h-1zM15 23h4v1h-4zM21 23h1v1h-1zM24 23h3v1h-3zM32 23h1v1h-1zM0 24h1v1h-1zM2 24h7v1h-7zM11 24h3v1h-3zM16 24h2v1h-2zM21 24h1v1h-1zM23 24h1v1h-1zM25 24h2v1h-2zM28 24h3v1h-3zM33 24h1v1h-1zM36 24h1v1h-1zM3 25h1v1h-1zM11 25h2v1h-2zM15 25h3v1h-3zM20 25h2v1h-2zM24 25h1v1h-1zM28 25h3v1h-3zM34 25h3v1h-3zM0 26h1v1h-1zM2 26h1v1h-1zM6 26h1v1h-1zM10 26h3v1h-3zM14 26h3v1h-3zM20 26h1v1h-1zM24 26h1v1h-1zM26 26h1v1h-1zM28 26h2v1h-2zM31 26h3v1h-3zM35 26h2v1h-2zM1 27h3v1h-3zM7 27h2v1h-2zM10 27h3v1h-3zM16 27h3v1h-3zM20 27h2v1h-2zM25 27h1v1h-1zM27 27h2v1h-2zM31 27h2v1h-2zM0 28h1v1h-1zM2 28h5v1h-5zM10 28h1v1h-1zM14 28h4v1h-4zM19 28h1v1h-1zM21 28h1v1h-1zM24 28h2v1h-2zM28 28h5v1h-5zM36 28h1v1h-1zM8 29h2v1h-2zM14 29h1v1h-1zM16 29h1v1h-1zM20 29h1v1h-1zM26 29h1v1h-1zM28 29h1v1h-1zM32 29h2v1h-2zM35 29h2v1h-2zM0 30h7v1h-7zM12 30h1v1h-1zM16 30h2v1h-2zM20 30h1v1h-1zM22 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM30 30h1v1h-1zM32 30h2v1h-2zM35 30h2v1h-2zM0 31h1v1h-1zM6 31h1v1h-1zM9 31h1v1h-1zM13 31h5v1h-5zM21 31h2v1h-2zM25 31h2v1h-2zM28 31h1v1h-1zM32 31h2v1h-2zM35 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM8 32h1v1h-1zM12 32h1v1h-1zM16 32h3v1h-3zM20 32h2v1h-2zM24 32h2v1h-2zM28 32h6v1h-6zM35 32h1v1h-1zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM10 33h1v1h-1zM14 33h2v1h-2zM20 33h2v1h-2zM24 33h2v1h-2zM28 33h1v1h-1zM31 33h2v1h-2zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM8 34h1v1h-1zM10 34h1v1h-1zM13 34h1v1h-1zM17 34h1v1h-1zM27 34h3v1h-3zM32 34h1v1h-1zM34 34h3v1h-3zM0 35h1v1h-1zM6 35h1v1h-1zM10 35h1v1h-1zM14 35h1v1h-1zM16 35h2v1h-2zM20 35h4v1h-4zM25 35h2v1h-2zM28 35h1v1h-1zM30 35h3v1h-3zM35 35h1v1h-1zM0 36h7v1h-7zM8 36h1v1h-1zM10 36h2v1h-2zM13 36h1v1h-1zM15 36h1v1h-1zM17 36h1v1h-1zM19 36h1v1h-1zM21 36h1v1h-1zM24 36h2v1h-2zM27 36h2v1h-2zM30 36h1v1h-1zM35 36h2v1h-2z"};
+const gQR = el('g', { id: 'qr', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code ausblenden' });
+const gQRPlatz = el('g', { id: 'qr-platz', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code anzeigen' });
+const QR_BOX = QR && (() => {
+  const m = 6, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
+  gQR.dataset.url = QR.url;
+  el('title', {}, gQR).textContent = 'Klicken: QR-Code ausblenden';
+  el('rect', { x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1 }, gQR);
+  el('path', { d: QR.d, fill: '#000', transform: `translate(${x0 + q} ${y0 + q}) scale(${m})`, 'shape-rendering': 'crispEdges' }, gQR);
+  txt(x0 + w / 2, y0 + w + 26, 'Am eigenen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  txt(x0 + w / 2, y0 + w + 52, 'Gerät öffnen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  const p = 96, px = 1900 - p, s = 3, o = Math.round((p - 21 * s) / 2);
+  el('title', {}, gQRPlatz).textContent = 'Klicken: QR-Code anzeigen';
+  el('rect', { x: px, y: y0, width: p, height: p, rx: 8, fill: '#fff', stroke: '#9aa3ad', 'stroke-width': 2, 'stroke-dasharray': '8 6' }, gQRPlatz);
+  let d = '';
+  for (const [cx, cy] of [[0, 0], [14, 0], [0, 14]]) d += `M${cx} ${cy}h7v7h-7zM${cx + 1} ${cy + 1}v5h5v-5zM${cx + 2} ${cy + 2}h3v3h-3z`;
+  for (const [x, y] of [[9, 1], [11, 2], [9, 4], [12, 4], [10, 6], [12, 8], [8, 9], [10, 10], [14, 9], [16, 10], [18, 9], [20, 11], [1, 9], [3, 10], [5, 9],
+    [2, 12], [9, 12], [11, 13], [15, 14], [17, 15], [19, 16], [14, 17], [16, 19], [18, 18], [20, 20], [9, 15], [11, 17], [9, 19], [12, 20]]) d += `M${x} ${y}h1v1h-1z`;
+  el('path', { d, fill: '#5b6570', 'fill-rule': 'evenodd', transform: `translate(${px + o} ${y0 + o}) scale(${s})`, 'shape-rendering': 'crispEdges' }, gQRPlatz);
+  txt(px + p / 2, y0 + p + 28, 'QR-Code', { class: 'qr-cap', 'text-anchor': 'middle' }, gQRPlatz);
+  return { x0, y0, w };
+})();
+const qrGross = () => window.innerWidth >= 800, qrExport = () => document.documentElement.classList.contains('export');
+function qrSichtbar() { return !!QR && S.qr && (qrGross() || qrExport()); }
+function qrPlatzSichtbar() { return !!QR && !S.qr && qrGross() && !qrExport(); }
+function qrUmschalten() {
+  S.qr = !S.qr; render();
+  const z = S.qr ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({ preventScroll: true });
+}
+for (const g of [gQR, gQRPlatz]) {
+  g.addEventListener('click', qrUmschalten);
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
+}
+
+/* ================= 8 Bedienung ================= */
+const btnPlay = $('#btn-play'), rng = $('#rng-x'), num = $('#num-x'), selEbene = $('#sel-ebene');
+function ebenenAuswahl() {
+  selEbene.innerHTML = '';
+  const ctx = { weg: S.weg, tech: S.tech };
+  LV.forEach((lv, i) => {
+    const o = document.createElement('option');
+    o.value = String(i); o.textContent = (i + 1) + ' · ' + (lv.def.nameF ? lv.def.nameF(ctx) : lv.def.name).join(' ');
+    selEbene.appendChild(o);
+  });
+  for (const e of [rng, num]) { e.min = 0; e.max = maxE(); e.step = 0.01; }
+}
+function syncUI() {
+  const v = Math.round(S.e * 100) / 100;
+  rng.max = maxE(); num.max = maxE();
+  rng.value = v;
+  if (document.activeElement !== num) num.value = v;
+  btnPlay.textContent = S.playing ? '❚❚ Pause' : '▶ Abspielen';
+  const bw = $('#btn-weiter'), amEnde = (tween ? tween.nach : S.e) >= maxE() - EPS, amAnfang = (tween ? tween.nach : S.e) <= EPS;
+  const ohneHeraus = herausHalt(tween ? tween.nach : S.e) === null;
+  bw.textContent = weiterText(); bw.disabled = amEnde; $('#btn-zurueck').disabled = amAnfang; $('#btn-heraus').disabled = ohneHeraus;
+  gNavW.style.opacity = amEnde ? 0.35 : 1; gNavZ.style.opacity = amAnfang ? 0.35 : 1; gNavH.style.opacity = ohneHeraus ? 0.35 : 1;
+  btnPlay.setAttribute('aria-pressed', String(S.playing));
+  for (const b of document.querySelectorAll('#seg-weg button')) b.setAttribute('aria-pressed', String(b.dataset.weg === S.weg));
+  for (const b of document.querySelectorAll('#seg-tech button')) b.setAttribute('aria-pressed', String(b.dataset.tech === S.tech));
+  $('#btn-a').textContent = 'A = ' + S.a; $('#btn-b').textContent = 'B = ' + S.b;
+  const k = phaseVon(S.e).k; if (document.activeElement !== selEbene) selEbene.value = String(k);
+  show(gQR, qrSichtbar()); show(gQRPlatz, qrPlatzSichtbar());
+  titel.setAttribute('x', (qrSichtbar() || qrPlatzSichtbar()) ? QR_BOX.x0 - 60 : 1872);
+}
+function setX(v, fromUser = true) {
+  if (!Number.isFinite(v)) return;
+  if (fromUser) { S.playing = false; tween = null; }
+  S.e = clamp(v, 0, maxE());
+  render();
+  if (fromUser) writeHash();
+}
+function umschalten(key) { S[key] = S[key] ? 0 : 1; render(); writeHash(); }
+function setWeg(w) {
+  if (!WEGE[w] || w === S.weg) return;
+  const altId = LV[phaseVon(S.e).k].id, f = S.e - Math.floor(S.e);
+  S.weg = w; bauen();
+  const neu = WEGE[w].ebenen.indexOf(altId);              // gleiche Ebene beibehalten, wenn es sie im neuen Weg gibt
+  S.e = clamp(neu >= 0 ? neu + Math.min(f, CFG.stopDar) : S.e, 0, maxE());
+  render(); writeHash();
+}
+function setTech(t) { if (t === S.tech || !['cmos', 'ttl'].includes(t)) return; S.tech = t; bauen(); render(); writeHash(); }
+function writeHash() {
+  try { history.replaceState(null, '', `#${S.weg}.${S.tech}.e` + String(Math.round(S.e * 100) / 100).replace('.', '-')); } catch (e) { /* Rahmen erlaubt es nicht */ }
+}
+function readStart() {
+  try {
+    const h = /^#(ic|alu|reg)\.(cmos|ttl)\.e(\d+)(?:-(\d+))?$/.exec(location.hash || '');
+    if (h) return { weg: h[1], tech: h[2], e: parseFloat(h[3] + (h[4] ? '.' + h[4] : '')) };
+  } catch (e) { /* ignorieren */ }
+  return null;
+}
+function startWert() { return WEGE[S.weg].ebenen.indexOf(CFG.start.ebene) + CFG.stopDar; }
+let last = null;
+function tick(ts) {
+  if (!S.playing) { last = null; return; }
+  if (last !== null) {
+    // Festlegung der Lehrkraft, 20.11.2026: Abspielen zoomt hinein und wieder heraus (Schleife hin und zurück)
+    const dt = Math.min((ts - last) / 1000, 0.1);
+    if (spielHalt > 0) spielHalt -= dt;
+    else {
+      S.e += spielRichtung * dt / S.dauer;
+      if (S.e >= maxE()) { S.e = maxE(); spielRichtung = -1; spielHalt = 1.5; }
+      else if (S.e <= 0) { S.e = 0; spielRichtung = 1; spielHalt = 1.5; }
+    }
+    render();
+  }
+  last = ts;
+  requestAnimationFrame(tick);
+}
+function togglePlay() {
+  tween = null;
+  S.playing = !S.playing;
+  if (S.playing) { spielHalt = 0; spielRichtung = S.e >= maxE() - 1e-6 ? -1 : spielRichtung; if (S.e <= 1e-6) spielRichtung = 1; }
+  syncUI();
+  if (S.playing) requestAnimationFrame(tick); else writeHash();
+}
+/* Durchklicken (Festlegung der Lehrkraft, 20.11.2026): Jeder Schritt läuft animiert zum nächsten Halt –
+   Bild (k) → Darstellung (k + 0,6) → hineinzoomen → Bild der nächsten Ebene (k + 1). Zurück zoomt wieder heraus.
+   Dauer: ein Drittel der eingestellten Zeit je Ebene (Tempo); ein weiterer Klick während der Bewegung setzt
+   am Ziel der laufenden Bewegung an. Bei „Bewegung reduzieren“ springt die Anzeige ohne Animation. */
+const EPS = 1e-6;
+function naechsterHalt(e, r) {
+  const k = Math.min(Math.floor(e + EPS), LV.length - 1), f = e - k;
+  if (r > 0) return f < CFG.stopDar - EPS ? k + CFG.stopDar : Math.min(k + 1, maxE());
+  if (f > CFG.stopDar + EPS) return k + CFG.stopDar;
+  if (f > EPS) return k;
+  return Math.max(k - 1 + CFG.stopDar, 0);
+}
+let tween = null;
+const wenigBewegung = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+function geheZu(ziel, sofort = false) {
+  S.playing = false;
+  ziel = clamp(ziel, 0, maxE());
+  if (sofort || wenigBewegung()) { tween = null; setX(ziel); return; }
+  const d = Math.abs(ziel - S.e); if (d < EPS) { tween = null; syncUI(); return; }
+  const lief = !!tween;
+  tween = { von: S.e, nach: ziel, t0: null, dauer: Math.max(0.4, d * S.dauer / 3) };
+  if (!lief) requestAnimationFrame(tweenTick);
+}
+function tweenTick(ts) {
+  if (!tween) return;
+  if (tween.t0 === null) tween.t0 = ts;
+  const u = clamp((ts - tween.t0) / 1000 / tween.dauer, 0, 1), w = u < 0.5 ? 2 * u * u : 1 - Math.pow(2 - 2 * u, 2) / 2;
+  S.e = tween.von + (tween.nach - tween.von) * w;
+  if (u >= 1) { S.e = tween.nach; tween = null; render(); writeHash(); return; }
+  render(); requestAnimationFrame(tweenTick);
+}
+function herausHalt(e) {      // größter Halt „Darstellung“ (j + 0,6) unterhalb von e; null: nichts darüber
+  for (let j = Math.min(Math.floor(e + EPS), LV.length - 1); j >= 0; j--) if (j + CFG.stopDar < e - EPS) return j + CFG.stopDar;
+  return null;
+}
+function schritt(art, sofort = false) {
+  const basis = tween ? tween.nach : S.e, k = Math.min(Math.floor(basis + EPS), LV.length - 1), f = basis - k;
+  const halt = f >= CFG.stopDar - EPS ? CFG.stopDar : 0;
+  if (art === '+A') geheZu(naechsterHalt(basis, 1), sofort);
+  else if (art === '-A') geheZu(naechsterHalt(basis, -1), sofort);
+  else if (art === '+E') geheZu(Math.min(k + 1, LV.length - 1) + halt, sofort);
+  else if (art === '-E' || art === 'H') { const z = herausHalt(basis); if (z !== null) geheZu(z, sofort); }
+}
+function weiterText() {   // Hauptknopf nennt die nächste Handlung
+  const basis = tween ? tween.nach : S.e, k = Math.min(Math.floor(basis + EPS), LV.length - 1), f = basis - k;
+  if (basis >= maxE() - EPS) return 'Ende erreicht';
+  return f < CFG.stopDar - EPS ? 'Darstellung zeigen ▶' : 'Hineinzoomen ▶';
+}
+btnPlay.addEventListener('click', togglePlay);
+$('#sel-speed').addEventListener('change', (e) => { S.dauer = Number(e.target.value); });
+rng.addEventListener('input', () => setX(parseFloat(rng.value)));
+num.addEventListener('change', () => setX(parseFloat(String(num.value).replace(',', '.'))));
+selEbene.addEventListener('change', () => setX(Number(selEbene.value) + CFG.stopDar));
+$('#btn-weiter').addEventListener('click', () => schritt('+A'));
+$('#btn-zurueck').addEventListener('click', () => schritt('-A'));
+$('#btn-heraus').addEventListener('click', () => schritt('H'));
+for (const b of document.querySelectorAll('#seg-weg button')) b.addEventListener('click', () => setWeg(b.dataset.weg));
+for (const b of document.querySelectorAll('#seg-tech button')) b.addEventListener('click', () => setTech(b.dataset.tech));
+$('#btn-a').addEventListener('click', () => umschalten('a'));
+$('#btn-b').addEventListener('click', () => umschalten('b'));
+const SCHALTER = ['text', 'sm', 'strom'];
+for (const key of SCHALTER) $('#chk-' + key).addEventListener('change', (e) => { S[key] = e.target.checked; render(); });
+function setVollbild(an) {
+  const html = document.documentElement;
+  html.classList.toggle('vollbild', an);
+  try {
+    if (an && !document.fullscreenElement) html.requestFullscreen?.().catch(() => {});
+    if (!an && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* nicht verfügbar: Ersatz über die Klasse */ }
+  render();
+}
+const toggleFullscreen = () => setVollbild(!document.documentElement.classList.contains('vollbild'));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.documentElement.classList.contains('vollbild')) setVollbild(false); });
+$('#btn-fs').addEventListener('click', toggleFullscreen);
+$('#vb-ende').addEventListener('click', () => setVollbild(false));
+$('#btn-reset').addEventListener('click', () => {
+  S.a = CFG.start.a; S.b = CFG.start.b;
+  if (S.weg !== CFG.start.weg || S.tech !== CFG.start.tech) { S.weg = CFG.start.weg; S.tech = CFG.start.tech; bauen(); }
+  setX(startWert());
+});
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  const inField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if (e.key === ' ' && !inField && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); return; }
+  if (inField && t.type !== 'checkbox') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); schritt((e.key === 'ArrowRight' ? '+' : '-') + (e.shiftKey ? 'E' : 'A')); }
+  else if (e.key === 'PageDown' || e.key === 'PageUp') { e.preventDefault(); schritt(e.key === 'PageDown' ? '+A' : '-A'); }   // Presenter
+  else if (e.key === 'h' || e.key === 'H') schritt('H');
+  else if (e.key === 'Home') { e.preventDefault(); setX(0); }
+  else if (e.key === 'a' || e.key === 'A') umschalten('a');
+  else if (e.key === 'b' || e.key === 'B') umschalten('b');
+  else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  else if (e.key === 'Escape' && document.documentElement.classList.contains('vollbild')) setVollbild(false);
+});
+window.addEventListener('hashchange', () => {
+  const h = readStart(); if (!h) return;
+  if (h.weg !== S.weg || h.tech !== S.tech) { S.weg = h.weg; S.tech = h.tech; bauen(); }
+  if (h.e !== S.e) setX(h.e, false);
+});
+window.addEventListener('resize', syncUI);
+
+/* ================= 9 Schnittstelle für Prüfung und Export (Pflicht) ================= */
+const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
+if (params.has('export')) document.documentElement.classList.add('export');
+if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');
+for (const k of SCHALTER) if (params.has(k)) { S[k] = params.get(k) !== '0'; $('#chk-' + k).checked = S[k]; }
+if (params.has('qr')) S.qr = params.get('qr') !== '0';
+window.anim = {
+  bauart: 'stellgroesse',
+  cfg: CFG,
+  model, volladdierer, nand,
+  set(x) { S.playing = false; tween = null; S.e = clamp(x, 0, maxE()); render(); return S.e; },
+  // act('weiter' | 'zurueck' | 'heraus' | 'ebene+' | 'ebene-' | 'reset'); sofort = true springt ohne Animation (Prüfung)
+  act(name, sofort = false) {
+    const m = { weiter: '+A', zurueck: '-A', heraus: 'H', 'ebene+': '+E', 'ebene-': '-E' };
+    if (m[name]) schritt(m[name], sofort); else if (name === 'reset') $('#btn-reset').click();
+    return tween ? tween.nach : S.e;
+  },
+  opt(key, val) {
+    if (key === 'weg') setWeg(val);
+    else if (key === 'tech') setTech(val);
+    else if (key === 'a' || key === 'b') { S[key] = val ? 1 : 0; render(); }
+    else { S[key] = val; const c = $('#chk-' + key); if (c) c.checked = !!val; render(); }
+  },
+  vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },
+  get state() {
+    const ph = phaseVon(S.e), m = model(S.a, S.b);
+    return { e: S.e, weg: S.weg, tech: S.tech, a: S.a, b: S.b, y: m.y, playing: S.playing, text: S.text, sm: S.sm, strom: S.strom, qr: S.qr,
+      ebene: LV[ph.k].id, ebenenNr: ph.k + 1, ebenen: LV.length, phase: ph.name, cmos: m.cmos, ttl: m.ttl, textVoll, bewegt: !!tween };
+  },
+};
+
+/* ================= 10 Start ================= */
+const h0 = readStart();
+if (h0) { S.weg = h0.weg; S.tech = h0.tech; }
+bauen();
+S.e = clamp(h0 ? h0.e : startWert(), 0, maxE());
+render();
+})();
+</script>
+</body>
+</html>
