@@ -390,16 +390,17 @@ const CFG = {
   schritt: [-10, -1, 1, 10],                     // Schrittknöpfe in µF
   hash: 'c',                                     // #c83-2 → C = 83,2 µF
   g: {                                           // Geometrie in Bühnenpixeln (1920 × 1080)
-    yo: 400, yu: 990,                            // Leitung L1 (oben) und N (unten)
+    yo: 400, yu: 1008,                           // Leitung L1 (oben) und N (unten); N 18 px tiefer, damit unter Q_L1 Platz bleibt
     xT: 120, xU: 200,                            // Netzklemmen, Spannungspfeil
     xA: 228, xK: 600, xM: 1036, xE: 1060,        // Leistungspfeile: Anfang am Netz, Kondensatorzweig, Ende am Motor; Ersatzschaltbild
     mess: [330, 885], mw: 190, mh: 172, my: 270, // Strommesser: Mitten, Breite, Höhe, Oberkante
     iPf: { y: 372, x2: 440, x1: 615, max: 128 }, // Strompfeile: Höhe, Anfang I2 und I1, größte Länge
-    R: [450, 570], L: [736, 874],                // Ersatzschaltbild: R und L (oben, unten); Abstand R–L vergrößert (Festlegung 20.11.2026)
+    R: [480, 600], L: [766, 904],                // Ersatzschaltbild: R und L (oben, unten); Abstand R–L vergrößert (Festlegung 20.11.2026)
                                                  // L wie im Hausstil (CircuiTikZ american inductor: so lang wie R, 4 Bögen, Bogenhöhe ≈ halbe Breite von R),
                                                  // etwas größer als R (Lehrkraft, 20.11.2026); 1. und 4. Bogen mittig auf yC und yN
-    yP: 510, hPmax: 80,                          // Wirkleistungspfeil: Mitte = Mitte von R, größte Breite
-    yC: 650 + 310 / 3, yN: 650 + 2 * 310 / 3,    // Kondensator und sein Pfeil auf den 1. Bogen von L, Pfeil aus dem Netz auf den 4. Bogen
+    yP: 540, hPmax: 80,                          // Wirkleistungspfeil: Mitte = Mitte von R, größte Breite
+    yC: 680 + 310 / 3, yN: 680 + 2 * 310 / 3,    // Kondensator und sein Pfeil auf den 1. Bogen von L, Pfeil aus dem Netz auf den 4. Bogen
+                                                 // R, L, Pfeile und Beschriftungen 30 px tiefer: mehr Abstand zu den Strommessern (Lehrkraft, 20.11.2026)
     hQmax: 92,                                   // Blindleistungspfeile: größte Breite
     motor: { x: 990, y: 285, w: 372, h: 760 },   // gestrichelter Kasten „Motor“
     zb: { x0: 1440, wMax: 330, yTop: 488, yBot: 1040, kopf: 418, mitte: 1650 },   // Zeigerbild
@@ -603,7 +604,7 @@ const tCos = txt(1872, 226, '', { class: 'lbl-s', 'text-anchor': 'end' }, gBack)
   zeile(150, C.zur, C.hin, -1, `Blindleistung ${I('Q')}: Energie zurück`);
   txt(44, 194, 'Pfeilbreite ∝ Leistung', { class: 'lbl-xs sans muted' }, gBack);
 }
-const tZeitlupe = txt(44, 1052, '', { class: 'lbl-xs sans muted' }, gBack);
+const tZeitlupe = txt(44, 1064, '', { class: 'lbl-xs sans muted' }, gBack);
 
 // Leitungen: L1 oben, N unten; Netzklemmen links; Ersatzschaltbild des Motors rechts
 const draht = (d, p = gLeit) => el('path', { d, fill: 'none', stroke: C.ink, 'stroke-width': 3, 'stroke-linejoin': 'round' }, p);
@@ -667,7 +668,7 @@ txt(M.x + M.w / 2 + 40, M.y + 80, 'im Bemessungsbetrieb', { class: 'lbl-xs sans 
 }
 {
   const blau = '#2f5d94', hell = '#5584bd', dunkel = '#1f3f66', grau = '#8d969e';
-  const g = el('g', { id: 'motor-bild', transform: `translate(${M.x + 148} 790) scale(0.86)` }, gBack);   // Seitenansicht, Welle nach rechts
+  const g = el('g', { id: 'motor-bild', transform: `translate(${M.x + 148} 820) scale(0.86)` }, gBack);   // Seitenansicht, Welle nach rechts
   const yM = 96;
   el('rect', { x: 58, y: yM + 60, width: 36, height: 22, rx: 3, fill: dunkel }, g);                     // Füße
   el('rect', { x: 140, y: yM + 60, width: 36, height: 22, rx: 3, fill: dunkel }, g);
@@ -681,8 +682,8 @@ txt(M.x + M.w / 2 + 40, M.y + 80, 'im Bemessungsbetrieb', { class: 'lbl-xs sans 
   el('rect', { x: 88, y: yM - 102, width: 66, height: 36, rx: 5, fill: blau, stroke: dunkel, 'stroke-width': 2 }, g);   // Klemmenkasten
   el('rect', { x: 150, y: yM - 26, width: 30, height: 24, rx: 2, fill: '#eef1f4', stroke: dunkel, 'stroke-width': 1 }, g);   // Leistungsschild
 }
-const tMotor = [0, 1, 2, 3, 4].map((k) => txt(M.x + 140, 480 + 40 * k, '', { class: 'lbl-s' }, gBack));
-const tMotorHin = txt(M.x + 140, 700, 'unabhängig von C', { class: 'lbl-xs sans muted' }, gBack);
+const tMotor = [0, 1, 2, 3, 4].map((k) => txt(M.x + 140, 510 + 40 * k, '', { class: 'lbl-s' }, gBack));
+const tMotorHin = txt(M.x + 140, 730, 'unabhängig von C', { class: 'lbl-xs sans muted' }, gBack);
 
 // Kondensatorzweig (nur bei C > 0): Abzweig an L1 und N, Kondensator mit zwei Platten, orange getönt (Q)
 const kDraht = draht('', gKond);
@@ -859,7 +860,7 @@ function render() {
   tMotor[3].innerHTML = sym('Q', 'L1', fmtLauf(m.Q1, 'var'), 25); tMotor[3].setAttribute('class', 'lbl-s c-q');
   tMotor[4].innerHTML = sym('I', '1', fmtLauf(m.I1, 'A'), 25); tMotor[4].setAttribute('class', 'lbl-s c-i fett');
   show(tMotor[3], W); show(tMotor[4], W);
-  tMotorHin.setAttribute('y', W ? 700 : 620);
+  tMotorHin.setAttribute('y', W ? 730 : 650);
 
   // Leistungspfeile (Festlegung der Lehrkraft, 20.11.2026): P genau auf Höhe der Mitte von R; der Kondensator und sein
   // Blindleistungspfeil auf 1/3, der Blindleistungspfeil aus dem Netz (Q_L1 bzw. Q_L2) auf 2/3 der früheren Spulenhöhe;
