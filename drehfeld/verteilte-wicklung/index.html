@@ -6,105 +6,223 @@
 <title>Drehfeld mit verteilter Wicklung</title>
 <meta name="description" content="Ständer mit verteilter Drehstromwicklung in Nuten: Die Ströme ändern sich, Nordpol und Südpol laufen am Ständer um, das resultierende Magnetfeld dreht sich.">
 <style>
-/* Layout: 16:9-Bühne als SVG (1920 × 1080) oben, Bedienleiste darunter, Erklärung und Modellhinweise.
-   Die Bühne bleibt hell: Die Farbwerte der Fachkonventionen gelten für weißen Grund. Nur der Rahmen folgt Hell/Dunkel. */
+/* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+   Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
+   gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit.
+   v4 (20.11.2026): Die Vorschau ?buehne=1 passt die Bühne in jeden Rahmen ganz ein (Moodle-Rahmen mit fester Höhe).
+   v5 (20.11.2026): Bedienleiste in Kästen mit Überschrift – oben Steuerung links, Parameter rechts, darunter Ansicht. */
 :root{
-  /* Rahmen (Seite, Bedienung) */
+  /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
   --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
   --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
-  /* Bühne (fest, nicht umschalten) */
+  /* Bühne: immer weiß, ohne Karoraster – die Größenfarben der Fachkonventionen gelten für weißen Grund */
   --stage:#ffffff; --ink:#1b2127;
-  /* Größenfarben: B grün (Festlegung 11.11.2026), Stränge in den Leiterfarben (Festlegung 12.11.2026) */
-  --b:#00B050; --l1:#FFC000; --l2:#00B050; --l3:#7030A0;
   --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  --font-math:Cambria,"Cambria Math",Caladea,"Times New Roman","Liberation Serif","DejaVu Serif",serif;
+  --font-math:var(--font-ui);   /* Formeln in der Textschrift (Festlegung der Lehrkraft, 12.11.2026; fachkonventionen 3a) */
+  /* Bühnengröße = (Fensterhöhe − --reserve) · 16/9, höchstens 1920 px und höchstens die Seitenbreite.
+     --reserve: Ränder, Abstand und Bedienleiste. Derselbe Wert steht in scripts/pruefen.py (NORM). */
+  --reserve:250px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
     --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
-    color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
   --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
-  color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{background:var(--page);color:var(--fg)}
-body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.4;
-  padding-block:16px 24px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.wrap{width:100%;max-width:max(min(100%,720px),calc((100dvh - 230px) * 16 / 9));margin:0 auto;display:grid;gap:12px;min-width:0}
-/* Lernende am eigenen Gerät: Auf schmalen Bildschirmen bleibt die Bühne lesbar groß und lässt sich seitlich schieben. */
-.stage{background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow-x:auto;overflow-y:hidden;max-width:100%;min-width:0}
-.stage svg{display:block;width:100%;min-width:760px;height:auto;aspect-ratio:16/9}
-.stage:fullscreen{border:0;border-radius:0;width:100vw;height:100vh;max-width:none;display:grid;place-items:center}
-.stage:fullscreen svg{min-width:0;width:100vw;height:100vh}
-.tip{display:none;font-size:13px;color:var(--muted)}
-@media (max-width:720px) and (orientation:portrait){.tip{display:block}}
+body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.45;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+sub,sup{font-size:.72em;line-height:0}
 
-/* Beschriftung in der Bühne: Formelzeichen kursiv (.i), Einheiten, Zahlen und Indizes aufrecht */
+/* 1 Seitenaufbau, immer in dieser Reihenfolge, alles gleich breit: Bühne (#stage) → Bedienleiste (#controls) →
+   Zusatzbereiche (.card, .info, optional) → Modellhinweise (.notes). Über der Bühne steht nichts. */
+.wrap{width:100%;max-width:min(1920px,max(min(100%,720px),calc((100dvh - var(--reserve)) * 16 / 9)));
+  margin:0 auto;display:grid;gap:12px}
+
+/* 2 Bühne: immer 16:9, logisch 1920 × 1080 (SVG-viewBox; Canvas darunter, SVG mit Titel und QR-Code darüber) */
+.stage{position:relative;background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.stage svg,.stage canvas{display:block;width:100%;height:100%}
+.stage canvas + svg{position:absolute;inset:0}
+.stage:fullscreen{border:0;border-radius:0;aspect-ratio:auto;width:100vw;height:100vh;max-width:none}   /* nur noch für Animationen vor v3 */
+
+/* 3 Schrift in der Bühne (Bühnenpixel bei 1920 Breite): Formelzeichen kursiv (.i), Einheiten, Zahlen, Indizes aufrecht */
 #stage-svg text{font-family:var(--font-math);fill:var(--ink)}
-#stage-svg .t-main{font-size:60px;font-weight:700}
-#stage-svg .t-panel{font-size:34px;font-weight:700}
-#stage-svg .lbl{font-size:30px}
+#stage-svg .t-main{font-size:60px;font-weight:700}     /* Titel, oben rechts neben dem QR-Code */
+#stage-svg .t-panel{font-size:34px;font-weight:700}    /* Bereichsüberschrift */
+#stage-svg .ro{font-size:38px}                         /* Momentanwerte */
+#stage-svg .lbl{font-size:30px}                        /* Formelzeichen an Pfeilen und Bauteilen */
 #stage-svg .lbl-s{font-size:25px}
-#stage-svg .ro{font-size:38px}
+#stage-svg .lbl-xs{font-size:22px}                     /* kleinste erlaubte Beschriftung */
+#stage-svg .sans{font-family:var(--font-ui)}
 #stage-svg .i{font-style:italic}
-#stage-svg .c-b{fill:#00843c;font-weight:700}
+#stage-svg .muted{fill:#58636e}
 #stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .qr-cap{font-family:var(--font-ui);font-size:22px}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
+
+/* 4 Bedienleiste in Kästen mit Überschrift auf dem Rahmen (v5, Festlegung der Lehrkraft 20.11.2026, layout.md 4):
+   .row 1: .kasten.steuerung links (Raster: Hauptknopf/Eingriff · Pause/Zurücksetzen · Tempo/Anzeige) | .kasten.parameter rechts
+   .row 2: Ansicht – Kästen nach Thema (Ebenen in der Bühne, Text darunter) mit Kästchen · Vollbild (#btn-fs) rechts außen
+   dann „Tastatur“. Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+.card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.controls{display:grid;gap:12px;font-size:13.5px;line-height:1.35;padding-top:14px;container:leiste / inline-size}
+.controls>details.keys{margin-top:-5px}
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px 8px}
+.row .sp{flex:1 1 auto}
+.kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 auto;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+.kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);font-size:10.5px;line-height:13px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kasten .chk+.chk{margin-left:4px}
+.kasten .paar{display:flex;flex-wrap:wrap;gap:6px}
+.kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;justify-items:start;
+  gap:6px 10px;flex:0 1 auto}
+.kasten.steuerung:last-child{flex-grow:1}   /* ohne Parameter füllt die Steuerung die Zeile */
+.kasten.steuerung .zeile,.kasten.steuerung .zeile>.group{display:contents}   /* je .zeile: Knopf · Knopf · Überschrift · Auswahl */
+.kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+.kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;
+  flex:1 1 0;min-width:auto}   /* nimmt den Rest der Zeile neben der Steuerung; lange Auswahlreihen (.paar) brechen im Kasten um */
+#btn-fs{margin-left:auto;align-self:center}
+button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}  /* Ein/Aus-Knopf */
+/* Leiste 600–850 px breit (1280 × 720): Parameter-Überschrift über der Auswahl, damit Steuerung und Parameter nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){
+  .kasten.parameter{grid-template-columns:auto;gap:2px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:4px}}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
+.group.wert .group{flex-wrap:nowrap}
+.group.wert input[type=range]{min-width:100px}
+.cap{font-size:12px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
+button{padding:3px 9px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:9em;font-weight:600}
+button.primary:hover{opacity:.92}
+select{padding:2px 5px}
+input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
+.seg{display:inline-flex}
+.seg button,.kasten button{white-space:nowrap}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
+.seg button:last-child{border-radius:0 5px 5px 0}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:14px;height:14px;margin:0}
+:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.keys .hint{margin-top:6px}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+.sep{width:1px;align-self:stretch;background:var(--rule)}
+@media (max-width:640px){.sep{display:none} .kasten{flex:1 1 100%}}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){   /* schmal: Steuerung als Zeilen statt Raster */
+  .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  .kasten.steuerung .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  .kasten.steuerung .zeile>.group{display:flex}
+  .kasten.steuerung .zeile>:empty{display:none}}
+
+/* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
+.diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
+.diag text{font-family:var(--font-math);fill:var(--ink)}           /* Schriftstufen wie in der Bühne (Bühnenpixel bei 1920) */
+.diag .lbl{font-size:30px} .diag .lbl-s{font-size:25px} .diag .lbl-xs{font-size:22px}
+.diag .sans{font-family:var(--font-ui)} .diag .i{font-style:italic} .diag .muted{fill:#58636e}
+.diag .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+.info{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.info{grid-template-columns:1fr}}
+.info h2{margin:0;font-size:19px}
+.info h3,.card h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#pText{margin:8px 0 0;max-width:68ch}
+.formulas{margin-top:10px;padding:10px 12px;border-left:3px solid var(--rule);background:var(--btn);border-radius:0 6px 6px 0;display:grid;gap:8px;font-family:var(--font-math);font-size:17px}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px;line-height:1.15}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 3px}
+.vals table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.vals td{padding:4px 0;border-bottom:1px solid var(--rule)}
+.vals td:last-child{text-align:right;font-weight:600}
+.vals tr:last-child td{border-bottom:0}
+
+/* 6 Modellhinweise: immer zuletzt, aufklappbar */
+.notes summary{cursor:pointer;font-weight:600}
+.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
+
+/* 7 Export (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
+html.export .wrap>:not(.stage){display:none}
+
+/* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
+   16:9-Rahmen genau aus und passt in jeden anders geformten Rahmen ganz hinein, mittig (v4: Moodle-Rahmen haben eine
+   feste Höhe, am Handy ist der Rahmen schmaler). Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und
+   Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden;height:100%}
+html.buehne body{display:grid;place-items:center}
+html.buehne .wrap{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));max-width:none;margin:0;gap:0}
+html.buehne .stage{border:0;border-radius:0}
+html.buehne .wrap>:not(.stage){display:none}
+
+/* 9 Handy quer (Fenster flach und höchstens 520 px hoch): Bühne links, so groß wie es die Höhe erlaubt; Bedienleiste
+   rechts daneben, bei Bedarf mit eigenem Rollbalken; alles Weitere darunter. Nicht in Vorschau und Export. */
+@media (orientation:landscape) and (max-height:520px){
+  html:not(.buehne):not(.export):not(.vollbild) .wrap{max-width:none;
+    grid-template-columns:min(calc((100dvh - 32px) * 16 / 9),calc(100% - 272px)) minmax(260px,1fr);align-items:start}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>*{grid-column:1 / -1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.stage{grid-column:1;grid-row:1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{grid-column:2;grid-row:1;min-width:0;max-height:calc(100dvh - 32px);
+    overflow-x:hidden;overflow-y:auto;padding:8px 10px}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{padding-top:14px}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten.parameter{grid-template-columns:auto}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten .sep{display:none}
+}
+
+/* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
+   sichtbar sind nur die Bühne und – wenn eingeschaltet – das Diagramm (#diagCard) darunter. Die Bühne bleibt 16:9 und wird
+   so groß, dass beides auf den Bildschirm passt (mit Diagramm: 1920 × 1480 Bühnenpixel zusammen). Ohne Vollbild-Schnittstelle
+   (iPhone, eingebettete Ansicht) füllt dieselbe Ansicht das Fenster; dann führt .vb-ende zurück.
+   Festlegung der Lehrkraft, 12.11.2026: „Vollbild nimmt ein eingeschaltetes Diagramm mit.“ */
+html.vollbild,html.vollbild body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.vollbild .wrap{position:fixed;inset:0;z-index:20;max-width:none;width:auto;margin:0;gap:0;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;--vb-h:1080}
+html.vollbild .wrap:has(>#diagCard:not([hidden])){--vb-h:1480}
+html.vollbild .wrap>*{display:none}
+html.vollbild .wrap>.stage{display:block;flex:none;border:0;border-radius:0;width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild .wrap>#diagCard:not([hidden]){display:block;flex:none;border:0;border-radius:0;padding:0;background:#fff;
+  width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild #diagCard h3{display:none}
+html.vollbild #diagCard .diag{border:0;border-radius:0}
+.vb-ende{display:none}
+html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:21;opacity:.8}
+/* LAYOUT-NORM:end */
+
+/* Eigenes dieser Animation (nach dem Normblock). Umgebaut auf Layout-Norm v5 am 21.11.2026 (Auftrag der Lehrkraft:
+   „Bedienelemente übersichtlicher anordnen“); vorher eigenes Layout ohne Normblock. */
+:root{
+  /* Größenfarben: B grün (Festlegung 11.11.2026), Stränge in den Leiterfarben (Festlegung 12.11.2026) */
+  --b:#00B050; --l1:#FFC000; --l2:#00B050; --l3:#7030A0;
+}
+#stage-svg .c-b{fill:#00843c;font-weight:700}
 #stage-svg .pol{font-family:var(--font-ui);font-size:40px;font-weight:700;fill:#fff}
 /* Die Polbuchstaben stehen in der Bohrung am inneren Rand des Eisens (Festlegung 12.11.2026) und tragen deshalb die Polfarbe. */
 #stage-svg .pol-n{fill:#E2231A}
 #stage-svg .pol-s{fill:#0E8A7C}
 #stage-svg .pol-frei{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
-#stage-svg .lbl-xs{font-size:22px}
-#stage-svg .sans{font-family:var(--font-ui)}
-#stage-svg .qr-knopf{cursor:pointer}
-#stage-svg .qr-knopf:focus{outline:none}
-#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
 #stage-svg .strang{font-family:var(--font-ui);font-size:27px;font-weight:700}
 
-.controls,.notes{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
-.controls{display:grid;gap:10px}
-.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
-.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-.cap{font-size:13px;font-weight:600;color:var(--muted)}
-button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
-button{padding:5px 10px;cursor:pointer;font-variant-numeric:tabular-nums}
-button:hover{background:var(--btn-hover)}
-button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:8.5em;font-weight:600}
-select{padding:4px 6px}
-input[type=number]{width:6.2em;padding:4px 6px;font-variant-numeric:tabular-nums}
-input[type=range]{flex:1 1 240px;min-width:0;accent-color:var(--primary)}
-.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
-.chk input{accent-color:var(--primary);width:16px;height:16px;margin:0}
-:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.hint{font-size:12.5px;color:var(--muted)}
-kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
 /* „Was man sieht“: einklappbar wie „Modell und Vereinfachungen“ (Festlegung der Lehrkraft, 12.11.2026) */
 .erkl-text{margin-top:10px}
 .erkl-text p{margin:0;max-width:75ch}
 .erkl-text p + p{margin-top:6px}
-.notes summary{cursor:pointer;font-weight:600}
-.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
-.notes i,.erkl i{font-family:var(--font-math);font-size:1.08em}
 
-/* Exportmodus (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
-html.export,html.export body{background:#fff;padding:0}
-html.export .wrap{width:1920px;max-width:none;gap:0}
-html.export .stage{width:1920px;height:1080px;border:0;border-radius:0;overflow:hidden}
-html.export .controls,html.export .notes,html.export .erkl,html.export .tip{display:none}
-/* Vorschau ?buehne=1 (Moodle-Einbettung und Übersicht): nur die Bühne, randlos – füllt einen
-   16:9-Rahmen genau aus. Klicken und Tasten in der Bühne bleiben; Bedienleiste und Texte entfallen.
-   Nachgerüstet 16.11.2026 wie in den übrigen Animationen (Layout-Norm, Normblock 8). */
-html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
-html.buehne .wrap{width:100%;max-width:none;gap:0}
-html.buehne .stage{border:0;border-radius:0;overflow:hidden}
-html.buehne .stage svg{min-width:0}
-html.buehne .wrap>:not(.stage){display:none}
 </style>
 </head>
 <body>
@@ -115,46 +233,63 @@ html.buehne .wrap>:not(.stage){display:none}
       <desc id="svg-desc">Ständerring im Schnittbild mit Nuten. Die Stränge U, V und W sind auf mehrere Nuten verteilt. Punkt und Kreuz in den Leitern zeigen die Stromrichtung, ihre Größe den Strom. Die Zähne des Ständers sind als Nordpol (rot) und Südpol (grün) gefärbt, die Farbe ist umso kräftiger, je stärker das Feld ist. Die Pole laufen am Ständer um. In der Mitte dreht sich der Pfeil des resultierenden Magnetfelds. Wahlweise ist das Eisen als kleine Elementarmagnete gezeichnet, die sich nach dem Feld ausrichten.</desc>
     </svg>
   </div>
-  <div class="tip">Tipp: Handy quer halten oder die Grafik seitlich schieben.</div>
-
   <div class="controls" id="controls">
+    <!-- Bedienleiste in Kästen (Layout-Norm v5, layout.md 4), umgebaut 21.11.2026. Zeile 1: Steuerung links, Parameter rechts. -->
     <div class="row">
-      <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
-      <label class="group" for="sel-speed"><span class="cap">Tempo</span>
-        <select id="sel-speed">
-          <option value="6">1 Umlauf in 6 s</option>
-          <option value="12" selected>1 Umlauf in 12 s</option>
-          <option value="24">1 Umlauf in 24 s</option>
-        </select>
-      </label>
-      <input id="rng-x" type="range" aria-label="Winkel ωt">
-      <label class="group" for="num-x"><span class="cap" id="cap-x"></span>
-        <input id="num-x" type="number">
-      </label>
+      <div class="kasten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <div class="zeile">                             <!-- Hauptknopf · Zurücksetzen · Tempo -->
+          <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
+          <button id="btn-reset" type="button">Zurücksetzen</button>
+          <label class="group" for="sel-speed"><span class="cap">Tempo</span>
+            <select id="sel-speed">
+              <option value="6">1 Umlauf in 6 s</option>
+              <option value="12" selected>1 Umlauf in 12 s</option>
+              <option value="24">1 Umlauf in 24 s</option>
+            </select>
+          </label>
+        </div>
+        <div class="zeile">                             <!-- (leer) · (leer) · Schritt ± -->
+          <span></span><span></span>
+          <div class="group" role="group" aria-label="Schrittweise verstellen"><span class="cap">Schritt</span>
+            <div class="paar" id="steps"></div>
+          </div>
+        </div>
+      </div>
+      <div class="kasten parameter" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
+        <label class="cap" id="cap-x" for="num-x"></label>
+        <div class="group wert">
+          <input id="rng-x" type="range" aria-label="Winkel ωt">
+          <input id="num-x" type="number">
+        </div>
+        <span class="cap">Direkt</span>
+        <div class="paar" role="group" aria-label="Winkel direkt wählen" id="presets"></div>
+        <span class="cap" id="cap-q">Leiter je Spulenseite</span>
+        <div class="seg" role="group" aria-labelledby="cap-q" id="seg-q"></div>
+      </div>
     </div>
-    <div class="row">
-      <div class="group" role="group" aria-label="Schrittweise verstellen" id="steps"><span class="cap">Schritt</span></div>
-      <div class="group" role="group" aria-label="Wert direkt wählen" id="presets"><span class="cap">Direkt</span></div>
-    </div>
-    <div class="row">
+    <div class="row">                                   <!-- Zeile 2 · Ansicht: Kästen nach Thema, rechts außen Vollbild -->
       <!-- Schalter für Ebenen: id = "chk-" + Schlüssel in S; der Startzustand kommt aus S.
            Festlegung der Lehrkraft, 11.11.2026: Zusatzebenen sind beim Öffnen aus – hier außer dem Liniendiagramm (12.11.2026). -->
-      <label class="group" for="sel-q"><span class="cap">Leiter je Spulenseite</span>
-        <select id="sel-q"></select>
-      </label>
-      <label class="chk" for="chk-ef"><input id="chk-ef" type="checkbox">Einzelfelder der Stränge</label>
-      <label class="chk" for="chk-ld"><input id="chk-ld" type="checkbox">Liniendiagramm der Ströme</label>
-      <label class="chk" for="chk-em"><input id="chk-em" type="checkbox">Eisen als Elementarmagnete</label>
-      <label class="chk" for="chk-fl"><input id="chk-fl" type="checkbox">Feldlinien</label>
+      <div class="kasten" role="group" aria-labelledby="lg-feld"><span class="lg" id="lg-feld">Feld</span>
+        <label class="chk" for="chk-ef"><input id="chk-ef" type="checkbox">Einzelfelder der Stränge</label>
+        <label class="chk" for="chk-fl"><input id="chk-fl" type="checkbox">Feldlinien</label>
+        <label class="chk" for="chk-em"><input id="chk-em" type="checkbox">Eisen als Elementarmagnete</label>
+      </div>
+      <div class="kasten" role="group" aria-labelledby="lg-diag"><span class="lg" id="lg-diag">Diagramm</span>
+        <label class="chk" for="chk-ld"><input id="chk-ld" type="checkbox">Liniendiagramm der Ströme</label>
+      </div>
       <button type="button" id="btn-fs">Vollbild</button>
     </div>
-    <div class="hint">
-      Tastatur: <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> kleiner Schritt · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> großer Schritt · <kbd>Pos1</kbd> Anfang · <kbd>F</kbd> Vollbild.
-      Ein Winkel lässt sich verlinken, z.&nbsp;B. <code>#a210</code>.
-    </div>
+    <details class="keys">
+      <summary>Tastatur und Verlinken</summary>
+      <div class="hint">
+        <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> kleiner Schritt · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> großer Schritt · <kbd>Pos1</kbd> Anfang · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
+        Ein Winkel lässt sich verlinken, z.&nbsp;B. <code>#a210</code>; dann steht die Animation beim Öffnen auf diesem Winkel.
+      </div>
+    </details>
   </div>
 
-  <details class="notes" id="erkl">
+  <details class="card notes" id="erkl">
     <summary>Was man sieht</summary>
     <div class="erkl-text">
       <p>Die Wicklung liegt in den Nuten des Ständers. Jeder Strang hat zwei Spulenseiten, die sich gegenüberliegen, zum Beispiel U1 und U2. Bei einer verteilten Wicklung liegt jede Spulenseite in mehreren Nuten nebeneinander.</p>
@@ -166,7 +301,7 @@ html.buehne .wrap>:not(.stage){display:none}
     </div>
   </details>
 
-  <details class="notes">
+  <details class="card notes">
     <summary>Modell und Vereinfachungen</summary>
     <ul>
       <li>Strangströme: <i>i</i><sub>U</sub> = <i>î</i> · sin(<i>ωt</i>), <i>i</i><sub>V</sub> = <i>î</i> · sin(<i>ωt</i> − 120°), <i>i</i><sub>W</sub> = <i>î</i> · sin(<i>ωt</i> − 240°). Gezeichnet ist nur das Verhältnis zum Scheitelwert <i>î</i>, ohne Zahlenwerte.</li>
@@ -197,6 +332,8 @@ html.buehne .wrap>:not(.stage){display:none}
   </details>
 </div>
 
+<button type="button" class="vb-ende" id="vb-ende">Vollbild beenden</button>
+
 <script>
 (() => {
 'use strict';
@@ -207,7 +344,9 @@ const D = Math.PI / 180;
    Alles, was die Lehrkraft später selbst ändern können soll, steht hier: Werte, Bereiche, Geometrie, Farben. */
 const CFG = {
   x: { zeichen: 'ωt', einheit: '°', min: 0, max: 360, step: 1, big: 30, start: 90, hash: 'a', loop: true,
-       presets: [0, 30, 60, 90, 120, 180, 210, 270, 330, 360] },
+       /* Direktwahl gekürzt am 21.11.2026 (Leiste übersichtlicher, Layout-Norm v5: wenige Werte): 0° und die drei Winkel,
+          bei denen das Feld auf der Achse von U (90°), V (210°) und W (330°) liegt. Vorher 0, 30, 60, 90, 120, 180, 210, 270, 330, 360. */
+       presets: [0, 90, 210, 330] },
   /* Stränge: achse = Richtung, in die das Feld des Strangs bei positivem Strom in der Bohrung zeigt
      (mathematischer Winkel in °, 0° = rechts, positiv gegen den Uhrzeigersinn). Es sind dieselben Achsen wie bei
      den Spulen der Animation „Drehfeld aus drei Spulen“. phase = Nacheilung des Strangstroms in °.
@@ -511,31 +650,33 @@ const untertitel = txt(60, 140, '', { class: 'lbl-s' }, gBack);
 const gLegPol = el('g', { id: 'leg-pol' }, gBack), gLegEm = el('g', { id: 'leg-em' }, gBack), gLegFl = el('g', { id: 'leg-fl' }, gBack);
 {
   const x = 1010;
+  /* Zeilen im Abstand von 56 px; die Texte enden links vom QR-Code (x ≤ 1610). Gekürzt am 21.11.2026 für die
+     Textschrift der Layout-Norm, die breiter läuft als die vorherige Serifenschrift. */
   /* Erste Zeile: Polfarbe des Eisens oder, in der Ansicht „Elementarmagnete“, ein Elementarmagnet */
-  el('rect', { x, y: 190, width: 44, height: 34, fill: C.nord }, gLegPol);
-  el('rect', { x: x + 44, y: 190, width: 44, height: 34, fill: C.sued }, gLegPol);
-  el('rect', { x, y: 190, width: 88, height: 34, fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gLegPol);
-  txt(x + 22, 208, 'N', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:26px' }, gLegPol);
-  txt(x + 66, 208, 'S', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:26px' }, gLegPol);
-  txt(x + 118, 216, 'Nordpol und Südpol · kräftig = starkes Feld', { class: 'lbl-s' }, gLegPol);
-  magnetForm(gLegEm, 88, 32).setAttribute('transform', `translate(${x + 44} 207)`);
-  txt(x + 22, 208, 'S', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:24px' }, gLegEm);
-  txt(x + 66, 208, 'N', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:24px' }, gLegEm);
-  txt(x + 118, 216, 'Elementarmagnet · stellt sich nach dem Feld ein', { class: 'lbl-s' }, gLegEm);
+  el('rect', { x, y: 180, width: 44, height: 34, fill: C.nord }, gLegPol);
+  el('rect', { x: x + 44, y: 180, width: 44, height: 34, fill: C.sued }, gLegPol);
+  el('rect', { x, y: 180, width: 88, height: 34, fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gLegPol);
+  txt(x + 22, 198, 'N', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:26px' }, gLegPol);
+  txt(x + 66, 198, 'S', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:26px' }, gLegPol);
+  txt(x + 118, 206, 'Nordpol, Südpol · kräftig = starkes Feld', { class: 'lbl-s' }, gLegPol);
+  magnetForm(gLegEm, 88, 32).setAttribute('transform', `translate(${x + 44} 197)`);
+  txt(x + 22, 198, 'S', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:24px' }, gLegEm);
+  txt(x + 66, 198, 'N', { class: 'pol', 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'font-size:24px' }, gLegEm);
+  txt(x + 118, 206, 'Elementarmagnet · folgt dem Feld', { class: 'lbl-s' }, gLegEm);
 
-  el('circle', { cx: x + 22, cy: 267, r: 17, fill: '#fff', stroke: C.ink, 'stroke-width': 2.2 }, gBack);
-  el('circle', { cx: x + 22, cy: 267, r: 7, fill: C.ink }, gBack);
-  el('circle', { cx: x + 66, cy: 267, r: 17, fill: '#fff', stroke: C.ink, 'stroke-width': 2.2 }, gBack);
-  el('path', { d: `M ${x + 58} 259 L ${x + 74} 275 M ${x + 58} 275 L ${x + 74} 259`, stroke: C.ink, 'stroke-width': 4, 'stroke-linecap': 'round', fill: 'none' }, gBack);
-  txt(x + 118, 276, 'Strom heraus / hinein · groß = großer Strom', { class: 'lbl-s' }, gBack);
+  el('circle', { cx: x + 22, cy: 253, r: 17, fill: '#fff', stroke: C.ink, 'stroke-width': 2.2 }, gBack);
+  el('circle', { cx: x + 22, cy: 253, r: 7, fill: C.ink }, gBack);
+  el('circle', { cx: x + 66, cy: 253, r: 17, fill: '#fff', stroke: C.ink, 'stroke-width': 2.2 }, gBack);
+  el('path', { d: `M ${x + 58} 245 L ${x + 74} 261 M ${x + 58} 261 L ${x + 74} 245`, stroke: C.ink, 'stroke-width': 4, 'stroke-linecap': 'round', fill: 'none' }, gBack);
+  txt(x + 118, 262, 'Strom heraus / hinein · groß = stark', { class: 'lbl-s' }, gBack);
 
-  const a0 = makeArrow(gBack, C.bRand, 12, 36, 16); a0.set(x, 327, x + 92, 327);
-  const a1 = makeArrow(gBack, C.b, 7, 30, 12); a1.set(x, 327, x + 87, 327);
-  txt(x + 118, 336, `${I('B')}${SUB('res', 25, '  resultierendes Magnetfeld (Drehfeld)')}`, { class: 'lbl-s' }, gBack);
+  const a0 = makeArrow(gBack, C.bRand, 12, 36, 16); a0.set(x, 309, x + 92, 309);
+  const a1 = makeArrow(gBack, C.b, 7, 30, 12); a1.set(x, 309, x + 87, 309);
+  txt(x + 118, 318, `${I('B')}${SUB('res', 25, '  resultierendes Feld (Drehfeld)')}`, { class: 'lbl-s' }, gBack);
   /* Vierte Zeile nur in der Ansicht „Feldlinien“ */
-  el('line', { x1: x, y1: 387, x2: x + 92, y2: 387, stroke: C.b, 'stroke-width': CFG.fl.breite }, gLegFl);
-  el('path', { d: `M ${x + 56} 387 L ${x + 40} 393 L ${x + 40} 381 Z`, fill: C.b }, gLegFl);
-  txt(x + 118, 396, `Feldlinien von ${I('B')} · Kraft auf einen Probe-Nordpol`, { class: 'lbl-s' }, gLegFl);
+  el('line', { x1: x, y1: 365, x2: x + 92, y2: 365, stroke: C.b, 'stroke-width': CFG.fl.breite }, gLegFl);
+  el('path', { d: `M ${x + 56} 365 L ${x + 40} 371 L ${x + 40} 359 Z`, fill: C.b }, gLegFl);
+  txt(x + 118, 374, `Feldlinien von ${I('B')} · Kraft auf Probe-Nordpol`, { class: 'lbl-s' }, gLegFl);
   /* Hinweiszeile zur Modelltiefe (feldbilder-darstellen, Abschnitt 3): Idealisierung mit Gültigkeitsbedingung */
   txt(1010, 1040, `Feldlinien: Grundwelle, Streufluss vernachlässigt (${I('μ')}${SUB('r', 25)} ≫ 1).`, { class: 'lbl-s' }, gLegFl);
 }
@@ -783,6 +924,12 @@ const kette = [1, 2].map((k) => el('line', { stroke: CFG.straenge[k].farbe, 'str
 const resRand = makeArrow(gRes, C.bRand, 13, 40, 18);              // dunkler Rand, damit Grün neben Südpol und Strang V erkennbar bleibt
 const resPfeil = makeArrow(gRes, C.b, 8, 33, 13);
 const resLbl = txt(0, 0, `${I('B')}${SUB('res')}`, { class: 'lbl c-b halo', 'text-anchor': 'middle' }, gLbl);
+let resSeite = 1;                                                    // 1: rechts vom Pfeil (in Pfeilrichtung), −1: links
+/* Abstand eines Punkts von einer Strecke [x1, y1, x2, y2] */
+const segAbstand = (x, y, [x1, y1, x2, y2]) => {
+  const dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy || 1e-9, t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / l2));
+  return Math.hypot(x - x1 - t * dx, y - y1 - t * dy);
+};
 const flLbl = txt(0, 0, I('B'), { class: 'lbl c-b halo', 'text-anchor': 'middle' }, gLbl);   // Formelzeichen an einer Feldlinie
 const ro = txt(1010, 110, '', { class: 'ro' }, gLbl);
 const marke = el('line', { stroke: C.ink, 'stroke-width': 1.6, 'stroke-dasharray': '8 7' }, gLd);
@@ -835,10 +982,23 @@ function render() {
   const ux = m.bx / (m.bRes || 1), uy = m.by / (m.bRes || 1);
   resRand.set(T.cx, T.cy, tx, ty);
   resPfeil.set(T.cx, T.cy, tx - ux * 6, ty + uy * 6);
-  /* Beschriftung neben dem Schaft (rechts in Pfeilrichtung) */
+  /* Beschriftung neben dem Schaft, rechts oder links in Pfeilrichtung: auf der Seite mit mehr Platz zu den Pfeilen der
+     Einzelfelder (21.11.2026: in der Textschrift lag „B_res“ bei q = 1, ωt = 75° auf dem Pfeil B_U). Gewechselt wird erst
+     bei 8 px Vorsprung, damit die Beschriftung beim Abspielen nicht hin und her springt. */
   const quer = S.fl ? flAbstand() : 40;                              // mit Feldlinien: zwischen zwei Linien, nicht auf einer
-  resLbl.setAttribute('x', (T.cx + ux * 92 + uy * quer).toFixed(1));
-  resLbl.setAttribute('y', (T.cy - (uy * 92 - ux * quer) + 10).toFixed(1));
+  const efSeg = S.ef ? CFG.straenge.map((st) => {
+    const i = m['i' + st.name], th = st.achse * D;
+    return [T.cx, T.cy, T.cx + i * T.kB * Math.cos(th), T.cy - i * T.kB * Math.sin(th)];
+  }) : [];
+  const lage = (sg) => {
+    const x = T.cx + ux * 92 + uy * quer * sg, y = T.cy - (uy * 92 - ux * quer * sg);
+    return { x, y, frei: efSeg.length ? Math.min(...efSeg.map((g) => segAbstand(x, y, g))) : 0 };
+  };
+  const hier = lage(resSeite), dort = lage(-resSeite);
+  if (dort.frei > hier.frei + 8) resSeite = -resSeite;
+  const lb = lage(resSeite);
+  resLbl.setAttribute('x', lb.x.toFixed(1));
+  resLbl.setAttribute('y', (lb.y + 10).toFixed(1));
   /* Einzelfelder: stehende Pfeile auf den Achsen und, gestrichelt, die Aneinanderreihung zur Summe */
   show(gEf, S.ef);
   if (S.ef) {
@@ -940,23 +1100,38 @@ for (const p of CFG.x.presets) {
 }
 const SCHALTER = ['ef', 'ld', 'em', 'fl'];       // Schlüssel in S, zu jedem gehört <input id="chk-…">
 for (const key of SCHALTER) $('#chk-' + key).addEventListener('change', (e) => { S[key] = e.target.checked; render(); });
-/* Nutenzahl: Auswahl aus CFG.q.werte; der Ständer wird neu gezeichnet. */
-const selQ = $('#sel-q');
+/* Leiter je Spulenseite: Auswahlreihe aus CFG.q.werte (Parameter, v5); der Ständer wird neu gezeichnet. */
+const segQ = $('#seg-q');
 for (const q of CFG.q.werte) {
-  const o = document.createElement('option');
-  o.value = String(q); o.textContent = `${q}${q > 4 ? ' kleine' : ''} (${2 * CFG.straenge.length * q} Nuten)`;
-  selQ.appendChild(o);
+  const b = document.createElement('button');
+  b.type = 'button'; b.dataset.q = String(q); b.textContent = String(q);
+  b.title = `${q} Leiter je Spulenseite, ${2 * CFG.straenge.length * q} Nuten`;
+  b.addEventListener('click', () => setQ(q));
+  segQ.appendChild(b);
 }
+function syncQ() { for (const b of segQ.children) b.setAttribute('aria-pressed', String(Number(b.dataset.q) === S.q)); }
 function setQ(q) {
   if (!CFG.q.werte.includes(q)) return;
-  S.q = q; selQ.value = String(q);
+  S.q = q; syncQ();
   baueStaender(q); render();
 }
-selQ.addEventListener('change', () => setQ(Number(selQ.value)));
-function toggleFullscreen() {
-  try { if (document.fullscreenElement) document.exitFullscreen(); else $('#stage').requestFullscreen?.().catch(() => {}); } catch (e) { /* nicht verfügbar */ }
+/* Vollbild nach Normblock 10: die ganze Seite; sichtbar ist nur die Bühne (das Liniendiagramm liegt in ihr).
+   Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
+function setVollbild(an) {
+  const html = document.documentElement;
+  html.classList.toggle('vollbild', an);
+  try {
+    if (an && !document.fullscreenElement) html.requestFullscreen?.().catch(() => {});
+    if (!an && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* nicht verfügbar: Ersatz über die Klasse */ }
+  render();
 }
+const toggleFullscreen = () => setVollbild(!document.documentElement.classList.contains('vollbild'));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.documentElement.classList.contains('vollbild')) setVollbild(false); });
 $('#btn-fs').addEventListener('click', toggleFullscreen);
+$('#vb-ende').addEventListener('click', () => setVollbild(false));
+/* Zurücksetzen (Pflicht nach layout.md 4): Startwinkel, Abspielen aus – wie im Gerüst. Ansicht und Leiterzahl bleiben. */
+$('#btn-reset').addEventListener('click', () => setX(CFG.x.start));
 function qrUmschalten() {
   S.qr = !S.qr; render();
   const z = S.qr ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({ preventScroll: true });
@@ -974,6 +1149,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setX(S.x + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? CFG.x.big : CFG.x.step)); }
   else if (e.key === 'Home') { e.preventDefault(); setX(CFG.x.min); }
   else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  else if (e.key === 'Escape' && document.documentElement.classList.contains('vollbild')) setVollbild(false);
 });
 window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S.x) setX(v, false); });
 
@@ -981,7 +1157,7 @@ window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S
    scripts/pruefen.py und scripts/video.py steuern die Seite nur hierüber. */
 const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
 if (params.has('export')) document.documentElement.classList.add('export');
-if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne
+if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne (16.11.2026)
 for (const k of SCHALTER) { if (params.has(k)) S[k] = params.get(k) !== '0'; $('#chk-' + k).checked = S[k]; }
 if (params.has('qr')) S.qr = params.get('qr') !== '0';   // ?qr=1: QR-Code gleich zeigen (Beamer, Export)
 if (params.has('q') && CFG.q.werte.includes(Number(params.get('q')))) S.q = Number(params.get('q'));   // z. B. ?q=1
@@ -992,6 +1168,8 @@ window.anim = {
   nuten,                                                       // Lage der Nuten für eine Nutenzahl
   set(x) { S.playing = false; S.x = clamp(x, CFG.x.min, CFG.x.max); render(); return S.x; },
   pause(an = true) { S.playing = !an; syncUI(); if (S.playing) requestAnimationFrame(tick); return !S.playing; },   // Ablauf anhalten (true) oder starten
+  vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },   // Normblock 10
+  reset() { setX(CFG.x.start); return S.x; },                 // wie der Knopf „Zurücksetzen“
   opt(key, val) {
     if (key === 'q') { setQ(Number(val)); return; }
     S[key] = val; const c = $('#chk-' + key); if (c) c.checked = !!val; render();
@@ -1006,7 +1184,7 @@ window.anim = {
 /* ================= 10 Start ================= */
 svg.append(gQR, gQRPlatz);                 // QR-Code und Platzhalter zuoberst: anklickbar, von nichts verdeckt
 S.x = clamp(readStart(), CFG.x.min, CFG.x.max);
-selQ.value = String(S.q);
+syncQ();
 baueStaender(S.q);
 render();
 /* Festlegung der Lehrkraft, 15.11.2026: Die Animation läuft beim Öffnen. Ausnahmen: Export (?export=1), ?auto=0 und ein
