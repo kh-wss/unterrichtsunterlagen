@@ -1,0 +1,1242 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PEN-Leiter und Anlagenerder: Potential am Schutzleiter</title>
+<meta name="description" content="Schaltbild eines TN-C-S-Netzes mit Trafostation, Leitung, Haus, Wallbox mit Auto und Person, darunter das Potential der Erdoberfläche. Laden eines Autos an der Wallbox, PEN-Leiter, Anlagenerder, Berührung und Standort der Person lassen sich schalten: Man sieht, wie sich das Potential des Schutzleiters, die Berührungsspannung und der Körperstrom ändern.">
+<style>
+/* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+   Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
+   gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit.
+   v4 (20.11.2026): Die Vorschau ?buehne=1 passt die Bühne in jeden Rahmen ganz ein (Moodle-Rahmen mit fester Höhe).
+   v5 (20.11.2026): Bedienleiste in Kästen mit Überschrift – oben Steuerung links, Parameter rechts, darunter Ansicht. */
+:root{
+  /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
+  --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
+  --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
+  /* Bühne: immer weiß, ohne Karoraster – die Größenfarben der Fachkonventionen gelten für weißen Grund */
+  --stage:#ffffff; --ink:#1b2127;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-math:var(--font-ui);   /* Formeln in der Textschrift (Festlegung der Lehrkraft, 12.11.2026; fachkonventionen 3a) */
+  /* Bühnengröße = (Fensterhöhe − --reserve) · 16/9, höchstens 1920 px und höchstens die Seitenbreite.
+     --reserve: Ränder, Abstand und Bedienleiste. Derselbe Wert steht in scripts/pruefen.py (NORM). */
+  --reserve:250px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+    --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+  --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--page);color:var(--fg)}
+body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.45;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+sub,sup{font-size:.72em;line-height:0}
+
+/* 1 Seitenaufbau, immer in dieser Reihenfolge, alles gleich breit: Bühne (#stage) → Bedienleiste (#controls) →
+   Zusatzbereiche (.card, .info, optional) → Modellhinweise (.notes). Über der Bühne steht nichts. */
+.wrap{width:100%;max-width:min(1920px,max(min(100%,720px),calc((100dvh - var(--reserve)) * 16 / 9)));
+  margin:0 auto;display:grid;gap:12px}
+
+/* 2 Bühne: immer 16:9, logisch 1920 × 1080 (SVG-viewBox; Canvas darunter, SVG mit Titel und QR-Code darüber) */
+.stage{position:relative;background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.stage svg,.stage canvas{display:block;width:100%;height:100%}
+.stage canvas + svg{position:absolute;inset:0}
+.stage:fullscreen{border:0;border-radius:0;aspect-ratio:auto;width:100vw;height:100vh;max-width:none}   /* nur noch für Animationen vor v3 */
+
+/* 3 Schrift in der Bühne (Bühnenpixel bei 1920 Breite): Formelzeichen kursiv (.i), Einheiten, Zahlen, Indizes aufrecht */
+#stage-svg text{font-family:var(--font-math);fill:var(--ink)}
+#stage-svg .t-main{font-size:60px;font-weight:700}     /* Titel, oben rechts neben dem QR-Code */
+#stage-svg .t-panel{font-size:34px;font-weight:700}    /* Bereichsüberschrift */
+#stage-svg .ro{font-size:38px}                         /* Momentanwerte */
+#stage-svg .lbl{font-size:30px}                        /* Formelzeichen an Pfeilen und Bauteilen */
+#stage-svg .lbl-s{font-size:25px}
+#stage-svg .lbl-xs{font-size:22px}                     /* kleinste erlaubte Beschriftung */
+#stage-svg .sans{font-family:var(--font-ui)}
+#stage-svg .i{font-style:italic}
+#stage-svg .muted{fill:#58636e}
+#stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .qr-cap{font-family:var(--font-ui);font-size:22px}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
+
+/* 4 Bedienleiste in Kästen mit Überschrift auf dem Rahmen (v5, Festlegung der Lehrkraft 20.11.2026, layout.md 4):
+   .row 1: .kasten.steuerung links (Raster: Hauptknopf/Eingriff · Pause/Zurücksetzen · Tempo/Anzeige) | .kasten.parameter rechts
+   .row 2: Ansicht – Kästen nach Thema (Ebenen in der Bühne, Text darunter) mit Kästchen · Vollbild (#btn-fs) rechts außen
+   dann „Tastatur“. Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+.card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.controls{display:grid;gap:12px;font-size:13.5px;line-height:1.35;padding-top:14px;container:leiste / inline-size}
+.controls>details.keys{margin-top:-5px}
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px 8px}
+.row .sp{flex:1 1 auto}
+.kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 auto;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+.kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);font-size:10.5px;line-height:13px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kasten .chk+.chk{margin-left:4px}
+.kasten .paar{display:flex;flex-wrap:wrap;gap:6px}
+.kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;justify-items:start;
+  gap:6px 10px;flex:0 1 auto}
+.kasten.steuerung:last-child{flex-grow:1}   /* ohne Parameter füllt die Steuerung die Zeile */
+.kasten.steuerung .zeile,.kasten.steuerung .zeile>.group{display:contents}   /* je .zeile: Knopf · Knopf · Überschrift · Auswahl */
+.kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+.kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;
+  flex:1 1 0;min-width:auto}   /* nimmt den Rest der Zeile neben der Steuerung; lange Auswahlreihen (.paar) brechen im Kasten um */
+#btn-fs{margin-left:auto;align-self:center}
+button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}  /* Ein/Aus-Knopf */
+/* Leiste 600–850 px breit (1280 × 720): Parameter-Überschrift über der Auswahl, damit Steuerung und Parameter nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){
+  .kasten.parameter{grid-template-columns:auto;gap:2px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:4px}}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
+.group.wert .group{flex-wrap:nowrap}
+.group.wert input[type=range]{min-width:100px}
+.cap{font-size:12px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
+button{padding:3px 9px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:9em;font-weight:600}
+button.primary:hover{opacity:.92}
+select{padding:2px 5px}
+input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
+.seg{display:inline-flex}
+.seg button,.kasten button{white-space:nowrap}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
+.seg button:last-child{border-radius:0 5px 5px 0}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:14px;height:14px;margin:0}
+:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.keys .hint{margin-top:6px}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+.sep{width:1px;align-self:stretch;background:var(--rule)}
+@media (max-width:640px){.sep{display:none} .kasten{flex:1 1 100%}}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){   /* schmal: Steuerung als Zeilen statt Raster */
+  .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  .kasten.steuerung .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  .kasten.steuerung .zeile>.group{display:flex}
+  .kasten.steuerung .zeile>:empty{display:none}}
+
+/* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
+.diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
+.diag text{font-family:var(--font-math);fill:var(--ink)}           /* Schriftstufen wie in der Bühne (Bühnenpixel bei 1920) */
+.diag .lbl{font-size:30px} .diag .lbl-s{font-size:25px} .diag .lbl-xs{font-size:22px}
+.diag .sans{font-family:var(--font-ui)} .diag .i{font-style:italic} .diag .muted{fill:#58636e}
+.diag .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+.info{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.info{grid-template-columns:1fr}}
+.info h2{margin:0;font-size:19px}
+.info h3,.card h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#pText{margin:8px 0 0;max-width:68ch}
+.formulas{margin-top:10px;padding:10px 12px;border-left:3px solid var(--rule);background:var(--btn);border-radius:0 6px 6px 0;display:grid;gap:8px;font-family:var(--font-math);font-size:17px}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px;line-height:1.15}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 3px}
+.vals table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.vals td{padding:4px 0;border-bottom:1px solid var(--rule)}
+.vals td:last-child{text-align:right;font-weight:600}
+.vals tr:last-child td{border-bottom:0}
+
+/* 6 Modellhinweise: immer zuletzt, aufklappbar */
+.notes summary{cursor:pointer;font-weight:600}
+.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
+
+/* 7 Export (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
+html.export .wrap>:not(.stage){display:none}
+
+/* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
+   16:9-Rahmen genau aus und passt in jeden anders geformten Rahmen ganz hinein, mittig (v4: Moodle-Rahmen haben eine
+   feste Höhe, am Handy ist der Rahmen schmaler). Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und
+   Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden;height:100%}
+html.buehne body{display:grid;place-items:center}
+html.buehne .wrap{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));max-width:none;margin:0;gap:0}
+html.buehne .stage{border:0;border-radius:0}
+html.buehne .wrap>:not(.stage){display:none}
+
+/* 9 Handy quer (Fenster flach und höchstens 520 px hoch): Bühne links, so groß wie es die Höhe erlaubt; Bedienleiste
+   rechts daneben, bei Bedarf mit eigenem Rollbalken; alles Weitere darunter. Nicht in Vorschau und Export. */
+@media (orientation:landscape) and (max-height:520px){
+  html:not(.buehne):not(.export):not(.vollbild) .wrap{max-width:none;
+    grid-template-columns:min(calc((100dvh - 32px) * 16 / 9),calc(100% - 272px)) minmax(260px,1fr);align-items:start}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>*{grid-column:1 / -1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.stage{grid-column:1;grid-row:1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{grid-column:2;grid-row:1;min-width:0;max-height:calc(100dvh - 32px);
+    overflow-x:hidden;overflow-y:auto;padding:8px 10px}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{padding-top:14px}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten.parameter{grid-template-columns:auto}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten .sep{display:none}
+}
+
+/* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
+   sichtbar sind nur die Bühne und – wenn eingeschaltet – das Diagramm (#diagCard) darunter. Die Bühne bleibt 16:9 und wird
+   so groß, dass beides auf den Bildschirm passt (mit Diagramm: 1920 × 1480 Bühnenpixel zusammen). Ohne Vollbild-Schnittstelle
+   (iPhone, eingebettete Ansicht) füllt dieselbe Ansicht das Fenster; dann führt .vb-ende zurück.
+   Festlegung der Lehrkraft, 12.11.2026: „Vollbild nimmt ein eingeschaltetes Diagramm mit.“ */
+html.vollbild,html.vollbild body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.vollbild .wrap{position:fixed;inset:0;z-index:20;max-width:none;width:auto;margin:0;gap:0;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;--vb-h:1080}
+html.vollbild .wrap:has(>#diagCard:not([hidden])){--vb-h:1480}
+html.vollbild .wrap>*{display:none}
+html.vollbild .wrap>.stage{display:block;flex:none;border:0;border-radius:0;width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild .wrap>#diagCard:not([hidden]){display:block;flex:none;border:0;border-radius:0;padding:0;background:#fff;
+  width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild #diagCard h3{display:none}
+html.vollbild #diagCard .diag{border:0;border-radius:0}
+.vb-ende{display:none}
+html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:21;opacity:.8}
+/* LAYOUT-NORM:end */
+
+/* Nur diese Animation: Größenfarben nach fachkonventionen, Abschnitt 6 (Spannung und Potential blau, Strom rot),
+   Farbklassen der Bühne und die Klickflächen. Seitenaufbau, Bühnengröße, Schrift in der Bühne, Bedienleiste und Export
+   stehen im Normblock oben und werden nicht geändert (references/layout.md). */
+:root{ --u:#0070C0; --i:#FF0000; --neg:#d46b00; --erde:#efe7d8; }   /* --neg: hervorgehobenes Minuszeichen bei negativem Wert */
+#stage-svg .c-u{fill:var(--u);font-weight:600}
+#stage-svg .c-i{fill:var(--i);font-weight:600}
+#stage-svg .neg{fill:var(--neg);font-weight:800}
+#stage-svg .halo-e{paint-order:stroke;stroke:var(--erde);stroke-width:7px;stroke-linejoin:round}   /* Schrift im Erdreich */
+#stage-svg .hit{fill:transparent;cursor:pointer}
+#stage-svg .hit:focus{outline:none}
+#stage-svg .hit:hover + .hit-frame, #stage-svg .hit:focus-visible + .hit-frame{stroke:var(--focus);stroke-width:3}
+.formulas{border-left-color:var(--u)}
+.formulas .anm{font-family:var(--font-ui);font-size:14px;color:var(--muted)}
+.info h2 + .formulas, .info h3 + .formulas{margin-top:8px}
+#pText{font-size:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 1 Bühne: 16:9, logisch 1920 × 1080. Über ihr steht nichts. -->
+  <div class="stage" id="stage">
+    <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">PEN-Leiter und Anlagenerder: Potential am Schutzleiter</title>
+      <desc id="svg-desc">Oben das Schaltbild eines TN-C-S-Netzes: Trafostation mit Strangwicklung und Betriebserder, Leitung mit je einem Leiterwiderstand in L1 und PEN, Haus mit Haupterdungsschiene und Anlagenerder, an der Hauswand zwei Steckdosen übereinander mit den Kontakten L1, PE und N: oben die Wallbox mit einem ladenden Auto, unten die Außensteckdose, deren Schutzkontakt eine Person berührt. Die Person steht wahlweise 0,2 m neben dem Anlagenerder oder weit weg auf Bezugserde. Darunter das Potential der Erdoberfläche über dem Ort mit Potentialtrichtern an den Erdern und Marken für das Potential des Schutzleiters und des Sternpunkts.</desc>
+    </svg>
+  </div>
+
+  <!-- 2 Bedienleiste in Kästen (Layout-Norm v5, layout.md 4). Zeile 1: Steuerung links, Parameter rechts.
+       Zuordnung nach der Auswahlrunde vom 22.11.2026: Anlagenerder als Ein/Aus-Knopf in der Steuerung, R_A bei den Parametern. -->
+  <div class="controls" id="controls" role="toolbar" aria-label="Bedienung">
+    <div class="row">
+      <div class="kasten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <div class="zeile">                             <!-- Hauptknopf · Pause · Eingriff im Netz -->
+          <button id="bAct" class="primary" type="button"></button>
+          <button id="bPause" type="button">Pause</button>
+          <div class="group"><span class="cap">Netz</span>
+            <div class="paar"><button id="ein-penbruch" class="ein" type="button" aria-pressed="false">PEN unterbrechen</button></div>
+          </div>
+        </div>
+        <div class="zeile">                             <!-- Eingriff Person · Zurücksetzen · Standort der Person (Umschalter nah / weit weg, Auswahlrunde vom 22.11.2026) -->
+          <button id="ein-person" class="ein" type="button" aria-pressed="false">Person berührt</button>
+          <button id="bReset" type="button">Zurücksetzen</button>
+          <div class="group"><span class="cap">Standort</span>
+            <div class="seg" role="group" aria-label="Abstand der Person vom Anlagenerder">
+              <button type="button" data-ds="nah" aria-pressed="true">0,2&#8239;m am Erder</button>
+              <button type="button" data-ds="weit" aria-pressed="false">weit weg</button>
+            </div>
+          </div>
+        </div>
+        <div class="zeile">                             <!-- dritte Zeile (Abweichung von der Norm, die zwei Zeilen vorsieht): Eingriff im Haus.
+                                                             Grund: Eine dritte Zeile bei den Parametern ließe die Leiste bei 1280 × 720 um 73 px überstehen. -->
+          <span></span><span></span>
+          <div class="group"><span class="cap">Haus</span>
+            <div class="paar"><button id="ein-ohneerder" class="ein" type="button" aria-pressed="false">Anlagenerder entfernen</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="kasten parameter" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
+        <span class="cap">Leitung <i>R</i><sub>Ltg</sub></span>
+        <div class="seg" role="group" aria-label="Leiterwiderstand je Ader">
+          <button type="button" data-rl="0.1" aria-pressed="false">0,1&#8239;Ω</button>
+          <button type="button" data-rl="0.5" aria-pressed="false">0,5&#8239;Ω</button>
+          <button type="button" data-rl="1" aria-pressed="true">1&#8239;Ω</button>
+        </div>
+        <span class="cap">Erder <i>R</i><sub>A</sub></span>
+        <div class="seg" role="group" aria-label="Widerstand des Anlagenerders">
+          <button type="button" data-ra="2" aria-pressed="false">2&#8239;Ω</button>
+          <button type="button" data-ra="10" aria-pressed="true">10&#8239;Ω</button>
+          <button type="button" data-ra="100" aria-pressed="false">100&#8239;Ω</button>
+        </div>
+      </div>
+    </div>
+    <div class="row">                                   <!-- Zeile 2 · Ansicht: Kästen nach Thema (Kästchen), rechts außen Vollbild -->
+      <div class="kasten" role="group" aria-labelledby="lg-buehne"><span class="lg" id="lg-buehne">Bühne</span>
+        <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox">Zahlenwerte</label>
+        <label class="chk" for="chk-fluss"><input id="chk-fluss" type="checkbox" checked>Stromfluss</label>
+      </div>
+      <div class="kasten" role="group" aria-labelledby="lg-diagramm"><span class="lg" id="lg-diagramm">Diagramm</span>
+        <label class="chk" for="chk-diag"><input id="chk-diag" type="checkbox" checked>Diagramm</label>
+        <label class="chk" for="chk-lupe"><input id="chk-lupe" type="checkbox">Lupe ×5</label>
+        <label class="chk" for="chk-grenze" title="Grenzlinie 25 V einblenden: ohne Basisschutz höchstens zulässige Spannung"><input id="chk-grenze" type="checkbox">25 V</label>
+      </div>
+      <div class="kasten" role="group" aria-labelledby="lg-text"><span class="lg" id="lg-text">Text</span>
+        <label class="chk" for="chk-erkl"><input id="chk-erkl" type="checkbox">Erklärung</label>
+        <label class="chk" for="chk-form"><input id="chk-form" type="checkbox">Formeln</label>
+        <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox">Berechnung</label>
+      </div>
+      <button type="button" id="btn-fs">Vollbild</button>
+    </div>
+    <details class="keys">
+      <summary>Tastatur</summary>
+      <div class="hint"><kbd>Leertaste</kbd> Laden ein/aus · <kbd>P</kbd> PEN unterbrechen · <kbd>A</kbd> Anlagenerder entfernen · <kbd>B</kbd> Person berührt · <kbd>S</kbd> Standort nah oder weit weg · <kbd>D</kbd> Diagramm ein/aus · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden. Auto, PEN-Stelle, Anlagenerder und Person lassen sich auch in der Grafik anklicken. Ein Zustand lässt sich verlinken: vier Ziffern wie die vier Knöpfe (1 = gedrückt), zum Beispiel <kbd>#z1101</kbd> = Laden ein, PEN unterbrochen, Anlagenerder vorhanden, Person berührt; dazu <kbd>rl0.1</kbd> und <kbd>ra2</kbd> für die Widerstände und <kbd>weit</kbd> für den Standort auf Bezugserde.</div>
+    </details>
+  </div>
+
+  <!-- 3 Zusatzbereich: Erklärung, Formeln, Berechnung und Werte – beim Öffnen alles aus (Festlegung der Lehrkraft, 22.11.2026:
+       Die Klasse rechnet erst selbst). -->
+  <section class="info" id="info" hidden>
+    <article class="card">
+      <h2 id="pTitle" aria-live="polite"></h2>
+      <p id="pText"></p>
+      <div id="pForm" class="formulas"></div>
+    </article>
+    <aside class="card vals" id="valsCard">
+      <h3>Werte</h3>
+      <table><tbody id="vals"></tbody></table>
+    </aside>
+  </section>
+
+  <!-- 4 Zuletzt die Modellhinweise -->
+  <details class="card notes">
+    <summary>Modell und Vereinfachungen</summary>
+    <ul id="notes"></ul>
+  </details>
+</div>
+
+<button type="button" class="vb-ende" id="vb-ende">Vollbild beenden</button>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const $ = (id) => document.getElementById(id);
+const svg = $('stage-svg');
+
+/* ================= 1 Parameterblock =================
+   Festlegungen der Lehrkraft vom 22.11.2026 (Auftrag, Runde 1 zum Inhalt und Auswahlrunde zur Darstellung):
+   – Schaltbar sind vier Dinge: Laden (Auto an der Wallbox), PEN, Anlagenerder, Person. Startzustand beim Öffnen:
+     Anlagenerder vorhanden, PEN intakt, Laden aus, niemand berührt – die Lehrkraft schaltet live.
+   – Verbraucher (Rückmeldung vom 22.11.2026, 14 Uhr): statt der Heizung eine einphasige Wallbox mit kleinem Auto,
+     Ladestrom 32 A. Im Modell ist das Auto ein ohmscher Ersatzwiderstand R_Auto (im Quelltext RV, Schalter „laden“).
+   – Standort der Person (Rückmeldung und Auswahlrunde vom 22.11.2026, 14:30 Uhr): Umschalter nah / weit weg. Nah heißt 0,2 m
+     neben dem Anlagenerder (erst 1 m, dann auf Wunsch näher), dort steht sie beim Öffnen; weit weg heißt auf Bezugserde. Die Breite des Trichters folgt aus
+     R_A (Halbkugelerder, r_0 = ρ/(2π·R_A)). Anlass: Der Unterschied mit und ohne Anlagenerder war der Lehrkraft zu klein.
+   – L1 und PEN haben je einen gebündelten Leiterwiderstand, Standard 1 Ω je Ader (wie im SPS-Versuch), einstellbar.
+   – Die Person ist ein „Widerstandsmännchen“ mit R_K = 1 kΩ und steht nur draußen auf Bezugserde.
+   – Zahlenwerte in der Bühne und Berechnung darunter sind beim Öffnen aus, beide zuschaltbar: Die Klasse rechnet erst selbst.
+   – Stromfluss als rote Laufmarken in Zählpfeilrichtung, dazu Strompfeile. Es bewegt sich erst etwas, wenn Strom fließt.
+   – Anlagenerder als Ein/Aus-Knopf in der Steuerung, R_A als Direktwahl bei den Parametern.
+   – Potentialdiagramm mit blauer Linie, fester Maßstab bis 230 V, Lupe zuschaltbar (gewählt war ×10, siehe CFG.diag).
+   Vorschläge von Claude, nicht ausdrücklich bestätigt: R_Auto = 7,19 Ω als ohmscher Ersatz, R_B = 2 Ω, R_A = 10 Ω als Standard, Direktwahl der
+   Widerstände, zuschaltbare Grenzlinie (erst 50 V, seit der Rückmeldung von 14:55 Uhr 25 V), Quelle als Strangwicklung. */
+const CFG = {
+  U0: 230,                                  // Strangspannung in V (Netz 230/400 V)
+  RL: 1, RLwahl: [0.1, 0.5, 1],             // Leiterwiderstand je Ader in Ω (R_L = R_PEN); 1 Ω ist überhöht, real etwa 0,02 bis 0,3 Ω
+                                            // (Startwert 1 Ω aus der Übergabe; mit dem 32-A-Verbraucher noch offen, ob 0,1 Ω der bessere Startwert ist)
+  RV: 7.19,                                 // Ersatzwiderstand des ladenden Autos in Ω: R = U/I = 230 V / 32 A = 7,19 Ω (Ladestrom 32 A, einphasig; P = 7,36 kW)
+  RB: 2,                                    // Betriebserder in Ω (Blatt „01 Info Schleifenimpedanz“: höchstens 2 Ω)
+  RA: 10, RAwahl: [2, 10, 100],             // Anlagenerder in Ω (Annahme)
+  RK: 1000,                                 // Körperwiderstand in Ω (Festlegung der Lehrkraft; Blatt „02 AB Berührspg“)
+  UL: 25,                                   // Grenzlinie in V (Festlegung der Lehrkraft, 22.11.2026, 14:55 Uhr): Der PE ist blank und direkt berührbar,
+                                            // also ohne Basisschutz – dafür gelten AC 25 V (DIN VDE 0100-410, 414.4.5, trockene Umgebung; sonst AC 12 V).
+                                            // Die dauernd zulässige Berührungsspannung im Fehlerfall wäre AC 50 V.
+  rho: 100,                                 // spezifischer Erdwiderstand in Ωm (Annahme: feuchter Lehmboden); daraus folgt die Breite des Trichters
+  DS: 0.2, DSwahl: [0.2, Infinity],         // Standort: Abstand d der Person vom Rand des Anlagenerders in m; Infinity = weit weg (Bezugserde).
+                                            // 0,2 m (Rückmeldung 22.11.2026, 14:49 Uhr: „nah noch näher, etwa 2 V“): U_B = 19,41 V · 0,2 m/(1,59 m + 0,2 m) = 2,17 V
+  start: { laden: false, pen: true, erder: true, person: false },   // Startzustand (Festlegung der Lehrkraft, 22.11.2026)
+  /* Wirkung des Körperstroms, ab I_K in A. Quelle: Arbeitsbuch Elektrotechnik Lernfelder 1–4, Europa-Lehrmittel, S. 7, Bild 3.
+     Die Stufen hängen in Wirklichkeit auch von der Einwirkdauer ab. */
+  stufen: [
+    { ab: 0, text: 'nicht wahrnehmbar' },
+    { ab: 1e-3, text: 'wahrnehmbar' },                 // ab 1,0 bis 1,5 mA mit dem Finger wahrnehmbar
+    { ab: 6e-3, text: 'Loslassgrenze' },               // ab 6 mA (Frauen), ab 9 mA (Männer)
+    { ab: 20e-3, text: 'Verkrampfung' },
+    { ab: 50e-3, text: 'Herzkammerflimmern' },
+    { ab: 500e-3, text: 'häufig tödlich' },
+  ],
+  skalaI: 3.75,                             // Strompfeile: px je A (32 A = 120 px)
+  ikFaktor: 100,                            // der Pfeil I_K ist so viel mal vergrößert (sonst wären 228 mA neben 31 A unsichtbar)
+  diag: { voll: 230, lupe: 5 },             // Potentialdiagramm: Bereich in V, Dehnung der Lupe. ×5 (bis 46 V) statt ×10 aus der Auswahlrunde:
+                                            // Mit ×10 (bis 23 V) lägen die Grenzlinie 25 V und der Fall ohne Erder (25,0 V) außerhalb. Vorschlag von Claude, 22.11.2026.
+  marken: { abstand: 62, vmax: 230, iref: 25, exp: 0.4, imin: 2e-4 },   // Laufmarken: Abstand in px, Tempo in px/s bei iref (A); Tempo ∝ I^exp
+  col: { u: '#0070C0', i: '#FF0000', ink: '#1b2127', rahmen: '#8b949e', erde: '#efe7d8', erdlinie: '#7d6e59', warm: '#f08a24', blitz: '#ffd400' },
+};
+
+/* ================= 2 Physikalisches Modell (rein, ohne Darstellung) =================
+   Drei Knoten: S = Sternpunkt, H = Schutzleiter im Haus (PE, Haupterdungsschiene, Gehäuse), E = Bezugserde mit φ = 0 V.
+   TN-C-S: N und PE sind im Haus an der Aufteilung verbunden; der N-Leiter im Haus ist vernachlässigt, das Auto (Ersatzwiderstand R_V) liegt
+   zwischen L1 und H. Jeder Erder ist ein gebündelter Widerstand zur Bezugserde.
+   Leitwerte je nach Schalterstellung, sonst null:
+     G_s = 1/(R_L + R_V) bei Laden ein · G_P = 1/R_PEN bei intaktem PEN · G_A = 1/R_A bei vorhandenem Anlagenerder ·
+     G_K = 1/R_K bei Berührung · G_B = 1/R_B immer.
+   Knoten H: (φ_S + U_0 − φ_PE) · G_s + (φ_S − φ_PE) · G_P − φ_PE · (G_A + G_K) = 0
+   Knoten S: −(φ_S + U_0 − φ_PE) · G_s − (φ_S − φ_PE) · G_P − φ_S · G_B = 0
+   Summe beider Gleichungen: φ_S = −φ_PE · (G_A + G_K) / G_B. Eingesetzt:
+     φ_PE = U_0 · G_s · G_B / det,  φ_S = −U_0 · G_s · (G_A + G_K) / det,  det = (G_s + G_P) · (G_B + G_A + G_K) + (G_A + G_K) · G_B
+   Zählpfeile (Verbraucherzählpfeilsystem, bleiben stehen): I_L von S über L1 und das Auto nach H · I_PEN von H nach S ·
+   I_A und I_K von H nach E · I_B von E nach S. U_PEN = I_PEN · R_PEN ist die Spannung an R_PEN, U_B = φ_PE die
+   Berührungsspannung zwischen Schutzleiter und Standort (Bezugserde) – ohne Berührung die zu erwartende. Alle Werte sind Effektivwerte; φ_S < 0 bedeutet Gegenphase.
+   Standort der Person im Potentialtrichter (Parameter f, 0 ≤ f < 1): Der Anlagenerder ist als Halbkugel mit dem Ersatzradius
+   r_0 = ρ/(2π·R_A) gerechnet. Im Abstand d vom Rand hat das Erdreich das Potential φ_St = φ_PE · r_0/(r_0 + d), also den
+   Anteil f = r_0/(r_0 + d) des Erderpotentials. Im Netzwerk teilt das den Erdungswiderstand: R_A1 = (1 − f) · R_A zwischen
+   Erder und Standort, R_A2 = f · R_A zwischen Standort und Bezugserde. Die Person (R_K) liegt parallel zu R_A1.
+   Vom Schutzleiter zur Bezugserde: R_AK = R_X + R_A2 mit R_X = R_A1 ∥ R_K (ohne Berührung R_X = R_A1). U_B = I_E · R_X mit
+   I_E = φ_PE / R_AK. f = 0 heißt Standort auf Bezugserde – dann ist es das Modell der Übergabe. Ohne Anlagenerder gibt es
+   keinen Trichter (f = 0).
+   Sonderfall det = 0 (Laden aus, PEN unterbrochen, kein Anlagenerder, niemand berührt): Knoten H hat keinen Bezug,
+   φ_PE ist unbestimmt (bezug = false, phi_PE = null).
+   Dasselbe Modell als Python-Skript: Referenzmodell_PEN_Anlagenerder.py (Funktion loese). */
+function model(p) {
+  const { U0, RL, RP, RV, RB, RA, RK, laden, pen, erder, person } = p, f = erder ? (p.f || 0) : 0;
+  const Gs = laden ? 1 / (RL + RV) : 0, GP = pen ? 1 / RP : 0, GB = 1 / RB;
+  const RA1 = (1 - f) * RA, RA2 = f * RA;                                     // Anlagenerder: Teil bis zum Standort · Teil vom Standort zur Bezugserde
+  const RX = erder ? (person ? RA1 * RK / (RA1 + RK) : RA1) : (person ? RK : Infinity);   // zwischen Schutzleiter und Standort
+  const GAK = 1 / (erder ? RX + RA2 : RX), Gq = Gs + GP, det = Gq * (GB + GAK) + GAK * GB;   // GAK: Leitwert vom Schutzleiter zur Bezugserde
+  if (det === 0) return { bezug: false, phi_PE: null, phi_S: 0, phi_St: 0, I_L: 0, I_PEN: 0, I_A: 0, I_K: 0, I_B: 0, U_V: 0, U_PEN: 0, U_B: null, P_V: 0 };
+  const fH = U0 * Gs * GB / det, fS = Gs && GAK ? -U0 * Gs * GAK / det : 0;
+  const I_E = fH * GAK;                                                       // Strom vom Schutzleiter in die Erde
+  const U_B = erder || person ? I_E * RX : fH;                                // ohne Erdweg: volle Spannung gegen Bezugserde zu erwarten
+  const I_K = person ? U_B / RK : 0, I_A = erder ? I_E - I_K : 0;
+  const I_L = (fS + U0 - fH) * Gs, I_PEN = (fH - fS) * GP, I_B = -fS * GB || 0;
+  return { bezug: true, phi_PE: fH, phi_S: fS, phi_St: fH - U_B, I_L, I_PEN, I_A, I_K, I_B, U_V: I_L * RV, U_PEN: I_PEN * RP, U_B, P_V: I_L * I_L * RV };
+}
+/* Halbkugelerder: Ersatzradius r_0 in m und Anteil f des Erderpotentials am Standort (Abstand d vom Rand des Erders) */
+const r0von = (RA) => CFG.rho / (2 * Math.PI * RA);
+const anteilStandort = (RA, d) => (isFinite(d) ? r0von(RA) / (r0von(RA) + d) : 0);
+/* Wirkung des Körperstroms als Stufe (Index in CFG.stufen) */
+function stufe(iK) { let k = 0; CFG.stufen.forEach((s, i) => { if (iK >= s.ab) k = i; }); return k; }
+
+/* ================= 3 Zustand ================= */
+const S = { werte: false, fluss: true, diag: true, lupe: false, grenze: false, erkl: false, form: false, rech: false, paused: false, qr: false };   // Anzeige und Bedienung
+const st = {};                                  // Schalter und Parameter: laden, pen (intakt), erder (vorhanden), person (berührt), RL, RA, DS (Standort)
+const lauf = { t: 0, off: {} };                 // nur Zeichnung: Animationszeit und Versatz der Laufmarken je Zweig
+let M = null;                                   // Ergebnis des Modells für den aktuellen Zustand
+const eingaben = () => ({ U0: CFG.U0, RL: st.RL, RP: st.RL, RV: CFG.RV, RB: CFG.RB, RA: st.RA, RK: CFG.RK,
+  laden: st.laden, pen: st.pen, erder: st.erder, person: st.person, f: anteilStandort(st.RA, st.DS) });
+const nahAmErder = () => st.erder && isFinite(st.DS);   // Person steht im Trichter des Anlagenerders
+function reset() {
+  Object.assign(st, CFG.start, { RL: CFG.RL, RA: CFG.RA, DS: CFG.DS });
+  lauf.t = 0; lauf.off = {};
+}
+/* Eingriffe von außen: Jeder hat einen Namen und ist über anim.act(name) erreichbar. */
+const AKTIONEN = {
+  laden() { st.laden = !st.laden; },
+  pen() { st.pen = !st.pen; },
+  erder() { st.erder = !st.erder; },
+  person() { st.person = !st.person; },
+  standort() { st.DS = isFinite(st.DS) ? Infinity : CFG.DS; },
+  reset,
+};
+
+/* ================= 4 Hilfen ================= */
+function el(tag, attrs = {}, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function txt(x, y, html, attrs = {}, parent = svg) { const t = el('text', { x, y, ...attrs }, parent); t.innerHTML = html; return t; }
+const I = (s) => `<tspan class="i">${s}</tspan>`;
+/* Index in SVG-Text. Folgt danach noch Text, ihn als rest übergeben – sonst bleibt er tiefgestellt. */
+const SUB = (s, size, rest = '') => `<tspan dy="${size * 0.3}" font-size="${size * 0.7}">${s}</tspan>` + (rest ? `<tspan dy="${-size * 0.3}">${rest}</tspan>` : '');
+function dez(v, nk) {
+  let s = Math.abs(v).toFixed(nk).replace('.', ',');
+  if (v < 0 && Number(s.replace(',', '.')) !== 0) s = '−' + s;
+  return s;
+}
+/* Zahlen nach fachkonventionen, Abschnitt 4: Einheitenvorsatz, höchstens 2 Nachkommastellen, Dezimalkomma */
+function fmtWert(v, einheit) {
+  if (!isFinite(v)) return '–';
+  const a = Math.abs(v);
+  if (a < 5e-13) return '0 ' + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let f = 1e-12, p = 'p';
+  for (const [fac, pf] of vors) if (a >= fac * 0.999995) { f = fac; p = pf; break; }
+  return dez(v / f, 2) + ' ' + p + einheit;
+}
+/* Ergebnis einer Rechnung: wie fmtWert, glatte Werte ohne angehängte Nullen („10 A“, „210 V“, aber „6,76 A“) */
+function fmtErg(v, einheit) {
+  const s = fmtWert(v, einheit), m = /^(−?\d+),00 (.*)$/.exec(s);
+  if (!m) return s;
+  const vors = { G: 1e9, M: 1e6, k: 1e3, m: 1e-3, 'µ': 1e-6, n: 1e-9, p: 1e-12 }, pf = m[2].slice(0, m[2].length - einheit.length);
+  const ganz = Number(m[1].replace('−', '-')) * (vors[pf] || 1);
+  return Math.abs(v - ganz) <= 1e-6 * Math.max(1, Math.abs(v)) ? `${m[1]} ${m[2]}` : s;
+}
+/* Laufende Werte in der Bühne mit drei geltenden Ziffern: „67,6 V“, „6,77 A“, „225 mA“ (Festlegung der Lehrkraft, 12.11.2026, W) */
+function fmtLauf(v, einheit) {
+  if (!isFinite(v)) return '–';
+  if (Math.abs(v) < 5e-13) return '0 ' + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let i = vors.findIndex(([f]) => Math.abs(v) >= f * 0.9995); if (i < 0) i = vors.length - 1;
+  for (;;) {
+    const [f, p] = vors[i], m = v / f, a = Math.abs(m), nk = a >= 99.95 ? 0 : a >= 9.995 ? 1 : 2;
+    if (Math.abs(Number(m.toFixed(nk))) >= 1000 && i > 0) { i--; continue; }   // 999,96 mV → 1,00 V
+    return dez(m, nk) + ' ' + p + einheit;
+  }
+}
+/* Gegebene Werte erscheinen so, wie sie gegeben sind: „230 V“, „0,1 Ω“, „21 Ω“, „1 kΩ“ */
+function fmtGeg(v, einheit) {
+  const a = Math.abs(v);
+  if (a >= 0.01 && a < 1000) return dez(v, 2).replace(/,(\d*?)0+$/, (m, z) => (z ? ',' + z : '')) + ' ' + einheit;
+  return fmtWert(v, einheit).replace(/,(\d*?)0+ /, (m, z) => (z ? ',' + z : '') + ' ');
+}
+const mitMinus = (f) => (f.startsWith('−') ? `<tspan class="neg">−</tspan>${f.slice(1)}` : f);
+/* Beschriftung in der Bühne: mit „Zahlenwerte“ als Gleichung „I_L = 6,77 A“, sonst nur das Formelzeichen
+   (darstellung.md 8: ohne Werte entfallen die Zahlen in der Bühne). Gegebene Größen stehen immer mit Wert da. */
+function beschr(zeichen, index, wert, einheit, nach = '', size = 30) {
+  if (!S.werte || wert === null) return I(zeichen) + (index ? SUB(index, size, nach) : nach);
+  return I(zeichen) + (index ? SUB(index, size, ' = ') : ' = ') + mitMinus(fmtLauf(wert, einheit)) + nach;
+}
+function gegeben(zeichen, index, wert, einheit, size = 30) {
+  return I(zeichen) + (index ? SUB(index, size, ' = ') : ' = ') + fmtGeg(wert, einheit);
+}
+function arrowHead(x2, y2, ux, uy, L, W) {
+  const bx = x2 - ux * L, by = y2 - uy * L;
+  return `${x2},${y2} ${bx - uy * W},${by + ux * W} ${bx + uy * W},${by - ux * W}`;
+}
+/* Zählpfeil: Mitte (x, y), Zählrichtung (ux, uy) fest; die Länge folgt dem Betrag.
+   Zu lange Pfeile werden bei max gekürzt und bekommen ein Bruchzeichen – der Wert steht in der Beschriftung. */
+function zaehlpfeil(parent, color, x, y, ux, uy, max) {
+  const g = el('g', {}, parent);
+  const line = el('line', { stroke: color, 'stroke-width': 5 }, g);
+  const head = el('polygon', { fill: color }, g);
+  const brk = el('path', { fill: 'none', stroke: color, 'stroke-width': 3 }, g);
+  return {
+    g,
+    set(len) {
+      let L = Math.abs(len); const gekuerzt = L > max; if (gekuerzt) L = max;
+      const hl = Math.min(24, Math.max(L * 0.6, Math.min(L, 12))), hw = Math.max(9 * hl / 24, Math.min(4.5, L * 0.6));   // kurze Pfeile: Spitze bleibt erkennbar
+      const x1 = x - ux * L / 2, y1 = y - uy * L / 2, x2 = x + ux * L / 2, y2 = y + uy * L / 2;
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2 - ux * Math.max(hl - 1, 0)); line.setAttribute('y2', y2 - uy * Math.max(hl - 1, 0));
+      head.setAttribute('points', arrowHead(x2, y2, ux, uy, hl, hw));
+      const sichtbar = L >= 4;
+      g.style.visibility = sichtbar ? '' : 'hidden';
+      const bx = x - ux * L * 0.2, by = y - uy * L * 0.2, nx = -uy, ny = ux;
+      brk.setAttribute('d', gekuerzt ? `M ${bx - ux * 7 - nx * 12} ${by - uy * 7 - ny * 12} L ${bx - ux * 1 + nx * 12} ${by - uy * 1 + ny * 12} M ${bx + ux * 1 - nx * 12} ${by + uy * 1 - ny * 12} L ${bx + ux * 7 + nx * 12} ${by + uy * 7 + ny * 12}` : '');
+      return sichtbar;
+    },
+  };
+}
+/* Streckenzug mit Bogenlänge, für die Laufmarken */
+function pfad(pts) {
+  const seg = []; let L = 0;
+  for (let k = 0; k + 1 < pts.length; k++) {
+    const [x1, y1] = pts[k], [x2, y2] = pts[k + 1], l = Math.hypot(x2 - x1, y2 - y1);
+    if (l > 0) { seg.push({ x: x1, y: y1, ux: (x2 - x1) / l, uy: (y2 - y1) / l, l, s0: L }); L += l; }
+  }
+  return { seg, L };
+}
+function aufPfad(p, s) {
+  for (const g of p.seg) if (s <= g.s0 + g.l) return { x: g.x + g.ux * (s - g.s0), y: g.y + g.uy * (s - g.s0), w: Math.atan2(g.uy, g.ux) * 180 / Math.PI };
+  const g = p.seg[p.seg.length - 1];
+  return { x: g.x + g.ux * g.l, y: g.y + g.uy * g.l, w: Math.atan2(g.uy, g.ux) * 180 / Math.PI };
+}
+
+/* ================= 5 Statische Zeichnung =================
+   Oben das Schaltbild: links die Trafostation mit waagerechter Strangwicklung, Sternpunkt und Betriebserder, in der Mitte
+   die Leitung mit R_L und R_PEN, rechts das Haus mit Haupterdungsschiene und Anlagenerder. An der Hauswand sitzen zwei
+   Steckdosen übereinander, Kontakte jeweils in der Reihenfolge L1, PE, N: oben die Wallbox mit dem ladenden Auto, unten
+   die Außensteckdose, deren Schutzkontakt (PE) die Person direkt berührt.
+   Festlegungen der Lehrkraft, 22.11.2026 (Rückmeldungen zur ersten und zweiten Fassung): Strangwicklung waagerecht ·
+   Steckverbindung mit Buchse als „C“ und Stecker als dickem Strich · Schalter im Gerät · kein Gehäuse, sondern direktes
+   Berühren des PE an der Außensteckdose · Erdungszeichen zusätzlich zu R_B und R_A · Spannungspfeil von der Berührstelle
+   zum Erdreich mit Wert · Spannung an R_PEN · Potentialdiagramm ausblendbar · statt der Heizung eine einphasige Wallbox
+   mit kleinem Auto, Ladestrom 32 A · zwei Steckdosen übereinander in der Anordnung L1, PE, N, oben die Wallbox, unten die
+   Person · alle Widerstände im Seitenverhältnis 3 : 1.
+   Schaltzeichen nach dem Hausstil (schaltzeichen, Tabellenbuch S. 86/87): Widerstand als Rechteck, Wicklungsstrang mit
+   Bögen, Schließer (senkrecht, Wurzel unten – die freigegebene Form), Erdung, Steckerbuchse und Steckerstift, Umrahmung
+   als Strich-Punkt-Linie. Kreuzungen ohne Punkt, jeder Abzweig mit Punkt.
+   Unten, deckungsgleich in x, das Potential der Erdoberfläche über dem Ort. */
+const C = CFG.col;
+const YL = 225, YP = 490, YB = 445, YG = 600, YE = 727, YS = 737;       // L1 · PEN und N · PE (Haupterdungsschiene) · Erdoberfläche · Bezugserde · Unterkante Erdreich
+const KO = { L: YL, PE: 270, N: 315 }, KU = { L: 400, PE: YB, N: YP };  // Kontakte der Wallbox (oben) und der Außensteckdose (unten): L1, PE, N
+const XQ = 170, XR = 570, XI = 800, XBR = 905, XH = 1050, XTL = 1225, XTP = 1262, XTN = 1299, XW = 1352;   // Sternpunkt · Leiterwiderstände · Strompfeile · PEN-Stelle · HES und Anlagenerder · Abzweige L1, PE, N · Hauswand
+const TRAFO = { x: 60, y: 170, w: 360, h: YG - 170 }, HAUS = { x: 985, y: 170, w: XW - 985, h: YG - 170 };
+const XB = XW + 8, XST = XB + 28;                                         // Buchsen vor der Hauswand · Ende der Steckerstifte
+const BER = { x: XB + 10, y: KU.PE };                                     // Berührstelle: Schutzkontakt (PE) der Außensteckdose
+const AUTO = { x0: 1400, x1: 1620, xs: 1535, xr: 1470 };                  // Auto: Heck · Bug · Schalter · Mitte des Ersatzwiderstands
+const XP = 1500, XF = XP - 20;                                            // Person: Mitte · linker Fuß (Verbindung zur Bezugserde)
+const XUB = XB + 46;                                                      // Spannungspfeil U_B von der Berührstelle zum Erdreich
+const D = { x0: 95, x1: 1890, Y0: 1012, YT: 782, YU: 1046, r0: 14, R: 240 };   // Diagramm: Achsen, Nulllinie, obere/untere Grenze, Trichter (Radius des Erders, Reichweite)
+const YAB = YG + 57, XBK = 745;                                           // Abgriff an R_A (Standort im Trichter) · Unterbrechung der Ortsachse zwischen Trafostation und Haus
+
+const gBack = el('g', { id: 'back' }), gWire = el('g', { id: 'schaltung' }), gDiag = el('g', { id: 'diagramm' }),
+  gMarken = el('g', { id: 'marken' }), gDyn = el('g', { id: 'dyn' }), gLbl = el('g', { id: 'labels' }), gHit = el('g', { id: 'klick' });
+const wire = (d, parent = gWire) => el('path', { d, fill: 'none', stroke: C.ink, 'stroke-width': 4, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, parent);
+const knoten = (x, y, parent = gWire) => el('circle', { cx: x, cy: y, r: 7, fill: C.ink }, parent);
+/* Widerstand: Rechteck im Seitenverhältnis 3 : 1 (Festlegung der Lehrkraft, 22.11.2026); (x, y) = Mitte, lang = lange Seite */
+const widerstand = (x, y, lang, senkrecht = false, parent = gWire) => {
+  const w = senkrecht ? lang / 3 : lang, h = senkrecht ? lang : lang / 3;
+  return el('rect', { x: x - w / 2, y: y - h / 2, width: w, height: h, fill: '#fff', stroke: C.ink, 'stroke-width': 4 }, parent);
+};
+/* Erdung (Tabellenbuch S. 87): drei kürzer werdende Striche; (x, y) = oberster Strich, die Leitung kommt von oben */
+const erdzeichen = (x, y, parent = gWire) => wire(`M ${x} ${y - 10} L ${x} ${y} M ${x - 22} ${y} L ${x + 22} ${y} M ${x - 14} ${y + 8} L ${x + 14} ${y + 8} M ${x - 6} ${y + 16} L ${x + 6} ${y + 16}`, parent);
+/* Steckverbindung (Tabellenbuch S. 87): Steckerbuchse als offener Bogen „C“ (Scheitel bei (x, y), Öffnung nach rechts),
+   Steckerstift als dicker Strich, der von rechts in die Buchse reicht. */
+const buchse = (x, y, parent = gWire) => el('path', { d: `M ${x + 10} ${y - 10} A 10 10 0 0 0 ${x + 10} ${y + 10}`, fill: 'none', stroke: C.ink, 'stroke-width': 4, 'stroke-linecap': 'round' }, parent);
+const stecker = (y, parent = gWire) => el('line', { x1: XB + 5, y1: y, x2: XST, y2: y, stroke: C.ink, 'stroke-width': 10 }, parent);
+
+// Erdreich: Fläche, Oberfläche mit Schraffur, Bezugserde als durchgehende Linie mit φ = 0 V (Rückweg des Stroms)
+el('rect', { x: 0, y: YG, width: 1920, height: YS - YG, fill: C.erde }, gBack);
+for (let x = 34; x < 1910; x += 44) el('line', { x1: x, y1: YG + 3, x2: x - 13, y2: YG + 16, stroke: C.erdlinie, 'stroke-width': 1.5, opacity: 0.55 }, gBack);
+el('line', { x1: 0, y1: YG, x2: 1920, y2: YG, stroke: C.erdlinie, 'stroke-width': 3 }, gBack);
+el('line', { x1: 60, y1: YE, x2: 1860, y2: YE, stroke: C.erdlinie, 'stroke-width': 8, 'stroke-linecap': 'round' }, gBack);
+txt(640, YE - 16, `Bezugserde: ${I('φ')} = 0 V`, { class: 'lbl-s halo-e', 'text-anchor': 'middle' }, gLbl);
+
+// Umrahmungen (Strich-Punkt): Trafostation und Haus; an der Hauswand die Gehäuse der beiden Steckdosen
+for (const r of [TRAFO, HAUS]) el('rect', { x: r.x, y: r.y, width: r.w, height: r.h, fill: 'none', stroke: C.rahmen, 'stroke-width': 2, 'stroke-dasharray': '20 7 3 7' }, gBack);
+for (const K of [KO, KU]) el('rect', { x: XW - 1, y: K.L - 20, width: 26, height: K.N - K.L + 40, rx: 6, fill: '#fff', stroke: C.rahmen, 'stroke-width': 2 }, gBack);
+txt(TRAFO.x + 14, TRAFO.y + 32, 'Trafostation', { class: 'lbl-s sans muted' }, gLbl);
+txt(HAUS.x + 14, HAUS.y + 32, 'Haus', { class: 'lbl-s sans muted' }, gLbl);
+
+// Trafostation: Sternpunkt S, Strangwicklung waagerecht in L1 (Wicklungsstrang mit Bögen), Betriebserder mit R_B und Erdungszeichen
+wire(`M ${XQ} ${YP} L ${XQ} ${YL} L 230 ${YL} a 12.5 12.5 0 0 1 25 0 a 12.5 12.5 0 0 1 25 0 a 12.5 12.5 0 0 1 25 0 a 12.5 12.5 0 0 1 25 0 L ${XR - 66} ${YL}`);
+wire(`M ${XQ} ${YP} L ${XQ} ${YG + 22}`);
+widerstand(XQ, YG + 57, 72, true);
+erdzeichen(XQ, YG + 102);
+// Leitung: L1 mit R_L bis zur Wallbox, PEN mit R_PEN bis zum Knoten im Haus, von dort als N bis zur Außensteckdose
+// (das Stück an der PEN-Stelle ist dynamisch)
+widerstand(XR, YL, 132);
+wire(`M ${XR + 66} ${YL} L ${XB} ${YL}`);
+wire(`M ${XQ} ${YP} L ${XR - 66} ${YP} M ${XR + 66} ${YP} L ${XBR - 24} ${YP} M ${XBR + 24} ${YP} L ${XB} ${YP}`);
+widerstand(XR, YP, 132);
+// Im Haus: Am Knoten (XH, YP) wird der PEN in N und PE aufgeteilt (TN-C-S). Nach oben die Haupterdungsschiene mit dem
+// Schutzleiter, nach unten der Anlagenerder. Beide Steckdosen liegen parallel: Abzweige für L1 (nach unten), PE und N (nach oben).
+wire(`M ${XH} ${YP} L ${XH} ${YB}`);
+el('line', { x1: XH - 36, y1: YB, x2: XH + 60, y2: YB, stroke: C.ink, 'stroke-width': 9, 'stroke-linecap': 'round' }, gWire);
+wire(`M ${XH + 60} ${YB} L ${XB} ${YB}`);
+wire(`M ${XTL} ${YL} L ${XTL} ${KU.L} L ${XB} ${KU.L}`);
+wire(`M ${XTP} ${YB} L ${XTP} ${KO.PE} L ${XB} ${KO.PE}`);
+wire(`M ${XTN} ${YP} L ${XTN} ${KO.N} L ${XB} ${KO.N}`);
+for (const K of [KO, KU]) for (const y of [K.L, K.PE, K.N]) buchse(XB, y);
+knoten(XQ, YP); knoten(XH, YP); knoten(XTL, YL); knoten(XTP, YB); knoten(XTN, YP);
+// Anlagenerder (entfernbar): Erdungsleiter vom Knoten, R_A im Erdreich, Erdungszeichen
+const gErder = el('g', { id: 'erder' }, gWire);
+wire(`M ${XH} ${YP} L ${XH} ${YG + 22}`, gErder);
+widerstand(XH, YG + 57, 72, true, gErder);
+erdzeichen(XH, YG + 102, gErder);
+// Wallbox mit Auto: Der Stecker steckt, das Auto (Schutzklasse I) hängt mit der Karosserie am PE. Im Auto liegen der
+// Ersatzwiderstand des Ladegeräts und der Schalter „Laden“ in Reihe zwischen L1 und N.
+const ax = (d) => AUTO.x0 + d;
+const autoForm = `M ${ax(0)} 344 L ${ax(0)} 262 Q ${ax(0)} 252 ${ax(8)} 246 L ${ax(31)} 208 Q ${ax(37)} 199 ${ax(50)} 199 L ${ax(130)} 199 Q ${ax(143)} 199 ${ax(150)} 208 L ${ax(178)} 246 L ${ax(206)} 252 Q ${ax(220)} 256 ${ax(220)} 272 L ${ax(220)} 344 L ${ax(196)} 344 A 21 21 0 0 0 ${ax(154)} 344 L ${ax(70)} 344 A 21 21 0 0 0 ${ax(28)} 344 Z`;
+el('path', { d: autoForm, fill: '#fff', stroke: '#5b6570', 'stroke-width': 3, 'stroke-linejoin': 'round' }, gWire);
+const autoWarm = el('path', { d: autoForm, fill: C.warm, opacity: 0, 'pointer-events': 'none' }, gWire);
+for (const d of [49, 175]) { el('circle', { cx: ax(d), cy: 346, r: 17, fill: '#fff', stroke: '#5b6570', 'stroke-width': 3 }, gWire); el('circle', { cx: ax(d), cy: 346, r: 5, fill: '#5b6570' }, gWire); }
+for (const y of [KO.L, KO.PE, KO.N]) stecker(y);
+const YK = KO.L + 21, YWZ = KO.N - 30;                                    // Schalter im Auto: fester Kontakt (oben) · Wurzel der Schaltzunge (unten)
+wire(`M ${XST} ${KO.L} L ${AUTO.xr - 33} ${KO.L} M ${AUTO.xr + 33} ${KO.L} L ${AUTO.xs} ${KO.L} L ${AUTO.xs} ${YK}`);
+widerstand(AUTO.xr, KO.L, 66);
+wire(`M ${AUTO.xs} ${YWZ} L ${AUTO.xs} ${KO.N} L ${XST} ${KO.N}`);
+wire(`M ${XST} ${KO.PE} L ${AUTO.x0} ${KO.PE}`);
+knoten(AUTO.x0, KO.PE);
+// Person als „Widerstandsmännchen“: Der Rumpf ist das Widerstandsrechteck R_K (3 : 1). Sie steht auf dem Erdreich (Bezugserde).
+// Verbindung der Füße zum Erdreich: weit weg zur Bezugserde; nah am Erder als Abgriff an R_A (die Person greift nur R_A1 ab)
+const fussWeit = el('line', { x1: XF, y1: YG, x2: XF, y2: YE, stroke: C.ink, 'stroke-width': 2.5, 'stroke-dasharray': '7 6' }, gWire);
+const fussNah = el('g', {}, gWire);
+el('path', { d: `M ${XF} ${YG} L ${XF} ${YAB} L ${XH + 14} ${YAB}`, fill: 'none', stroke: C.ink, 'stroke-width': 2.5, 'stroke-dasharray': '7 6' }, fussNah);
+el('circle', { cx: XH + 12, cy: YAB, r: 5, fill: C.ink }, fussNah);
+const gPers = el('g', { id: 'person' }, gWire);
+const SCH = { x: XP - 15, y: 462 };                                       // Schulter des Arms zur Berührstelle
+wire(`M ${XP} 445 L ${XP} 455 M ${XP} 545 L ${XF} ${YG} M ${XP} 545 L ${XP + 20} ${YG} M ${XF - 12} ${YG} L ${XF + 6} ${YG} M ${XP + 14} ${YG} L ${XP + 32} ${YG} M ${XP + 15} 462 L ${XP + 36} 532`, gPers);
+el('circle', { cx: XP, cy: 425, r: 20, fill: '#fff', stroke: C.ink, 'stroke-width': 4 }, gPers);
+widerstand(XP, 500, 90, true, gPers);
+const arm = el('line', { x1: SCH.x, y1: SCH.y, stroke: C.ink, 'stroke-width': 4, 'stroke-linecap': 'round' }, gPers);
+// Blitz: nur ab 50 mA (Herzkammerflimmern) – drastisches Bild nur im Fehlerfall (darstellung.md 7)
+const gBlitz = el('g', { id: 'blitz' }, gWire);
+el('polygon', { points: '0,0 15,0 7,17 17,17 -5,46 1,24 -9,24', transform: `translate(${XP - 62} 546) scale(1.1)`, fill: C.blitz, stroke: C.ink, 'stroke-width': 2, 'stroke-linejoin': 'round' }, gBlitz);
+
+// Feste Beschriftung: Leiter, Knoten, gegebene Größen
+txt(462, YL - 16, 'L1', { class: 'lbl sans', 'text-anchor': 'middle' }, gLbl);
+txt(462, YP - 16, 'PEN', { class: 'lbl sans', 'text-anchor': 'middle' }, gLbl);
+for (const K of [KO, KU]) for (const [name, y] of [['L1', K.L], ['PE', K.PE], ['N', K.N]]) txt(XW - 8, y - 10, name, { class: 'lbl-s sans', 'text-anchor': 'end' }, gLbl);
+txt(XQ - 22, YP + 11, 'S', { class: 'lbl sans', 'text-anchor': 'end' }, gLbl);
+txt(HAUS.x + 12, YB - 16, 'Haupterdungsschiene', { class: 'lbl-xs sans' }, gLbl);
+txt(XW + 6, 182, 'Wallbox', { class: 'lbl-xs sans muted' }, gLbl);
+txt(XW - 8, YP + 30, 'Außensteckdose', { class: 'lbl-xs sans muted', 'text-anchor': 'end' }, gLbl);
+txt(XQ + 34, YG + 42, 'Betriebserder', { class: 'lbl-xs sans muted halo-e' }, gLbl);
+txt(XQ + 34, YG + 90, gegeben('R', 'B', CFG.RB, 'Ω'), { class: 'lbl halo-e' }, gLbl);
+txt(AUTO.x0, 390, gegeben('R', 'Auto', CFG.RV, 'Ω'), { class: 'lbl' }, gLbl);                          // unter dem Auto
+txt(XP + 58, 466, gegeben('R', 'K', CFG.RK, 'Ω'), { class: 'lbl' }, gLbl);
+const lRL = txt(XR - 62, YL - 36, '', { class: 'lbl' }, gLbl);
+const lRP = txt(XR - 62, YP - 36, '', { class: 'lbl' }, gLbl);
+const lErderName = txt(XH + 42, YG + 42, '', { class: 'lbl-xs sans muted halo-e' }, gLbl);
+const lRA = txt(XH + 42, YG + 90, '', { class: 'lbl halo-e' }, gLbl);
+const lStandort = txt(XF + 16, YG + 34, '', { class: 'lbl-xs sans muted halo-e' }, gLbl);          // Standort der Person, neben der Fußlinie
+const lLaden = txt(AUTO.xs - 14, 300, '', { class: 'lbl-xs sans muted', 'text-anchor': 'end' }, gLbl);   // Zustand des Ladens, im Auto
+const lPenBruch = txt(XBR, YP - 50, 'PEN-Bruch', { class: 'lbl-s sans', 'text-anchor': 'middle' }, gLbl);
+const lWirkung = txt(XP + 70, 502, '', { class: 'lbl-s sans' }, gLbl);                           // Wirkung des Körperstroms, neben der Figur
+// Hinweise am Rand der Bühne (Maßstäbe und Annahmen kennzeichnen); die Ecke oben links bleibt für „Vollbild beenden“ frei
+txt(40, 82, 'Effektivwerte in Zählpfeilrichtung', { class: 'lbl-xs sans muted' }, gLbl);
+const hinwRL = txt(40, 112, '', { class: 'lbl-xs sans muted' }, gLbl);
+txt(40, 142, 'Tempo der Laufmarken nicht maßstäblich', { class: 'lbl-xs sans muted' }, gLbl);
+const titel = txt(1872, 120, 'PEN-Leiter und Anlagenerder', { class: 't-main', 'text-anchor': 'end' }, gBack);   // Norm: oben rechts, rückt neben den QR-Code (render)
+
+// Dynamische Teile der Schaltung: Schaltkontakt im Auto (Schließer, Wurzel unten), PEN-Stelle
+const blade = el('line', { x1: AUTO.xs, y1: YWZ, x2: AUTO.xs, y2: YK - 3, stroke: C.ink, 'stroke-width': 5, 'stroke-linecap': 'round' }, gDyn);
+const penGanz = wire(`M ${XBR - 24} ${YP} L ${XBR + 24} ${YP}`, gDyn);
+const penBruch = wire(`M ${XBR - 24} ${YP} L ${XBR - 9} ${YP - 13} M ${XBR + 24} ${YP} L ${XBR + 9} ${YP + 13}`, gDyn);
+
+// Zählpfeile (Richtung fest) mit Beschriftung; Spannungspfeile neben dem Bauteil, Strompfeile neben der Leitung
+/* Spannungspfeile im Schaltbild haben eine feste Länge neben dem Bauteil und zeigen nur die Zählrichtung; der Wert steht
+   daneben. Grund: Maßstäblich wäre U_PEN neben U_0 = 230 V nur ein Punkt (Rückmeldung der Lehrkraft, 22.11.2026:
+   „Spannung an R_PEN“, „Spannungspfeil von der Berührstelle zum Erdreich“). Die Größe der Potentiale zeigt das Diagramm. */
+function festpfeil(x1, y1, x2, y2) {
+  const g = el('g', {}, gDyn), l = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / l, uy = (y2 - y1) / l;
+  el('line', { x1, y1, x2: x2 - ux * 23, y2: y2 - uy * 23, stroke: C.u, 'stroke-width': 5 }, g);
+  el('polygon', { points: arrowHead(x2, y2, ux, uy, 24, 9), fill: C.u }, g);
+  return g;
+}
+festpfeil(338, YL + 32, 222, YL + 32);                                     // U_0: von L1 zum Sternpunkt
+const gUV = festpfeil(AUTO.xr - 29, KO.L + 30, AUTO.xr + 29, KO.L + 30);   // U_Auto: in Richtung von I_L
+const gUPEN = festpfeil(XR + 58, YP + 34, XR - 58, YP + 34);               // U_PEN: in Richtung von I_PEN
+// U_B: von der Berührstelle bis zum Erdreich
+const gUBs = festpfeil(XUB, YB + 6, XUB, YG - 1);
+const pIL = zaehlpfeil(gDyn, C.i, XI, YL + 34, 1, 0, 120);
+const pIPEN = zaehlpfeil(gDyn, C.i, XI, YP + 34, -1, 0, 120);
+const pIB = zaehlpfeil(gDyn, C.i, XQ + 35, 546, 0, -1, 96);
+const pIA = zaehlpfeil(gDyn, C.i, XH + 42, 556, 0, 1, 84);
+const pIK = zaehlpfeil(gDyn, C.i, XP + 52, 532, 0, 1, 110);
+txt(280, YL + 76, gegeben('U', '0', CFG.U0, 'V'), { class: 'lbl c-u halo', 'text-anchor': 'middle' }, gLbl);
+const lUV = txt(AUTO.x0 + 238, 390, '', { class: 'lbl c-u halo' }, gLbl);
+const lUPEN = txt(XR, YP + 76, '', { class: 'lbl c-u halo', 'text-anchor': 'middle' }, gLbl);
+const lUBs = txt(XF - 12, YG + 38, '', { class: 'lbl c-u halo-e', 'text-anchor': 'end' }, gLbl);
+const lIL = txt(XI, YL + 76, '', { class: 'lbl c-i halo', 'text-anchor': 'middle' }, gLbl);
+const lIPEN = txt(XI, YP + 76, '', { class: 'lbl c-i halo', 'text-anchor': 'middle' }, gLbl);
+const lIB = txt(XQ + 55, 556, '', { class: 'lbl c-i halo' }, gLbl);
+const lIA = txt(XH + 60, 566, '', { class: 'lbl c-i halo' }, gLbl);
+const lIK = txt(XP + 70, 542, '', { class: 'lbl c-i halo' }, gLbl);
+const lIKmass = txt(XP + 70, 574, `Pfeil ×${CFG.ikFaktor}`, { class: 'lbl-xs sans muted' }, gLbl);   // Maßstab kennzeichnen: nur dieser Pfeil ist vergrößert
+
+/* ----- Potentialdiagramm: Potential der Erdoberfläche über dem Ort (blaue Linie), deckungsgleich mit dem Schaltbild.
+   Ein Trichter erscheint nur an einem Erder, durch den Strom fließt; seine Höhe ist maßstäblich, die Form qualitativ.
+   φ_PE und φ_S sind Potentiale von Leitern, nicht des Erdreichs – sie haben eigene Marken (waagerechter Strich). ----- */
+txt(D.x0 + 26, 776, 'Potential gegen Bezugserde', { class: 't-panel' }, gDiag);
+for (const x of [XQ, XH, XP]) el('line', { x1: x, y1: YS, x2: x, y2: D.Y0, stroke: '#aab2ba', 'stroke-width': 1.5, 'stroke-dasharray': '5 8' }, gDiag);
+el('line', { x1: D.x0, y1: D.YU + 10, x2: D.x0, y2: 762, stroke: C.ink, 'stroke-width': 2 }, gDiag);
+el('polygon', { points: arrowHead(D.x0, 750, 0, -1, 16, 6), fill: C.ink }, gDiag);
+el('line', { x1: D.x0, y1: D.Y0, x2: D.x1 - 12, y2: D.Y0, stroke: C.ink, 'stroke-width': 2 }, gDiag);
+el('polygon', { points: arrowHead(D.x1, D.Y0, 1, 0, 16, 6), fill: C.ink }, gDiag);
+txt(D.x0 - 16, 772, I('φ'), { class: 'lbl', 'text-anchor': 'end' }, gDiag);
+txt(D.x1, D.Y0 + 32, 'Ort', { class: 'lbl-xs sans muted', 'text-anchor': 'end' }, gDiag);
+const gTeil = el('g', {}, gDiag);                                           // Teilung der φ-Achse (wechselt mit der Lupe)
+const lLupe = txt(D.x0 + 26, 812, '', { class: 'lbl-xs sans muted' }, gDiag);
+const gGrenze = el('g', {}, gDiag);                                         // Grenzlinie U_L (zuschaltbar)
+const grenzLinie = el('line', { x1: D.x0, x2: D.x1 - 12, stroke: C.ink, 'stroke-width': 2, 'stroke-dasharray': '14 9', opacity: 0.6 }, gGrenze);
+const lGrenze = txt(D.x1 - 24, 0, gegeben('U', 'L', CFG.UL, 'V', 25), { class: 'lbl-s halo', 'text-anchor': 'end' }, gGrenze);   // rechts außen: links stehen φ_S und die Achsenwerte
+// Unterbrechung der Ortsachse: Die Trafostation ist einige hundert Meter entfernt. Links davon ist der Ort nicht maßstäblich.
+el('rect', { x: XBK - 9, y: D.Y0 - 5, width: 18, height: 10, fill: '#fff' }, gDiag);
+el('path', { d: `M ${XBK - 11} ${D.Y0 + 11} L ${XBK - 3} ${D.Y0 - 11} M ${XBK + 3} ${D.Y0 + 11} L ${XBK + 11} ${D.Y0 - 11}`, fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gDiag);
+const erdBalken = el('rect', { y: D.Y0 + 5, height: 8, fill: C.erdlinie }, gDiag);              // Ausdehnung des Anlagenerders (nur maßstäblich gezeichnet)
+const gMass = el('g', {}, gDiag);                                           // Maßlinie: Abstand d der Person vom Rand des Erders
+const massLinie = el('path', { fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gMass);
+const lMass = txt(0, D.Y0 + 26, '', { class: 'lbl-xs' }, gMass);
+const potLinks = el('polyline', { fill: 'none', stroke: C.u, 'stroke-width': 5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, gDiag);
+const potLinie = el('polyline', { fill: 'none', stroke: C.u, 'stroke-width': 5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, gDiag);
+const lErdOb = txt(606, D.Y0 - 18, `Erdoberfläche: ${I('φ')}${SUB('E', 25)}`, { class: 'lbl-s c-u halo', 'text-anchor': 'middle' }, gDiag);
+txt(610, D.Y0 + 32, 'Bezugserde', { class: 'lbl-xs sans muted', 'text-anchor': 'middle' }, gDiag);
+txt(XQ, 1070, 'Betriebserder', { class: 'lbl-xs sans muted', 'text-anchor': 'middle' }, gDiag);
+const lOrtHaus = txt(XH, 1070, '', { class: 'lbl-xs sans muted', 'text-anchor': 'middle' }, gDiag);
+const lOrtPerson = txt(XP + 20, 1070, '', { class: 'lbl-xs sans muted', 'text-anchor': 'middle' }, gDiag);
+const markS = el('line', { x1: XQ - 62, x2: XQ + 62, stroke: C.u, 'stroke-width': 5, 'stroke-linecap': 'round' }, gDiag);
+const markPE = el('line', { x1: XH - 62, x2: XP + 14, stroke: C.u, 'stroke-width': 5, 'stroke-linecap': 'round' }, gDiag);
+const lPhiS = txt(XQ + 84, 0, '', { class: 'lbl c-u halo' }, gDiag);
+const lPhiPE = txt(XH + 110, 0, '', { class: 'lbl c-u halo' }, gDiag);
+const gUB = el('g', {}, gDiag);                                             // Berührungsspannung: Pfeil von der Marke φ_PE zur Erdoberfläche am Standort
+const ubLinie = el('line', { x1: XP, x2: XP, stroke: C.u, 'stroke-width': 5 }, gUB);
+const ubSpitze = el('polygon', { fill: C.u }, gUB);
+const lUB = txt(XP + 34, 0, '', { class: 'lbl c-u halo' }, gDiag);
+
+/* ----- Laufmarken: rote Dreiecke in Zählpfeilrichtung, je Zweig ein Streckenzug -----
+   Tempo wächst mit dem Strom (∝ I^0,4, nicht maßstäblich), damit 30 A und 20 mA zugleich sichtbar sind. */
+const ZWEIGE = {
+  L: { p: pfad([[XQ, YP], [XQ, YL], [AUTO.xs, YL], [AUTO.xs, KO.N], [XTN, KO.N], [XTN, YP], [XH, YP]]), strom: (m) => m.I_L },
+  PEN: { p: pfad([[XH, YP], [XQ, YP]]), strom: (m) => m.I_PEN },
+  A: { p: pfad([[XH, YP], [XH, YE]]), strom: (m) => m.I_A },
+  K: { p: pfad([[XH, YP], [XH, YB], [BER.x, BER.y], [SCH.x, SCH.y], [XP, 470], [XP, 545], [XF, YG], [XF, YE]]), strom: (m) => (nahAmErder() ? 0 : m.I_K) },
+  KN: { p: pfad([[XH, YP], [XH, YB], [BER.x, BER.y], [SCH.x, SCH.y], [XP, 470], [XP, 545], [XF, YG], [XF, YAB], [XH + 14, YAB]]), strom: (m) => (nahAmErder() ? m.I_K : 0) },   // nah am Erder: Rückweg über den Abgriff an R_A
+  E1: { p: pfad([[XF, YE], [XH, YE]]), strom: (m) => (nahAmErder() ? 0 : m.I_K) },
+  E2: { p: pfad([[XH, YE], [XQ, YE], [XQ, YP]]), strom: (m) => m.I_B },
+};
+for (const z of Object.values(ZWEIGE)) {
+  z.marken = [];
+  for (let k = 0; k * CFG.marken.abstand < z.p.L; k++) z.marken.push(el('polygon', { points: '8,0 -6,-6.5 -6,6.5', fill: C.i }, gMarken));
+}
+const tempo = (i) => (i > CFG.marken.imin ? CFG.marken.vmax * Math.pow(i / CFG.marken.iref, CFG.marken.exp) : 0);
+/* Ein Zeitschritt: bewegt nur die Laufmarken (Zeichnung). Der elektrische Zustand ist stationär. */
+function step(dt) {
+  lauf.t += dt;
+  for (const [k, z] of Object.entries(ZWEIGE)) lauf.off[k] = ((lauf.off[k] || 0) + tempo(z.strom(M)) * dt) % CFG.marken.abstand;
+}
+
+/* ----- Klickflächen in der Grafik (gestrichelter Rahmen, darstellung.md 5); dazu immer ein Knopf in der Bedienleiste ----- */
+function klickflaeche(x, y, w, h, name, aktion) {
+  const r = el('rect', { x, y, width: w, height: h, rx: 12, class: 'hit', tabindex: 0, role: 'button', 'aria-label': name }, gHit);
+  el('rect', { x, y, width: w, height: h, rx: 12, class: 'hit-frame', fill: 'none', stroke: '#9aa3ab', 'stroke-width': 1.5, 'stroke-dasharray': '7 6', 'pointer-events': 'none' }, gHit);
+  r.addEventListener('click', () => act(aktion));
+  r.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); act(aktion); } });
+  return r;
+}
+klickflaeche(AUTO.x0 - 6, 193, 232, 173, 'Laden starten oder stoppen', 'laden');
+klickflaeche(XBR - 46, YP - 34, 92, 68, 'PEN unterbrechen oder schließen', 'pen');
+klickflaeche(XH - 30, YP + 16, 60, YG + 124 - YP - 16, 'Anlagenerder entfernen oder anschließen', 'erder');
+klickflaeche(XP - 50, 402, 96, YG - 402 + 8, 'Person berührt den Schutzleiter oder lässt los', 'person');
+
+/* ===== QR-Code rechts oben in der Bühne (Festlegungen der Lehrkraft, 12.11.2026, Animation W) =====
+   Führt zur Adresse der Animation auf GitHub Pages (veroeffentlichen.md 3). Die Zeile `const QR = …;` erzeugt
+   python3 scripts/qr_buehne.py <Adresse> quelle.html  – null heißt: noch keine Adresse, die Ecke bleibt frei.
+   Beim Öffnen steht dort nur ein Platzhalter (QR-Symbol, „QR-Code“). Klick oder Enter darauf zeigt den QR-Code,
+   Klick auf den QR-Code blendet ihn wieder aus. ?qr=1 in der Adresse zeigt ihn gleich (Link für den Beamer).
+   Unter 800 px Fensterbreite fehlen beide (am Handy ist die Animation schon offen); im Export nur mit ?qr=1.
+   6 px je Modul (rund 270 px), ganzzahlig und auf ganze Pixel gesetzt: vom Beamer aus lesbar, auch verkleinert.
+   pruefen.py prüft Platzhalter und Umschalten und liest den Code in 1920 und 1280 px Breite. */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/schutzmassnahmen/pen-anlagenerder/", "n": 37, "d": "M0 0h7v1h-7zM10 0h1v1h-1zM12 0h1v1h-1zM15 0h3v1h-3zM19 0h2v1h-2zM23 0h2v1h-2zM28 0h1v1h-1zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM11 1h2v1h-2zM15 1h2v1h-2zM18 1h1v1h-1zM20 1h1v1h-1zM22 1h1v1h-1zM24 1h4v1h-4zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h5v1h-5zM18 2h1v1h-1zM20 2h4v1h-4zM26 2h1v1h-1zM28 2h1v1h-1zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h2v1h-2zM12 3h1v1h-1zM16 3h2v1h-2zM22 3h5v1h-5zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h2v1h-2zM11 4h2v1h-2zM14 4h3v1h-3zM19 4h2v1h-2zM22 4h3v1h-3zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h2v1h-2zM12 5h2v1h-2zM15 5h1v1h-1zM17 5h2v1h-2zM20 5h3v1h-3zM27 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM8 7h2v1h-2zM15 7h2v1h-2zM18 7h2v1h-2zM21 7h3v1h-3zM26 7h1v1h-1zM28 7h1v1h-1zM0 8h1v1h-1zM2 8h5v1h-5zM9 8h1v1h-1zM12 8h4v1h-4zM17 8h1v1h-1zM22 8h5v1h-5zM30 8h5v1h-5zM0 9h2v1h-2zM3 9h1v1h-1zM13 9h1v1h-1zM15 9h2v1h-2zM18 9h4v1h-4zM23 9h1v1h-1zM25 9h1v1h-1zM28 9h2v1h-2zM31 9h1v1h-1zM35 9h1v1h-1zM2 10h5v1h-5zM8 10h1v1h-1zM10 10h3v1h-3zM21 10h2v1h-2zM27 10h2v1h-2zM31 10h1v1h-1zM35 10h2v1h-2zM1 11h1v1h-1zM5 11h1v1h-1zM7 11h2v1h-2zM11 11h1v1h-1zM14 11h1v1h-1zM16 11h1v1h-1zM18 11h5v1h-5zM26 11h1v1h-1zM29 11h1v1h-1zM31 11h1v1h-1zM36 11h1v1h-1zM1 12h3v1h-3zM5 12h2v1h-2zM8 12h1v1h-1zM10 12h1v1h-1zM13 12h1v1h-1zM17 12h1v1h-1zM19 12h1v1h-1zM22 12h1v1h-1zM24 12h4v1h-4zM29 12h2v1h-2zM32 12h5v1h-5zM0 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM13 13h2v1h-2zM16 13h1v1h-1zM19 13h3v1h-3zM23 13h1v1h-1zM25 13h2v1h-2zM31 13h1v1h-1zM0 14h4v1h-4zM5 14h3v1h-3zM9 14h1v1h-1zM13 14h3v1h-3zM20 14h2v1h-2zM27 14h7v1h-7zM35 14h2v1h-2zM4 15h2v1h-2zM9 15h1v1h-1zM11 15h2v1h-2zM18 15h1v1h-1zM21 15h2v1h-2zM24 15h1v1h-1zM30 15h3v1h-3zM35 15h1v1h-1zM1 16h2v1h-2zM6 16h2v1h-2zM12 16h1v1h-1zM14 16h4v1h-4zM19 16h1v1h-1zM22 16h11v1h-11zM34 16h3v1h-3zM0 17h1v1h-1zM2 17h2v1h-2zM7 17h1v1h-1zM12 17h1v1h-1zM15 17h1v1h-1zM18 17h3v1h-3zM23 17h1v1h-1zM28 17h2v1h-2zM31 17h1v1h-1zM34 17h2v1h-2zM3 18h1v1h-1zM6 18h1v1h-1zM9 18h1v1h-1zM11 18h3v1h-3zM15 18h4v1h-4zM20 18h1v1h-1zM22 18h1v1h-1zM24 18h1v1h-1zM26 18h3v1h-3zM33 18h4v1h-4zM0 19h1v1h-1zM2 19h3v1h-3zM7 19h2v1h-2zM10 19h2v1h-2zM15 19h1v1h-1zM20 19h2v1h-2zM24 19h1v1h-1zM30 19h1v1h-1zM32 19h2v1h-2zM36 19h1v1h-1zM2 20h2v1h-2zM6 20h2v1h-2zM9 20h2v1h-2zM12 20h2v1h-2zM15 20h3v1h-3zM22 20h1v1h-1zM24 20h5v1h-5zM30 20h1v1h-1zM32 20h3v1h-3zM1 21h2v1h-2zM4 21h2v1h-2zM7 21h5v1h-5zM13 21h1v1h-1zM16 21h1v1h-1zM19 21h2v1h-2zM22 21h2v1h-2zM25 21h1v1h-1zM28 21h1v1h-1zM33 21h1v1h-1zM0 22h1v1h-1zM2 22h1v1h-1zM4 22h1v1h-1zM6 22h3v1h-3zM12 22h2v1h-2zM15 22h2v1h-2zM22 22h1v1h-1zM24 22h1v1h-1zM26 22h3v1h-3zM31 22h3v1h-3zM35 22h2v1h-2zM1 23h1v1h-1zM3 23h1v1h-1zM5 23h1v1h-1zM7 23h2v1h-2zM11 23h6v1h-6zM19 23h1v1h-1zM21 23h1v1h-1zM23 23h1v1h-1zM26 23h1v1h-1zM31 23h2v1h-2zM35 23h2v1h-2zM0 24h2v1h-2zM6 24h4v1h-4zM11 24h1v1h-1zM13 24h3v1h-3zM17 24h1v1h-1zM22 24h2v1h-2zM25 24h6v1h-6zM32 24h1v1h-1zM34 24h1v1h-1zM36 24h1v1h-1zM0 25h4v1h-4zM5 25h1v1h-1zM8 25h1v1h-1zM11 25h6v1h-6zM19 25h3v1h-3zM23 25h1v1h-1zM25 25h1v1h-1zM28 25h1v1h-1zM31 25h1v1h-1zM34 25h1v1h-1zM0 26h1v1h-1zM4 26h1v1h-1zM6 26h4v1h-4zM12 26h1v1h-1zM20 26h3v1h-3zM27 26h3v1h-3zM31 26h2v1h-2zM34 26h3v1h-3zM0 27h1v1h-1zM3 27h1v1h-1zM5 27h1v1h-1zM7 27h2v1h-2zM10 27h4v1h-4zM16 27h1v1h-1zM19 27h3v1h-3zM23 27h1v1h-1zM27 27h1v1h-1zM29 27h2v1h-2zM35 27h2v1h-2zM0 28h1v1h-1zM2 28h1v1h-1zM5 28h2v1h-2zM8 28h2v1h-2zM11 28h1v1h-1zM17 28h1v1h-1zM20 28h1v1h-1zM22 28h11v1h-11zM34 28h1v1h-1zM36 28h1v1h-1zM8 29h1v1h-1zM11 29h4v1h-4zM16 29h1v1h-1zM18 29h3v1h-3zM23 29h2v1h-2zM26 29h1v1h-1zM28 29h1v1h-1zM32 29h2v1h-2zM0 30h7v1h-7zM10 30h1v1h-1zM12 30h1v1h-1zM14 30h2v1h-2zM17 30h2v1h-2zM21 30h2v1h-2zM24 30h1v1h-1zM26 30h1v1h-1zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h3v1h-3zM0 31h1v1h-1zM6 31h1v1h-1zM8 31h1v1h-1zM11 31h2v1h-2zM15 31h2v1h-2zM18 31h2v1h-2zM21 31h1v1h-1zM23 31h2v1h-2zM26 31h1v1h-1zM28 31h1v1h-1zM32 31h2v1h-2zM36 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM8 32h3v1h-3zM12 32h4v1h-4zM17 32h2v1h-2zM22 32h1v1h-1zM24 32h9v1h-9zM34 32h2v1h-2zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM8 33h1v1h-1zM13 33h3v1h-3zM17 33h5v1h-5zM23 33h2v1h-2zM28 33h3v1h-3zM32 33h2v1h-2zM35 33h2v1h-2zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM8 34h2v1h-2zM11 34h1v1h-1zM13 34h5v1h-5zM20 34h3v1h-3zM24 34h1v1h-1zM26 34h1v1h-1zM29 34h1v1h-1zM34 34h3v1h-3zM0 35h1v1h-1zM6 35h1v1h-1zM10 35h5v1h-5zM16 35h1v1h-1zM18 35h1v1h-1zM21 35h3v1h-3zM26 35h4v1h-4zM32 35h1v1h-1zM36 35h1v1h-1zM0 36h7v1h-7zM8 36h2v1h-2zM13 36h2v1h-2zM16 36h2v1h-2zM20 36h1v1h-1zM22 36h5v1h-5zM29 36h2v1h-2zM32 36h5v1h-5z"};
+const gQR = el('g', { id: 'qr', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code ausblenden' });        // zuletzt angelegt:
+const gQRPlatz = el('g', { id: 'qr-platz', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code anzeigen' }); // liegen über allem
+const QR_BOX = QR && (() => {
+  const m = 6, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
+  gQR.dataset.url = QR.url;
+  el('title', {}, gQR).textContent = 'Klicken: QR-Code ausblenden';
+  el('rect', { x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1 }, gQR);
+  el('path', { d: QR.d, fill: '#000', transform: `translate(${x0 + q} ${y0 + q}) scale(${m})`, 'shape-rendering': 'crispEdges' }, gQR);
+  txt(x0 + w / 2, y0 + w + 26, 'Am eigenen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  txt(x0 + w / 2, y0 + w + 52, 'Gerät öffnen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  // Platzhalter, rechts oben bündig mit dem QR-Code: gestrichelter Rahmen, Symbol (drei Suchmuster und einige
+  // Module – kein lesbarer Code), darunter „QR-Code“
+  const p = 96, px = 1900 - p, s = 3, o = Math.round((p - 21 * s) / 2);
+  el('title', {}, gQRPlatz).textContent = 'Klicken: QR-Code anzeigen';
+  el('rect', { x: px, y: y0, width: p, height: p, rx: 8, fill: '#fff', stroke: '#9aa3ad', 'stroke-width': 2, 'stroke-dasharray': '8 6' }, gQRPlatz);
+  let d = '';
+  for (const [cx, cy] of [[0, 0], [14, 0], [0, 14]]) d += `M${cx} ${cy}h7v7h-7zM${cx + 1} ${cy + 1}v5h5v-5zM${cx + 2} ${cy + 2}h3v3h-3z`;
+  for (const [x, y] of [[9, 1], [11, 2], [9, 4], [12, 4], [10, 6], [12, 8], [8, 9], [10, 10], [14, 9], [16, 10], [18, 9], [20, 11], [1, 9], [3, 10], [5, 9],
+    [2, 12], [9, 12], [11, 13], [15, 14], [17, 15], [19, 16], [14, 17], [16, 19], [18, 18], [20, 20], [9, 15], [11, 17], [9, 19], [12, 20]]) d += `M${x} ${y}h1v1h-1z`;
+  el('path', { d, fill: '#5b6570', 'fill-rule': 'evenodd', transform: `translate(${px + o} ${y0 + o}) scale(${s})`, 'shape-rendering': 'crispEdges' }, gQRPlatz);
+  txt(px + p / 2, y0 + p + 28, 'QR-Code', { class: 'qr-cap', 'text-anchor': 'middle' }, gQRPlatz);
+  return { x0, y0, w };
+})();
+const qrGross = () => window.innerWidth >= 800, qrExport = () => document.documentElement.classList.contains('export');
+function qrSichtbar() { return !!QR && S.qr && (qrGross() || qrExport()); }
+function qrPlatzSichtbar() { return !!QR && !S.qr && qrGross() && !qrExport(); }
+function qrUmschalten() {
+  S.qr = !S.qr; render();
+  const z = S.qr ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({ preventScroll: true });
+}
+for (const g of [gQR, gQRPlatz]) {
+  g.addEventListener('click', qrUmschalten);
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
+}
+
+/* ================= 6 Darstellung: Zustand → Bild ================= */
+const zeige = (e, an) => { e.style.display = an ? '' : 'none'; };
+const weniger = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const trichter = (d) => (d <= D.r0 ? 1 : d >= D.R ? 0 : (D.r0 / d - D.r0 / D.R) / (1 - D.r0 / D.R));
+let teilungFuer = null;
+/* Alles, was vom Zustand abhängt (nach jedem Eingriff). Die Laufmarken bewegt bewegt(). */
+function render() {
+  M = model(eingaben());
+  const m = M, bereich = S.lupe ? CFG.diag.voll / CFG.diag.lupe : CFG.diag.voll, k = (D.Y0 - D.YT) / bereich;   // k: px je V im Diagramm
+  gQR.style.display = qrSichtbar() ? '' : 'none';
+  gQRPlatz.style.display = qrPlatzSichtbar() ? '' : 'none';
+  titel.setAttribute('x', (qrSichtbar() || qrPlatzSichtbar()) ? QR_BOX.x0 - 60 : 1872);   // springt beim Umschalten nicht
+
+  // Schaltung
+  blade.setAttribute('transform', `rotate(${st.laden ? 0 : -27} ${AUTO.xs} ${YWZ})`);
+  zeige(penGanz, st.pen); zeige(penBruch, !st.pen); zeige(lPenBruch, !st.pen);
+  zeige(gErder, st.erder);
+  lErderName.textContent = st.erder ? 'Anlagenerder' : 'Anlagenerder fehlt';
+  lRA.innerHTML = st.erder ? gegeben('R', 'A', st.RA, 'Ω') : '';
+  const nah = nahAmErder(), r0 = r0von(st.RA);
+  zeige(fussNah, nah); zeige(fussWeit, !nah);
+  lStandort.innerHTML = !isFinite(st.DS) ? 'Standort: weit weg, auf Bezugserde' : `Standort: ${I('d')} = ${fmtGeg(st.DS, 'm')} neben dem ${st.erder ? 'Erder' : 'Haus'}`;
+  lOrtHaus.innerHTML = !st.erder ? 'Haus' : nah ? `Anlagenerder: Halbkugel mit ${I('r')}${SUB('0', 22, ' = ' + fmtLauf(r0, 'm'))}` : 'Anlagenerder';
+  lOrtPerson.textContent = nah ? 'Person steht im Trichter des Erders' : st.erder ? 'Person steht weit weg auf Bezugserde' : 'Ohne Erder kein Trichter: Standort auf Erdpotential';
+  lRL.innerHTML = gegeben('R', 'L', st.RL, 'Ω'); lRP.innerHTML = gegeben('R', 'PEN', st.RL, 'Ω');
+  hinwRL.textContent = st.RL > 0.3 ? 'Leiterwiderstand überhöht, real etwa 0,02 bis 0,3 Ω' : 'Leiterwiderstand in realer Größe (etwa 0,02 bis 0,3 Ω)';
+  const pNenn = CFG.U0 * CFG.U0 / CFG.RV, anteil = m.P_V / pNenn;
+  autoWarm.setAttribute('opacity', (0.4 * Math.min(1, anteil)).toFixed(3));
+  lLaden.textContent = !st.laden ? 'Laden aus' : anteil >= 0.5 ? 'lädt' : anteil >= 0.03 ? 'lädt kaum' : 'lädt nicht';   // kurze Texte: Sie müssen ins Auto passen
+  arm.setAttribute('x2', st.person ? BER.x : XP - 42); arm.setAttribute('y2', st.person ? BER.y : 532);
+  const sIK = st.person ? stufe(m.I_K) : 0;
+  lWirkung.textContent = st.person ? (m.I_K < 1e-6 ? 'kein Körperstrom' : CFG.stufen[sIK].text) : '';
+  lWirkung.setAttribute('font-weight', st.person && m.I_K >= 50e-3 ? 700 : 400);
+  zeige(gBlitz, st.person && m.I_K >= 50e-3);
+
+  // Zählpfeile: Länge ∝ Wert. Beschriftung nur, wenn der Pfeil zu sehen ist oder „Zahlenwerte“ an ist.
+  const paar = (pfeil, lbl, laenge, html, zweigDa = true, nichtNull = true) => { pfeil.set(laenge); zeige(pfeil.g, zweigDa); zeige(lbl, zweigDa && (nichtNull || S.werte)); lbl.innerHTML = html; };
+  const iDa = (i) => i > CFG.marken.imin, uDa = (u) => Math.abs(u) > 0.05;
+  const upaar = (g, lbl, wert, html) => { const an = uDa(wert) || S.werte; zeige(g, an); zeige(lbl, an); lbl.innerHTML = html; };
+  upaar(gUV, lUV, m.U_V, beschr('U', 'Auto', m.U_V, 'V'));
+  upaar(gUPEN, lUPEN, m.U_PEN, beschr('U', 'PEN', m.U_PEN, 'V'));
+  const ubAn = m.bezug && (uDa(m.U_B) || S.werte);                            // auch ohne Berührung: die Spannung liegt an der Berührstelle
+  zeige(gUBs, ubAn); zeige(lUBs, ubAn); lUBs.innerHTML = beschr('U', 'B', m.U_B, 'V');
+  paar(pIL, lIL, m.I_L * CFG.skalaI, beschr('I', 'L', m.I_L, 'A'), true, iDa(m.I_L));
+  paar(pIPEN, lIPEN, m.I_PEN * CFG.skalaI, beschr('I', 'PEN', m.I_PEN, 'A'), true, iDa(m.I_PEN));
+  paar(pIB, lIB, m.I_B * CFG.skalaI, beschr('I', 'B', m.I_B, 'A'), true, iDa(m.I_B));
+  paar(pIA, lIA, m.I_A * CFG.skalaI, beschr('I', 'A', m.I_A, 'A'), st.erder, iDa(m.I_A));
+  paar(pIK, lIK, m.I_K * CFG.skalaI * CFG.ikFaktor, beschr('I', 'K', m.I_K, 'A'), st.person, iDa(m.I_K));
+  zeige(lIKmass, st.person && m.I_K * CFG.skalaI * CFG.ikFaktor >= 4);
+
+  // Potentialdiagramm (ausblendbar, Festlegung der Lehrkraft 22.11.2026)
+  zeige(gDiag, S.diag);
+  const yVon = (v) => Math.min(D.YU, Math.max(D.YT, D.Y0 - v * k)), ab = (v) => D.Y0 - v * k < D.YT - 0.5 || D.Y0 - v * k > D.YU + 0.5;
+  const yG = D.Y0 - CFG.UL * k, grenzeAn = S.grenze && yG >= D.YT;            // Grenzlinie U_L
+  const frei = (y) => (grenzeAn && yG > y - 27 && yG < y + 9 ? yG - 10 : y);   // Beschriftung über die Grenzlinie heben, wenn diese sonst durch den Text liefe
+  lErdOb.setAttribute('y', frei(D.Y0 - 18));
+  if (teilungFuer !== bereich) {                                              // Teilung der φ-Achse
+    teilungFuer = bereich; gTeil.innerHTML = '';
+    const schritt = bereich / 4.6;                                            // 230 V → 50 V, 23 V → 5 V
+    for (let v = 0; v <= bereich + 1e-9; v += schritt) {
+      const y = D.Y0 - v * k;
+      el('line', { x1: D.x0 - 8, y1: y, x2: D.x0, y2: y, stroke: C.ink, 'stroke-width': 2 }, gTeil);
+      txt(D.x0 - 14, y + 8, fmtGeg(v, 'V'), { class: 'lbl-xs', 'text-anchor': 'end' }, gTeil);
+    }
+  }
+  /* Erdoberfläche: links der Unterbrechung der Trichter am Betriebserder (qualitativ), rechts der am Anlagenerder.
+     Steht die Person nah am Erder, ist der rechte Teil maßstäblich: Halbkugelerder, φ_E = φ_PE · r_0/(r_0 + Abstand vom Rand).
+     Der Maßstab kx (px je m) ist so gewählt, dass der Standort bei der Figur liegt (x = XP). */
+  const phiA = st.erder && m.bezug ? m.phi_PE : 0, mass = nah && m.bezug;       // Trichter am Haus nur mit Anlagenerder
+  const DP = XP - XH, kx = DP / (r0 + st.DS), rpx = r0 * kx, fSt = r0 / (r0 + st.DS);
+  const phiHaus = (x) => {
+    const dist = Math.abs(x - XH);
+    if (!mass) return phiA * trichter(dist);
+    const g = dist <= rpx ? 1 : rpx / dist;
+    return dist <= DP ? m.phi_PE - (m.phi_PE - m.phi_St) * (1 - g) / (1 - fSt) : m.phi_St * DP / dist;
+  };
+  let pl = '', pr = '';
+  for (let x = D.x0; x <= XBK - 14; x += 2) pl += `${x},${yVon(m.phi_S * trichter(Math.abs(x - XQ))).toFixed(1)} `;
+  for (let x = XBK + 14; x <= D.x1 - 12; x += 2) pr += `${x},${yVon(phiHaus(x)).toFixed(1)} `;
+  potLinks.setAttribute('points', pl); potLinie.setAttribute('points', pr);
+  zeige(erdBalken, mass); zeige(gMass, mass);
+  if (mass) {
+    const xl = Math.max(XBK + 14, XH - rpx), xr = XH + rpx, ym = D.Y0 + 32, eng = XP - xr < 120;   // enge Maßlinie: Beschriftung rechts daneben
+    erdBalken.setAttribute('x', xl); erdBalken.setAttribute('width', xr - xl);
+    massLinie.setAttribute('d', `M ${xr} ${ym} L ${XP} ${ym} M ${xr} ${ym - 7} L ${xr} ${ym + 7} M ${XP} ${ym - 7} L ${XP} ${ym + 7}`);
+    lMass.innerHTML = `${I('d')} = ${fmtGeg(st.DS, 'm')}`;
+    lMass.setAttribute('x', eng ? XP + 12 : (xr + XP) / 2); lMass.setAttribute('y', D.Y0 + 26); lMass.setAttribute('text-anchor', eng ? 'start' : 'middle');
+  }
+  const yS = yVon(m.phi_S);
+  markS.setAttribute('y1', yS); markS.setAttribute('y2', yS); markS.setAttribute('stroke-dasharray', ab(m.phi_S) ? '10 9' : '');
+  lPhiS.innerHTML = beschr('φ', 'S', m.phi_S, 'V', ab(m.phi_S) ? ' ↓' : '');
+  lPhiS.setAttribute('y', yS > D.Y0 + 0.5 ? Math.max(yS + 10, D.Y0 + 38) : frei(D.Y0 - 16));
+  zeige(markPE, m.bezug); zeige(gUB, ubAn);
+  if (m.bezug) {
+    const yPE = yVon(m.phi_PE), cut = ab(m.phi_PE);
+    markPE.setAttribute('y1', yPE); markPE.setAttribute('y2', yPE); markPE.setAttribute('stroke-dasharray', cut ? '10 9' : '');
+    lPhiPE.innerHTML = beschr('φ', 'PE', m.phi_PE, 'V', cut ? ' ↑' : '');
+    lPhiPE.setAttribute('class', 'lbl c-u halo');
+    lPhiPE.setAttribute('y', frei(yPE - 16));
+    const ySt = yVon(m.phi_St);                                               // Erdoberfläche am Standort der Person
+    const L = ySt - yPE, hl = Math.min(24, Math.max(L * 0.6, Math.min(L, 12))), hw = Math.max(9 * hl / 24, Math.min(4.5, L * 0.6));       // U_B: von der Marke φ_PE hinab zur Erdoberfläche am Standort
+    ubLinie.setAttribute('y1', yPE); ubLinie.setAttribute('y2', ySt - Math.max(hl - 1, 0));
+    ubSpitze.setAttribute('points', arrowHead(XP, ySt, 0, 1, hl, hw));
+    gUB.style.visibility = L >= 4 ? '' : 'hidden';
+    zeige(lUB, ubAn);
+    lUB.innerHTML = beschr('U', 'B', m.U_B, 'V', cut ? ' ↑' : '');
+    lUB.setAttribute('y', frei(Math.min((yPE + ySt) / 2 + 10, ySt - 16)));
+  } else {
+    lPhiPE.innerHTML = `${I('φ')}${SUB('PE', 30, ': unbestimmt (ohne Bezug)')}`;
+    lPhiPE.setAttribute('class', 'lbl halo muted');
+    lPhiPE.setAttribute('y', frei(D.Y0 - 16));
+    zeige(lUB, false);
+  }
+  const clip = S.lupe && (ab(m.phi_S) || (m.bezug && ab(m.phi_PE)));
+  lLupe.textContent = S.lupe ? `Lupe ×${CFG.diag.lupe}` + (clip ? `: Werte über ${fmtGeg(bereich, 'V')} sind abgeschnitten` : '') : mass ? 'Trichter am Haus maßstäblich (Halbkugelerder), links der Unterbrechung nicht' : 'Höhe der Trichter maßstäblich, Form qualitativ';
+  zeige(gGrenze, grenzeAn);
+  grenzLinie.setAttribute('y1', yG); grenzLinie.setAttribute('y2', yG); lGrenze.setAttribute('y', yG - 12);
+
+  texte(); bedienung(); bewegt();
+}
+/* Bewegte Teile: Laufmarken, bei gefährlichem Körperstrom Zittern der Figur und Flackern der Blitze (nur Zeichnung). */
+function bewegt() {
+  const m = M;
+  for (const [name, z] of Object.entries(ZWEIGE)) {
+    const an = S.fluss && z.strom(m) > CFG.marken.imin, off = lauf.off[name] || 0;
+    z.marken.forEach((e, k) => {
+      const s = off + k * CFG.marken.abstand;
+      if (!an || s > z.p.L) { e.style.display = 'none'; return; }
+      const q = aufPfad(z.p, s);
+      e.style.display = ''; e.setAttribute('transform', `translate(${q.x.toFixed(1)} ${q.y.toFixed(1)}) rotate(${q.w.toFixed(1)})`);
+    });
+  }
+  const stark = st.person && m.I_K >= 20e-3 && !S.paused && !weniger;         // ab 20 mA: Muskeln verkrampfen
+  gPers.setAttribute('transform', stark ? `translate(${(1.8 * Math.sin(lauf.t * 47)).toFixed(2)} ${(1.2 * Math.sin(lauf.t * 61 + 1)).toFixed(2)})` : '');
+  gBlitz.setAttribute('opacity', st.person && m.I_K >= 50e-3 && !S.paused && !weniger ? (Math.sin(lauf.t * 19) > -0.3 ? 1 : 0.35) : 1);
+}
+
+/* ----- Texte unter der Bühne: Erklärung, Formeln, Berechnung, Werte – einzeln zuschaltbar, beim Öffnen aus ----- */
+const fz = (z, idx) => `<i>${z}</i>` + (idx ? `<sub>${idx}</sub>` : '');
+const bruch = (z, n) => `<span class="fr"><span>${z}</span><span>${n}</span></span>`;
+const hw = (s) => s.replace(' ', '&#8239;');                                   // schmales Leerzeichen zwischen Zahl und Einheit
+const E = (v, e) => hw(fmtErg(v, e)), Gg = (v, e) => hw(fmtGeg(v, e));
+/* Rechenweg für den aktuellen Zustand: je Zeile [gesuchte Größe, Formel, eingesetzte Werte, Ergebnis] oder ein Satz.
+   Formel → Werte → Ergebnis (fachkonventionen 2); Zwischenergebnisse gerundet angeschrieben, gerechnet wird genau. */
+function rechenweg(m) {
+  const { U0, RL, RP, RV, RB, RA, RK, f } = eingaben(), Z = [], nah = nahAmErder(), r0 = r0von(RA);
+  const U = fz('U', '0'), rl = fz('R', 'L'), rh = fz('R', 'Auto'), rp = fz('R', 'PEN'), rb = fz('R', 'B'), il = fz('I', 'L'), fpe = fz('φ', 'PE'), fs = fz('φ', 'S');
+  if (!m.bezug) return [{ satz: `Laden aus, PEN unterbrochen, kein Anlagenerder: Der Schutzleiter hat keine leitende Verbindung zur Erde oder zum Sternpunkt. ${fpe} ist unbestimmt.` }];
+  if (!st.laden) {
+    Z.push({ satz: `Laden aus: ${il} = 0&#8239;A. Ohne Strom gibt es keinen Spannungsfall, also ${fpe} = ${fs} = 0&#8239;V.` });
+    if (st.person) Z.push([fz('I', 'K'), bruch(fz('U', 'B'), fz('R', 'K')), bruch('0&#8239;V', Gg(RK, 'Ω')), '0&#8239;A']);
+    return Z;
+  }
+  const erdweg = st.erder || st.person;
+  let rak = '', RAK = Infinity, RX = 0;                                        // Widerstand von H zur Bezugserde · Teil, den die Person abgreift
+  const ra1 = fz('R', 'A1'), ra2 = fz('R', 'A2'), rx = fz('R', 'X'), d = fz('d'), rn = fz('r', '0');
+  if (nah) {                                                                   // Standort im Trichter: R_A teilt sich in R_A1 und R_A2
+    const R1 = (1 - f) * RA, R2 = f * RA;
+    Z.push([rn, bruch(fz('ρ'), `2π · ${fz('R', 'A')}`), bruch(Gg(CFG.rho, 'Ωm'), `2π · ${Gg(RA, 'Ω')}`), E(r0, 'm'), 'Ersatzradius des Erders als Halbkugel']);
+    Z.push([ra1, `${fz('R', 'A')} · ` + bruch(d, `${rn} + ${d}`), `${Gg(RA, 'Ω')} · ` + bruch(Gg(st.DS, 'm'), `${E(r0, 'm')} + ${Gg(st.DS, 'm')}`), E(R1, 'Ω'), 'Erdungswiderstand zwischen Erder und Standort']);
+    Z.push([ra2, `${fz('R', 'A')} − ${ra1}`, `${Gg(RA, 'Ω')} − ${E(R1, 'Ω')}`, E(R2, 'Ω'), 'zwischen Standort und Bezugserde']);
+    if (st.person) {
+      RX = R1 * RK / (R1 + RK); RAK = RX + R2; rak = fz('R', 'AK');
+      Z.push([rx, bruch(`${ra1} · ${fz('R', 'K')}`, `${ra1} + ${fz('R', 'K')}`), bruch(`${E(R1, 'Ω')} · ${Gg(RK, 'Ω')}`, `${E(R1, 'Ω')} + ${Gg(RK, 'Ω')}`), E(RX, 'Ω'), 'Person parallel zu ' + ra1]);
+      Z.push([rak, `${rx} + ${ra2}`, `${E(RX, 'Ω')} + ${E(R2, 'Ω')}`, E(RAK, 'Ω'), 'vom Schutzleiter zur Bezugserde']);
+    } else { RX = R1; RAK = RA; rak = fz('R', 'A'); }
+  } else if (st.erder && st.person) {
+    RAK = RA * RK / (RA + RK); rak = fz('R', 'AK');
+    Z.push([rak, bruch(`${fz('R', 'A')} · ${fz('R', 'K')}`, `${fz('R', 'A')} + ${fz('R', 'K')}`), bruch(`${Gg(RA, 'Ω')} · ${Gg(RK, 'Ω')}`, `${Gg(RA, 'Ω')} + ${Gg(RK, 'Ω')}`), E(RAK, 'Ω'), 'Anlagenerder und Person parallel']);
+  } else if (st.erder) { RAK = RA; rak = fz('R', 'A'); } else if (st.person) { RAK = RK; rak = fz('R', 'K'); }
+  const wAK = st.erder && st.person ? E(RAK, 'Ω') : Gg(RAK, 'Ω'), wX = E(RX, 'Ω');
+  if (st.pen && !erdweg) {
+    Z.push([il, bruch(U, `${rl} + ${rh} + ${rp}`), bruch(Gg(U0, 'V'), `${Gg(RL, 'Ω')} + ${Gg(RV, 'Ω')} + ${Gg(RP, 'Ω')}`), E(m.I_L, 'A')]);
+    Z.push([fz('U', 'PEN'), `${il} · ${rp}`, `${E(m.I_L, 'A')} · ${Gg(RP, 'Ω')}`, E(m.U_PEN, 'V'), 'Spannung an ' + rp]);
+    Z.push([fpe, fz('U', 'PEN'), '', E(m.phi_PE, 'V'), 'über die Erde fließt kein Strom, also ' + fs + ' = 0&#8239;V']);
+  } else if (st.pen && erdweg) {
+    const RE = RAK + RB, RR = RP * RE / (RP + RE), UP = m.phi_PE - m.phi_S, re = fz('R', 'E'), rr = fz('R', 'Rück'), up = fz('U', 'PEN');
+    Z.push([re, `${rak} + ${rb}`, `${wAK} + ${Gg(RB, 'Ω')}`, E(RE, 'Ω'), 'Rückweg über die Erde']);
+    Z.push([rr, bruch(`${rp} · ${re}`, `${rp} + ${re}`), bruch(`${Gg(RP, 'Ω')} · ${E(RE, 'Ω')}`, `${Gg(RP, 'Ω')} + ${E(RE, 'Ω')}`), E(RR, 'Ω'), 'PEN und Erdweg parallel']);
+    Z.push([il, bruch(U, `${rl} + ${rh} + ${rr}`), bruch(Gg(U0, 'V'), `${Gg(RL, 'Ω')} + ${Gg(RV, 'Ω')} + ${E(RR, 'Ω')}`), E(m.I_L, 'A')]);
+    Z.push([up, `${il} · ${rr}`, `${E(m.I_L, 'A')} · ${E(RR, 'Ω')}`, E(UP, 'V'), 'Spannung an ' + rp]);
+    Z.push([fpe, `${up} · ` + bruch(rak, `${rak} + ${rb}`), `${E(UP, 'V')} · ` + bruch(wAK, `${wAK} + ${Gg(RB, 'Ω')}`), E(m.phi_PE, 'V'), 'Spannungsteiler auf dem Erdweg']);
+    Z.push([fs, `${fpe} − ${up}`, `${E(m.phi_PE, 'V')} − ${E(UP, 'V')}`, E(m.phi_S, 'V')]);
+  } else if (erdweg) {
+    Z.push([il, bruch(U, `${rl} + ${rh} + ${rak} + ${rb}`), bruch(Gg(U0, 'V'), `${Gg(RL, 'Ω')} + ${Gg(RV, 'Ω')} + ${wAK} + ${Gg(RB, 'Ω')}`), E(m.I_L, 'A'), 'Rückweg nur über die Erde']);
+    Z.push([fpe, `${il} · ${rak}`, `${E(m.I_L, 'A')} · ${wAK}`, E(m.phi_PE, 'V')]);
+    Z.push([fs, `−${il} · ${rb}`, `−${E(m.I_L, 'A')} · ${Gg(RB, 'Ω')}`, E(m.phi_S, 'V')]);
+  } else {
+    Z.push({ satz: `Kein geschlossener Stromkreis: ${il} = 0&#8239;A. An ${rl} und ${rh} fällt keine Spannung ab.` });
+    Z.push([fpe, U, '', Gg(U0, 'V'), 'der Schutzleiter liegt über das Ladegerät des Autos am Außenleiter']);
+  }
+  Z.push([fz('U', 'Auto'), `${il} · ${rh}`, `${E(m.I_L, 'A')} · ${Gg(RV, 'Ω')}`, E(m.U_V, 'V')]);
+  if (nah && st.person) {
+    Z.push([fz('U', 'B'), `${fpe} · ` + bruch(rx, rak), `${E(m.phi_PE, 'V')} · ` + bruch(wX, wAK), E(m.U_B, 'V'), 'die Person greift nur die Spannung an ' + rx + ' ab']);
+    Z.push([fz('I', 'K'), bruch(fz('U', 'B'), fz('R', 'K')), bruch(E(m.U_B, 'V'), Gg(RK, 'Ω')), E(m.I_K, 'A')]);
+  } else if (nah) {
+    Z.push([fz('φ', 'St'), `${fpe} · ` + bruch(rn, `${rn} + ${d}`), `${E(m.phi_PE, 'V')} · ` + bruch(E(r0, 'm'), `${E(r0, 'm')} + ${Gg(st.DS, 'm')}`), E(m.phi_St, 'V'), 'Potential des Erdreichs am Standort']);
+    Z.push([fz('U', 'B'), `${fpe} − ${fz('φ', 'St')}`, `${E(m.phi_PE, 'V')} − ${E(m.phi_St, 'V')}`, E(m.U_B, 'V'), 'zu erwartende Berührungsspannung']);
+  } else if (st.person) {
+    Z.push([fz('U', 'B'), fpe, '', E(m.U_B, 'V'), st.erder ? 'die Person steht auf Bezugserde' : 'ohne Erder kein Trichter: Der Standort hat Erdpotential']);
+    Z.push([fz('I', 'K'), bruch(fz('U', 'B'), fz('R', 'K')), bruch(E(m.U_B, 'V'), Gg(RK, 'Ω')), E(m.I_K, 'A')]);
+  }
+  return Z;
+}
+function erklaerung(m) {
+  if (!m.bezug) return ['Schutzleiter ohne Bezug', 'Der PEN ist unterbrochen, einen Anlagenerder gibt es nicht und kein Verbraucher ist eingeschaltet. Der Schutzleiter hat keine Verbindung mehr zur Erde. Sein Potential ist unbestimmt – und niemand merkt es.'];
+  let t, s;
+  if (!st.laden) {
+    t = 'Kein Laststrom: Schutzleiter auf Erdpotential';
+    s = 'Ohne Laststrom gibt es keinen Spannungsfall. Der Schutzleiter liegt auf dem Potential der Bezugserde.' + (st.pen ? '' : ' Der unterbrochene PEN bleibt unbemerkt, bis ein Verbraucher eingeschaltet wird.');
+  } else if (st.pen && st.erder) {
+    t = 'PEN intakt, Anlagenerder vorhanden';
+    s = 'Fast der ganze Strom fließt über den PEN zurück. Die Spannung an ' + fz('R', 'PEN') + ' hebt das Potential des Schutzleiters an. Ein kleiner Teil des Stroms fließt über Anlagenerder, Erde und Betriebserder – deshalb gibt es zwei kleine Potentialtrichter.';
+  } else if (st.pen) {
+    t = 'PEN intakt, kein Anlagenerder';
+    s = (st.person ? 'Fast der' : 'Der') + ' ganze Strom fließt über den PEN zurück. Die Spannung an ' + fz('R', 'PEN') + ' liegt als Potential am Schutzleiter. Am Haus gibt es keinen Trichter, weil dort kein Strom in die Erde fließt.';
+  } else if (st.erder) {
+    t = 'PEN-Bruch: Rückweg nur über die Erde';
+    s = 'Der Strom fließt über Anlagenerder, Erde und Betriebserder zurück. Die Netzspannung teilt sich auf Auto, Anlagenerder und Betriebserder auf. '
+      + (m.phi_PE > CFG.UL ? `Am Anlagenerder bleiben mehr als ${Gg(CFG.UL, 'V')}: Der Erder allein macht den Schutzleiter nicht spannungsfrei.` : 'Am Anlagenerder bleibt eine Spannung: Der Erder senkt das Potential des Schutzleiters, spannungsfrei macht er ihn nicht.');
+  } else if (!st.person) {
+    t = 'PEN-Bruch ohne Anlagenerder: volle Spannung am Schutzleiter';
+    s = 'Es gibt keinen geschlossenen Stromkreis, das Auto lädt nicht. Über das Ladegerät liegt der Schutzleiter am Außenleiter. Jeder Schutzkontakt und die Karosserie des Autos haben die volle Netzspannung gegen Erde, ohne dass es jemand merkt.';
+  } else {
+    t = 'PEN-Bruch ohne Anlagenerder: Strom durch den Körper';
+    s = 'Die Person schließt den Stromkreis. Der ganze Strom fließt durch ihren Körper zur Erde, fast die volle Netzspannung liegt als Berührungsspannung an.';
+  }
+  if (st.laden && nahAmErder()) s += ` Die Person steht ${hw(fmtGeg(st.DS, 'm'))} neben dem Erder und damit im Potentialtrichter: Das Erdreich unter ihren Füßen ist auf ${fz('φ', 'St')} angehoben. Als Berührungsspannung bleibt nur der Unterschied ${fz('U', 'B')} = ${fz('φ', 'PE')} − ${fz('φ', 'St')}.`;
+  else if (st.laden && !st.erder && isFinite(st.DS)) s += ' Ohne Anlagenerder gibt es keinen Trichter: Das Erdreich am Standort bleibt auf Erdpotential, die ganze Spannung des Schutzleiters liegt als Berührungsspannung an.';
+  if (st.person && st.laden) {
+    const k = stufe(m.I_K);
+    s += ' ' + ['Die Person spürt nichts.', 'Die Person spürt ein Kribbeln.', 'Der Körperstrom erreicht die Loslassgrenze.', 'Die Muskeln verkrampfen, die Person kann nicht mehr loslassen.',
+      'Lebensgefahr: Herzkammerflimmern ist möglich.', 'Lebensgefahr: Ein solcher Strom ist häufig tödlich.'][k];
+    if (st.pen && k >= 2 && st.RL > 0.3) s += ` Das liegt am überhöhten Leiterwiderstand: Mit ${fz('R', 'Ltg')} = 0,1&#8239;Ω wären es ${hw(fmtLauf(model({ ...eingaben(), RL: 0.1, RP: 0.1 }).I_K, 'A'))}.`;
+  }
+  return [t, s];
+}
+function texte() {
+  const m = M, [t, s] = erklaerung(m);
+  $('pTitle').textContent = t; $('pText').innerHTML = s;
+  $('pTitle').hidden = $('pText').hidden = !S.erkl;
+  const zeilen = (S.rech || S.form) ? rechenweg(m).map((z) => {
+    if (z.satz) return `<div>${z.satz}</div>`;
+    const [gr, formel, werte, erg, anm] = z;
+    const kern = S.rech ? `${gr} = ${formel}${werte ? ' = ' + werte : ''} = ${erg}` : `${gr} = ${formel}`;
+    return `<div>${kern}${anm ? ` <span class="anm">(${anm})</span>` : ''}</div>`;
+  }) : [];
+  if (S.rech && zeilen.length > 1) zeilen.push('<div class="anm">Zwischenergebnisse sind gerundet angeschrieben, gerechnet wird mit den genauen Werten.</div>');
+  $('pForm').innerHTML = zeilen.join(''); $('pForm').hidden = !zeilen.length;
+  const w = (v, e) => (v === null ? 'unbestimmt' : hw(mitMinusHtml(fmtWert(v, e))));
+  $('vals').innerHTML = [
+    [fz('φ', 'PE'), w(m.phi_PE, 'V')], [fz('φ', 'S'), w(m.phi_S, 'V')], [fz('φ', 'St'), w(m.bezug ? m.phi_St : null, 'V')], [fz('I', 'L'), w(m.I_L, 'A')], [fz('I', 'PEN'), w(m.I_PEN, 'A')],
+    [fz('I', 'A'), w(m.I_A, 'A')], [fz('I', 'B'), w(m.I_B, 'A')], [fz('I', 'K'), st.person ? w(m.I_K, 'A') : '–'],
+    [fz('U', 'B'), w(m.U_B, 'V')], [fz('U', 'PEN'), w(m.U_PEN, 'V')], [fz('U', 'Auto'), w(m.U_V, 'V')], [fz('P', 'Auto'), w(m.P_V, 'W')],
+  ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+  $('valsCard').hidden = !S.werte;
+  const links = S.erkl || zeilen.length > 0;
+  $('pTitle').parentElement.hidden = !links;
+  $('info').hidden = !(links || S.werte);
+  $('info').style.gridTemplateColumns = links && S.werte ? '' : '1fr';
+}
+const mitMinusHtml = (f) => f;                                                 // Tabelle: Minus bleibt schlicht
+/* Bedienleiste an den Zustand angleichen */
+function bedienung() {
+  $('bAct').textContent = st.laden ? 'Laden stoppen' : 'Laden starten';
+  $('bPause').textContent = S.paused ? 'Weiter' : 'Pause';
+  $('ein-penbruch').setAttribute('aria-pressed', String(!st.pen));
+  $('ein-ohneerder').setAttribute('aria-pressed', String(!st.erder));
+  $('ein-person').setAttribute('aria-pressed', String(st.person));
+  document.querySelectorAll('[data-rl]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.rl) === st.RL)));
+  document.querySelectorAll('[data-ra]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.ra) === st.RA)));
+  document.querySelectorAll('[data-ds]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.ds === 'weit') === !isFinite(st.DS))));
+  for (const key of ['werte', 'fluss', 'diag', 'lupe', 'grenze', 'erkl', 'form', 'rech']) $('chk-' + key).checked = !!S[key];
+  $('chk-lupe').disabled = $('chk-grenze').disabled = !S.diag;
+  schreibeAdresse();
+}
+
+/* ================= 7 Zeit ================= */
+let last = null;
+function frame(ts) {
+  if (last !== null && !S.paused) { step(Math.min((ts - last) / 1000, 0.05)); bewegt(); }   // Sprünge nach Tab-Wechsel begrenzen
+  last = ts;
+  requestAnimationFrame(frame);
+}
+
+/* ================= 8 Bedienung ================= */
+const act = (name) => { AKTIONEN[name](); render(); };
+$('bAct').addEventListener('click', () => act('laden'));
+$('ein-penbruch').addEventListener('click', () => act('pen'));
+$('ein-ohneerder').addEventListener('click', () => act('erder'));
+$('ein-person').addEventListener('click', () => act('person'));
+$('bPause').addEventListener('click', () => { S.paused = !S.paused; render(); });
+$('bReset').addEventListener('click', () => act('reset'));
+document.querySelectorAll('[data-rl]').forEach((b) => b.addEventListener('click', () => { st.RL = Number(b.dataset.rl); render(); }));
+document.querySelectorAll('[data-ra]').forEach((b) => b.addEventListener('click', () => { st.RA = Number(b.dataset.ra); render(); }));
+document.querySelectorAll('[data-ds]').forEach((b) => b.addEventListener('click', () => { st.DS = b.dataset.ds === 'weit' ? Infinity : CFG.DS; render(); }));
+for (const key of ['werte', 'fluss', 'diag', 'lupe', 'grenze', 'erkl', 'form', 'rech']) $('chk-' + key).addEventListener('change', (e) => { S[key] = e.target.checked; render(); });
+/* Vollbild nach Normblock 10: die ganze Seite; sichtbar ist nur die Bühne (das Potentialdiagramm steht in der Bühne).
+   Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
+function setVollbild(an) {
+  const html = document.documentElement;
+  html.classList.toggle('vollbild', an);
+  try {
+    if (an && !document.fullscreenElement) html.requestFullscreen?.().catch(() => {});
+    if (!an && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* nicht verfügbar: Ersatz über die Klasse */ }
+  render();
+}
+const toggleFullscreen = () => setVollbild(!document.documentElement.classList.contains('vollbild'));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.documentElement.classList.contains('vollbild')) setVollbild(false); });
+$('btn-fs').addEventListener('click', toggleFullscreen);
+$('vb-ende').addEventListener('click', () => setVollbild(false));
+window.addEventListener('resize', () => render());
+document.addEventListener('keydown', (e) => {
+  const tag = e.target && e.target.tagName, feld = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.key.toLowerCase();
+  if (e.key === ' ' && tag !== 'BUTTON' && tag !== 'INPUT' && tag !== 'SUMMARY') { e.preventDefault(); act('laden'); }
+  else if (t === 'p' && !feld) act('pen');
+  else if (t === 'a' && !feld) act('erder');
+  else if (t === 'b' && !feld) act('person');
+  else if (t === 's' && !feld) act('standort');
+  else if (t === 'd' && !feld) { S.diag = !S.diag; render(); }
+  else if (t === 'f' && !feld) toggleFullscreen();
+  else if (e.key === 'Escape' && document.documentElement.classList.contains('vollbild')) setVollbild(false);
+});
+/* Adresse: vier Ziffern wie die vier Knöpfe (1 = gedrückt): Laden ein · PEN unterbrochen · Anlagenerder entfernt ·
+   Person berührt. #z1101 = Laden ein, PEN unterbrochen, Anlagenerder vorhanden, Person berührt; dazu rl0.1, ra2 und weit
+   (Standort weit weg auf Bezugserde).
+   So lässt sich jeder Zustand verlinken. In Vorschauen ohne eigene Adresse geschieht nichts. */
+function liesAdresse() {
+  const h = decodeURIComponent(location.hash || '');
+  const z = /z([01])([01])([01])([01])/.exec(h), rl = /rl([\d.]+)/.exec(h), ra = /ra([\d.]+)/.exec(h);
+  if (z) Object.assign(st, { laden: z[1] === '1', pen: z[2] !== '1', erder: z[3] !== '1', person: z[4] === '1' });
+  if (rl && Number(rl[1]) > 0) st.RL = Number(rl[1]);
+  if (ra && Number(ra[1]) > 0) st.RA = Number(ra[1]);
+  if (/weit/.test(h)) st.DS = Infinity;
+}
+let adresseAn = false;
+function schreibeAdresse() {
+  if (!adresseAn) return;
+  const z = `#z${+st.laden}${+!st.pen}${+!st.erder}${+st.person}` + (st.RL !== CFG.RL ? `rl${st.RL}` : '') + (st.RA !== CFG.RA ? `ra${st.RA}` : '') + (isFinite(st.DS) ? '' : 'weit');
+  try { if (location.hash !== z && /^https?:$/.test(location.protocol)) history.replaceState(null, '', z); } catch (e) { /* Vorschau ohne Adresse */ }
+}
+$('notes').innerHTML = [
+  `Gezeigt sind Effektivwerte in Zählpfeilrichtung. In Wirklichkeit ist es Wechselstrom, die Laufmarken zeigen nur die Zählrichtung. Ein negatives Potential ${fz('φ', 'S')} bedeutet Gegenphase zur Netzspannung.`,
+  `Der Leiterwiderstand ist je Ader zu einem Widerstand gebündelt: ${fz('R', 'L')} = ${fz('R', 'PEN')} = ${fz('R', 'Ltg')}. Der Standardwert ${fz('R', 'Ltg')} = ${Gg(CFG.RL, 'Ω')} ist etwa zehnfach überhöht, damit die Spannung an ${fz('R', 'PEN')} deutlich zu sehen ist. Für einen Stromkreis mit 32&#8239;A ist das unrealistisch: Am Auto kommen dann nur rund 180&#8239;V an. Real sind es etwa 0,02&#8239;Ω bis 0,3&#8239;Ω, zum Beispiel ${fz('R')} = ${bruch(fz('l'), `${fz('γ')} · ${fz('A')}`)} = ${bruch('300&#8239;m', '35&#8239;m/(Ω·mm²) · 50&#8239;mm²')} = 0,17&#8239;Ω (eigene Abschätzung).`,
+  `Nur ohmsche Widerstände. Vernachlässigt sind die Induktivität der Leitung, der Innenwiderstand des Transformators sowie die Widerstände von N und PE im Haus.`,
+  `Nur ein Außenleiter und eine Last: ein Auto, das einphasig an der Wallbox lädt. Sein Ladegerät ist durch einen ohmschen Widerstand ersetzt: ${fz('R', 'Auto')} = ${bruch(fz('U'), fz('I'))} = ${bruch('230&#8239;V', '32&#8239;A')} = ${Gg(CFG.RV, 'Ω')}, das entspricht ${fz('P')} = ${fz('U')} · ${fz('I')} = 230&#8239;V · 32&#8239;A = 7,36&#8239;kW. Andere Verbraucher und Nachbarhäuser am selben PEN fehlen.`,
+  `Grenze des Ersatzwiderstands: Ein echtes Ladegerät regelt den Ladestrom und schaltet bei zu kleiner Spannung ab. Die Werte bei PEN-Bruch („lädt kaum“) gelten deshalb für einen ohmschen Verbraucher gleicher Leistung, zum Beispiel ein Heizgerät. Im Normalbetrieb mit ${fz('R', 'Ltg')} = 0,1&#8239;Ω stimmt das Bild gut.`,
+  `Einphasig mit 32&#8239;A lädt man am öffentlichen Netz in Deutschland nicht: Geräte über 4,6&#8239;kVA sind dreiphasig anzuschließen (VDE-AR-N 4100, Abschnitt Symmetrie; FNN-Hinweis 12/2019). Einphasig ist bei 20&#8239;A Schluss. Die Animation rechnet trotzdem einphasig, weil nur dann der ganze Rückstrom über den PEN fließt – bei symmetrischer dreiphasiger Last wäre der PEN stromlos.`,
+  `Jeder Erder ist ein gebündelter Widerstand zur Bezugserde: Betriebserder ${fz('R', 'B')} = ${Gg(CFG.RB, 'Ω')}, Anlagenerder ${fz('R', 'A')} = ${Gg(CFG.RA, 'Ω')} (Annahmen). Der Abstand der Erder voneinander spielt keine Rolle. Der Erdungswiderstand sitzt im Erdreich direkt um den Erder – dort liegt der Potentialtrichter.`,
+  `Standort der Person: Der Anlagenerder ist als Halbkugel gerechnet, Ersatzradius ${fz('r', '0')} = ${bruch(fz('ρ'), `2π · ${fz('R', 'A')}`)} mit ${fz('ρ')} = ${Gg(CFG.rho, 'Ωm')} (Annahme). Im Abstand ${fz('d')} vom Rand hat das Erdreich das Potential ${fz('φ', 'St')} = ${fz('φ', 'PE')} · ${bruch(fz('r', '0'), `${fz('r', '0')} + ${fz('d')}`)}. Die Berührungsspannung ist ${fz('U', 'B')} = ${fz('φ', 'PE')} − ${fz('φ', 'St')}. Im Netzwerk greift die Person nur den Teil ${fz('R', 'A1')} = ${fz('R', 'A')} · ${bruch(fz('d'), `${fz('r', '0')} + ${fz('d')}`)} des Erdungswiderstands ab – im Schaltbild zeigt das der gestrichelte Abgriff an ${fz('R', 'A')}. Ein kleiner ${fz('R', 'A')} heißt großer Erder und breiter Trichter. Ein Fundamenterder unter dem ganzen Haus ist größer als diese Halbkugel, die Rechnung ist eine Näherung. „Weit weg“ heißt: Standort auf Bezugserde, der ungünstigste Fall.`,
+  `Potentialdiagramm: Die Höhe der Trichter ist maßstäblich. Steht die Person nah am Erder, sind rechts der Unterbrechung auch Form und Breite des Trichters maßstäblich (Halbkugelerder); die Maßlinie zeigt den Abstand ${fz('d')}. Sonst und am Betriebserder sind Form und Breite nur qualitativ. Die Ortsachse ist zwischen Trafostation und Haus unterbrochen, weil die Trafostation einige hundert Meter entfernt ist. Die Marken ${fz('φ', 'PE')} und ${fz('φ', 'S')} zeigen Potentiale von Leitern, nicht des Erdreichs. Mit „Lupe ×${CFG.diag.lupe}“ ist das Diagramm ${CFG.diag.lupe}-fach gedehnt, größere Werte sind dann abgeschnitten.`,
+  `Person: Körperwiderstand ${fz('R', 'K')} = ${Gg(CFG.RK, 'Ω')}. Sie berührt den Schutzkontakt (PE) der Außensteckdose direkt und steht draußen, umschaltbar ${Gg(CFG.DS, 'm')} neben dem Erder oder weit weg auf Bezugserde; Schuhe und Standortwiderstand sind vernachlässigt. Im Gebäude mit Schutzpotentialausgleich wäre der Standort mit angehoben und die Berührungsspannung viel kleiner.`,
+  `Wirkung des Körperstroms in Stufen: ab ${fz('I', 'K')} = 1&#8239;mA wahrnehmbar, ab 6&#8239;mA Loslassgrenze (Männer ab 9&#8239;mA), ab 20&#8239;mA Verkrampfung der Muskulatur, ab 50&#8239;mA Herzkammerflimmern, ab 500&#8239;mA häufig tödlich (Arbeitsbuch Elektrotechnik Lernfelder 1–4, Europa-Lehrmittel, S. 7). In Wirklichkeit hängt die Wirkung auch von der Einwirkdauer ab.`,
+  `Grenzlinie ${fz('U', 'L')} = ${Gg(CFG.UL, 'V')}: Der Schutzkontakt ist blank und direkt berührbar, er hat keinen Basisschutz (keine Isolierung). Ohne Basisschutz sind höchstens AC 25&#8239;V zulässig, und das nur in trockener Umgebung; sonst sind es AC 12&#8239;V (DIN VDE 0100-410, Abschnitt 414.4.5 zu SELV und PELV). Zum Vergleich: Im Fehlerfall gilt AC 50&#8239;V als dauernd zulässige Berührungsspannung.`,
+  `Maßstäbe: Die Spannungspfeile im Schaltbild haben eine feste Länge und zeigen nur die Zählrichtung; wie groß die Potentiale sind, zeigt das Diagramm. Strompfeile mit Länge ∝ ${fz('I')}; nur der Pfeil ${fz('I', 'K')} ist ${CFG.ikFaktor}-fach vergrößert. Das Tempo der Laufmarken wächst mit dem Strom, ist aber nicht maßstäblich.`,
+  `Haupterdungsschiene (Begriff nach DIN VDE 0100-540, früher Potentialausgleichsschiene): Am Knoten darunter wird der PEN in N und PE aufgeteilt (TN-C-S). Knoten, Haupterdungsschiene und Anlagenerder sind leitend verbunden und haben dasselbe Potential ${fz('φ', 'PE')}. Schutzeinrichtungen (Sicherung, RCD) sind nicht dargestellt.`,
+  `Steckverbindungen: Die Buchse ist ein offener Bogen, der Stecker ein dicker Strich. Beide Steckdosen sitzen außen an der Hauswand und liegen parallel, Kontakte jeweils L1, PE, N. Oben steckt das Ladekabel des Autos in der Wallbox; die Karosserie hängt am Schutzleiter, der Schalter „Laden“ sitzt im Auto. An der Außensteckdose darunter ist nichts eingesteckt. Leitungen, die sich ohne Punkt kreuzen, sind nicht verbunden.`,
+].map((s) => `<li>${s}</li>`).join('');
+
+/* ================= 9 Schnittstelle für Prüfung und Export (Pflicht) =================
+   advance() rechnet in festen Schritten und unabhängig von Pause und Bildrate. pause(true) hält die Laufmarken an –
+   eine andere Schleife gibt es nicht. Der elektrische Zustand hängt nicht von der Zeit ab. */
+try {
+  const params = new URLSearchParams(location.search);
+  if (params.has('export')) document.documentElement.classList.add('export');
+  if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne
+  if (params.has('qr')) S.qr = params.get('qr') !== '0';      // ?qr=1: QR-Code gleich sichtbar (Beamer-Link)
+} catch (e) { /* ignorieren */ }
+window.anim = {
+  bauart: 'ablauf',
+  cfg: CFG,
+  model,                                                     // reine Physik: anim.model({U0, RL, RP, RV, RB, RA, RK, laden, pen, erder, person})
+  act,                                                       // Eingriff: 'laden', 'pen', 'erder', 'person', 'standort' (jeweils umschalten), 'reset'
+  advance(sek) { const n = Math.max(1, Math.ceil(sek * 120)); for (let k = 0; k < n; k++) step(sek / n); bewegt(); return lauf.t; },
+  pause(on = true) { S.paused = on; render(); },
+  /* Schalter und Werte gezielt setzen: Ansicht (werte, fluss, diag, lupe, grenze, erkl, form, rech) und Zustand
+     (laden, pen = intakt, erder = vorhanden, person = berührt, RL, RA in Ω, DS = Abstand in m oder Infinity) */
+  opt(key, val) { if (key in st) st[key] = val; else S[key] = val; render(); },
+  vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },   // Normblock 10
+  get state() { return { ...S, ...st, ...M, wirkung: st.person && M.bezug ? CFG.stufen[stufe(M.I_K)].text : '' }; },
+};
+
+/* ================= 10 Start =================
+   Steht beim Öffnen: Das Laden ist aus, es fließt kein Strom (Festlegung der Lehrkraft, 22.11.2026). Die Laufmarken
+   laufen von selbst, sobald Strom fließt. */
+reset();
+liesAdresse();
+render();
+adresseAn = true;
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
