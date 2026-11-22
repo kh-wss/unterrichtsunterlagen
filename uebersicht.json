@@ -9,6 +9,7 @@
     { "name": "Leistung & Leistungsdreieck", "ordner": ["leistung", "lf5-kompensation"] },
     { "name": "Dreiphasenwechselspannung", "ordner": ["dreiphasenwechselspannung"] },
     { "name": "Antriebstechnik",          "ordner": ["drehfeld"] },
+    { "name": "Schutzmaßnahmen",          "ordner": ["schutzmassnahmen"] },
     { "name": "Schutzorgane",             "ordner": ["lf2-schutzorgane"] },
     { "name": "Digitaltechnik",           "ordner": ["digitaltechnik"] },
     { "name": "Werkzeuge",                "ordner": ["tools"], "art": "Werkzeug" }
@@ -29,6 +30,8 @@
     "drehfeld/verteilte-wicklung/":     { "reihenfolge": 2 },
 
     "digitaltechnik/abstraktionsebenen/": { "reihenfolge": 1 },
+
+    "schutzmassnahmen/pen-anlagenerder/": { "reihenfolge": 1 },
 
     "leistung/wirk-blind-schein/": { "reihenfolge": 1 },
     "leistung/blindleistung-pendeln/": { "reihenfolge": 2 },
