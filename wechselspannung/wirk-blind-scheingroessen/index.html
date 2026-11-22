@@ -6,10 +6,12 @@
 <title>Wirk-, Blind- und Scheingrößen</title>
 <meta name="description" content="R-L- und R-C-Reihenschaltung: Drehzeiger und Linienbild von i, u, Wirk- und Blindspannung, darunter Schaltung, Ersatzschaltbild sowie Spannungs-, Widerstands- und Leistungsdreieck. Die Phasenverschiebung φ lässt sich von −90° (kapazitiv) bis +90° (induktiv) einstellen, der Zeitpunkt ωt abspielen oder direkt wählen.">
 <style>
-/* LAYOUT-NORM:begin v3 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+/* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
    Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
    gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
-   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit. */
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit.
+   v4 (20.11.2026): Die Vorschau ?buehne=1 passt die Bühne in jeden Rahmen ganz ein (Moodle-Rahmen mit fester Höhe).
+   v5 (20.11.2026): Bedienleiste in Kästen mit Überschrift – oben Steuerung links, Parameter rechts, darunter Ansicht. */
 :root{
   /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
   --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
@@ -67,12 +69,33 @@ sub,sup{font-size:.72em;line-height:0}
 #stage-svg .qr-knopf:focus{outline:none}
 #stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
 
-/* 4 Bedienleiste: höchstens drei Zeilen – 1 Lauf (und Wert), 2 Einstellen (nur wenn nötig), 3 Ansicht – dann „Tastatur“.
-   Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+/* 4 Bedienleiste in Kästen mit Überschrift auf dem Rahmen (v5, Festlegung der Lehrkraft 20.11.2026, layout.md 4):
+   .row 1: .kasten.steuerung links (Raster: Hauptknopf/Eingriff · Pause/Zurücksetzen · Tempo/Anzeige) | .kasten.parameter rechts
+   .row 2: Ansicht – Kästen nach Thema (Ebenen in der Bühne, Text darunter) mit Kästchen · Vollbild (#btn-fs) rechts außen
+   dann „Tastatur“. Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
 .card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
-.controls{display:grid;gap:6px;font-size:13.5px;line-height:1.35}
-.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.controls{display:grid;gap:12px;font-size:13.5px;line-height:1.35;padding-top:14px;container:leiste / inline-size}
+.controls>details.keys{margin-top:-5px}
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px 8px}
 .row .sp{flex:1 1 auto}
+.kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 auto;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+.kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);font-size:10.5px;line-height:13px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kasten .chk+.chk{margin-left:4px}
+.kasten .paar{display:flex;flex-wrap:wrap;gap:6px}
+.kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;justify-items:start;
+  gap:6px 10px;flex:0 1 auto}
+.kasten.steuerung:last-child{flex-grow:1}   /* ohne Parameter füllt die Steuerung die Zeile */
+.kasten.steuerung .zeile,.kasten.steuerung .zeile>.group{display:contents}   /* je .zeile: Knopf · Knopf · Überschrift · Auswahl */
+.kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+.kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;
+  flex:1 1 0;min-width:auto}   /* nimmt den Rest der Zeile neben der Steuerung; lange Auswahlreihen (.paar) brechen im Kasten um */
+#btn-fs{margin-left:auto;align-self:center}
+button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}  /* Ein/Aus-Knopf */
+/* Leiste 600–850 px breit (1280 × 720): Parameter-Überschrift über der Auswahl, damit Steuerung und Parameter nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){
+  .kasten.parameter{grid-template-columns:auto;gap:2px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:4px}}
 .group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
 .group.wert .group{flex-wrap:nowrap}
@@ -87,6 +110,7 @@ select{padding:2px 5px}
 input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
 input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
 .seg{display:inline-flex}
+.seg button,.kasten button{white-space:nowrap}
 .seg button{border-radius:0;margin-left:-1px}
 .seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
 .seg button:last-child{border-radius:0 5px 5px 0}
@@ -99,7 +123,12 @@ details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
 details.keys .hint{margin-top:6px}
 kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
 .sep{width:1px;align-self:stretch;background:var(--rule)}
-@media (max-width:640px){.sep{display:none}}
+@media (max-width:640px){.sep{display:none} .kasten{flex:1 1 100%}}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){   /* schmal: Steuerung als Zeilen statt Raster */
+  .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  .kasten.steuerung .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  .kasten.steuerung .zeile>.group{display:flex}
+  .kasten.steuerung .zeile>:empty{display:none}}
 
 /* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
 .diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
@@ -131,9 +160,12 @@ html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
 html.export .wrap>:not(.stage){display:none}
 
 /* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
-   16:9-Rahmen genau aus. Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und Texte entfallen. */
-html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
-html.buehne .wrap{width:100%;max-width:none;gap:0}
+   16:9-Rahmen genau aus und passt in jeden anders geformten Rahmen ganz hinein, mittig (v4: Moodle-Rahmen haben eine
+   feste Höhe, am Handy ist der Rahmen schmaler). Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und
+   Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden;height:100%}
+html.buehne body{display:grid;place-items:center}
+html.buehne .wrap{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));max-width:none;margin:0;gap:0}
 html.buehne .stage{border:0;border-radius:0}
 html.buehne .wrap>:not(.stage){display:none}
 
@@ -148,6 +180,9 @@ html.buehne .wrap>:not(.stage){display:none}
     overflow-x:hidden;overflow-y:auto;padding:8px 10px}
   html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
   html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{padding-top:14px}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten.parameter{grid-template-columns:auto}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten .sep{display:none}
 }
 
 /* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
@@ -209,46 +244,54 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
     </svg>
   </div>
 
-  <!-- 2 Bedienleiste: unmittelbar unter der Bühne, höchstens drei Zeilen, dann „Tastatur“ -->
+  <!-- 2 Bedienleiste in Kästen (Layout-Norm v5, layout.md 4) – umgebaut 21.11.2026 auf Wunsch der Lehrkraft
+       („Bedienelemente übersichtlicher anordnen“). Zeile 1: Steuerung links, Parameter rechts; Zeile 2: Ansicht. -->
   <div class="controls" id="controls">
-    <div class="row">                                   <!-- Zeile 1 · Lauf und Wert (Zeitpunkt ωt) -->
-      <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
-      <label class="group" for="sel-speed"><span class="cap">Tempo</span>
-        <select id="sel-speed">
-          <option value="6" selected>1 Periode in 6 s</option>
-          <option value="12">1 Periode in 12 s</option>
-          <option value="24">1 Periode in 24 s</option>
-        </select>
-      </label>
-      <button id="btn-reset" type="button">Zurücksetzen</button>
-      <div class="group wert">
-        <input id="rng-x" type="range" aria-label="Zeitpunkt ωt in Grad">
-        <label class="group" for="num-x"><span class="cap"><i>ωt</i> in °</span>
+    <div class="row">
+      <div class="kasten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <div class="zeile">                             <!-- Hauptknopf · Zurücksetzen · Tempo -->
+          <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
+          <button id="btn-reset" type="button">Zurücksetzen</button>
+          <label class="group" for="sel-speed"><span class="cap">Tempo</span>
+            <select id="sel-speed">
+              <option value="6" selected>1 Periode in 6 s</option>
+              <option value="12">1 Periode in 12 s</option>
+              <option value="24">1 Periode in 24 s</option>
+            </select>
+          </label>
+        </div>
+        <div class="zeile">                             <!-- (leer) · (leer) · Anzeige: Tabelle statt Dreiecke (Ein/Aus-Knopf) -->
+          <span></span><span></span>
+          <div class="group" role="group" aria-label="Anzeige"><span class="cap">Anzeige</span>
+            <div class="paar"><button id="btn-tabelle" class="ein" type="button" aria-pressed="false" title="Berechnungstabelle statt der Dreiecke (Taste T)">Tabelle</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="kasten parameter" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
+        <label class="cap" for="num-x"><i>ωt</i> in °</label>
+        <div class="group wert">
+          <input id="rng-x" type="range" aria-label="Zeitpunkt ωt in Grad">
           <input id="num-x" type="number">
-        </label>
-      </div>
-    </div>
-    <div class="row">                                   <!-- Zeile 2 · Einstellen: Phasenverschiebung φ -->
-      <div class="group" role="group" aria-label="Schaltung wählen"><span class="cap">Direkt</span>
-        <span class="seg" id="presets"></span>
-      </div>
-      <div class="group wert">
-        <input id="rng-phi" type="range" aria-label="Phasenverschiebung φ in Grad">
-        <label class="group" for="num-phi"><span class="cap"><i>φ</i> in °</span>
+        </div>
+        <label class="cap" for="num-phi"><i>φ</i> in °</label>
+        <div class="group wert">
+          <input id="rng-phi" type="range" aria-label="Phasenverschiebung φ in Grad">
           <input id="num-phi" type="number">
-        </label>
+        </div>
+        <span class="cap">Direkt</span>
+        <div class="paar" role="group" aria-label="Schaltung wählen" id="presets"></div>
       </div>
     </div>
-    <div class="row">                                   <!-- Zeile 3 · Ansicht: Ebenen ein/aus, rechts außen Vollbild -->
-      <div class="group" role="group" aria-label="Unten zeigen"><span class="cap">Unten</span>
-        <span class="seg" id="seg-unten"><button type="button" data-v="dreiecke">Dreiecke</button><button type="button" data-v="tabelle">Tabelle</button></span>
+    <div class="row">                                   <!-- Zeile 2 · Ansicht: Kästen nach Thema (Kästchen), rechts außen Vollbild -->
+      <div class="kasten" role="group" aria-labelledby="lg-ebenen"><span class="lg" id="lg-ebenen">Ebenen</span>
+        <label class="chk" for="chk-proj"><input id="chk-proj" type="checkbox" checked>Projektion</label>
+        <label class="chk" for="chk-summe"><input id="chk-summe" type="checkbox"><span><i>u</i> = <i>u</i><sub>w</sub> + <i>u</i><sub>b</sub></span></label>
+        <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox">Werte</label>
       </div>
-      <label class="chk" for="chk-proj"><input id="chk-proj" type="checkbox" checked>Projektion</label>
-      <label class="chk" for="chk-summe"><input id="chk-summe" type="checkbox"><span><i>u</i> = <i>u</i><sub>w</sub> + <i>u</i><sub>b</sub></span></label>
-      <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox">Werte</label>
-      <label class="chk" for="chk-form"><input id="chk-form" type="checkbox">Formeln</label>
-      <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox">Berechnung</label>
-      <span class="sp"></span>
+      <div class="kasten" role="group" aria-labelledby="lg-text"><span class="lg" id="lg-text">Text</span>
+        <label class="chk" for="chk-form"><input id="chk-form" type="checkbox">Formeln</label>
+        <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox">Berechnung</label>
+      </div>
       <button type="button" id="btn-fs">Vollbild</button>
     </div>
     <details class="keys">
@@ -342,7 +385,8 @@ const D = Math.PI / 180;
    Festlegungen der Lehrkraft, 18.11.2026 (nach dem Prototyp):
    - Bauteile farbig hinterlegt wie in „Wirk-, Blind- und Scheinleistung“: R grün (P), Spule bzw. Kondensator orange (Q),
      Z lila (S); P, Q und S stehen an den Bauteilen (Annahme: „P, R und Q“ war als „P, S und Q“ gemeint).
-   - Berechnungstabelle umschaltbar: unten „Dreiecke“ oder „Tabelle“ (Rechnung je Dreieck wie AB, Seite 5).
+   - Berechnungstabelle umschaltbar: unten „Dreiecke“ oder „Tabelle“ (Rechnung je Dreieck wie AB, Seite 5); seit 21.11.2026
+     als Ein/Aus-Knopf „Tabelle“ unter „Anzeige“ in der Steuerung (Layout-Norm v5).
    - An den Dreiecken die Formeln mit I (Z = U / I, P = U_w · I usw.), ohne Unterstrich: nur Effektiv- bzw. Mittelwerte.
    - Rechter Winkel als Viertelkreis mit Punkt.
    - Beschriftung „u = u_w + u_b“ im Linienbild entfällt (verwirrend); die aufgesetzten Pfeile bleiben zuschaltbar.
@@ -804,7 +848,9 @@ function makeDreieck(nr, spec) {
     setze(bb, ty) { g.setAttribute('transform', `translate(${(mitte - (bb.x + bb.width / 2)).toFixed(1)} ${ty.toFixed(1)})`); },
   };
 }
-const ZS = (z, i, s = 30) => `${I(z)}${i ? SUB(i, s) : ''}`;    // Formelzeichen mit Index
+/* Formelzeichen mit Index; danach zurück auf die Grundlinie (leeres Zeichen), damit z. B. „ · I“ hinter U_w nicht
+   mit dem Index tiefgestellt wird (Korrektur 18.11.2026). */
+const ZS = (z, i, s = 30) => `${I(z)}${i ? SUB(i, s, '\u200B') : ''}`;
 const DREIECKE = [
   makeDreieck(0, { titel: 'Spannungsdreieck', bezug: true, fH: C.u, fV: C.u, fS: C.u, cH: 'c-u', cV: 'c-u', cS: 'c-u',
     formeln: (ind) => { const x = ind ? 'L' : 'C';
@@ -1305,7 +1351,7 @@ function syncUI() {
   rngP.value = S.phi;
   if (document.activeElement !== numP) numP.value = Math.round(S.phi * 100) / 100;
   for (const [b, w] of presetKnoepfe) b.setAttribute('aria-pressed', String(Math.abs(S.phi - w) < 1e-9));
-  for (const b of document.querySelectorAll('#seg-unten button')) b.setAttribute('aria-pressed', String(b.dataset.v === S.unten));
+  $('#btn-tabelle').setAttribute('aria-pressed', String(S.unten === 'tabelle'));
   btnPlay.textContent = S.playing ? '❚❚ Pause' : '▶ Abspielen';
   btnPlay.setAttribute('aria-pressed', String(S.playing));
   show(gQR, qrSichtbar()); show(gQRPlatz, qrPlatzSichtbar());
@@ -1375,7 +1421,7 @@ function setUnten(v) {
   if (S.unten === 'dreiecke') for (const d of DREIECKE) d.neu();
   render();
 }
-for (const b of document.querySelectorAll('#seg-unten button')) b.addEventListener('click', () => setUnten(b.dataset.v));
+$('#btn-tabelle').addEventListener('click', () => setUnten(S.unten === 'tabelle' ? 'dreiecke' : 'tabelle'));   // Ein/Aus-Knopf „Tabelle“ (v5)
 for (const key of SCHALTER) $('#chk-' + key).addEventListener('change', (e) => { S[key] = e.target.checked; render(); });
 /* Vollbild nach Normblock 10: die ganze Seite; sichtbar ist nur die Bühne.
    Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
