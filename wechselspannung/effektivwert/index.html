@@ -6,10 +6,12 @@
 <title>Effektivwert – gleiche Leistung bei Gleich- und Wechselspannung</title>
 <meta name="description" content="Animation zum Effektivwert: Zwei gleiche Lampen an Gleichspannung und an Wechselspannung. Schritt für Schritt entsteht die Leistungskurve p = u²/R; die Spitzen der Leistungsfläche klappen in die Täler und zeigen den Mittelwert P = p̂/2.">
 <style>
-/* LAYOUT-NORM:begin v3 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+/* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
    Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
    gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
-   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit. */
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit.
+   v4 (20.11.2026): Die Vorschau ?buehne=1 passt die Bühne in jeden Rahmen ganz ein (Moodle-Rahmen mit fester Höhe).
+   v5 (20.11.2026): Bedienleiste in Kästen mit Überschrift – oben Steuerung links, Parameter rechts, darunter Ansicht. */
 :root{
   /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
   --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
@@ -67,12 +69,33 @@ sub,sup{font-size:.72em;line-height:0}
 #stage-svg .qr-knopf:focus{outline:none}
 #stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
 
-/* 4 Bedienleiste: höchstens drei Zeilen – 1 Lauf (und Wert), 2 Einstellen (nur wenn nötig), 3 Ansicht – dann „Tastatur“.
-   Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+/* 4 Bedienleiste in Kästen mit Überschrift auf dem Rahmen (v5, Festlegung der Lehrkraft 20.11.2026, layout.md 4):
+   .row 1: .kasten.steuerung links (Raster: Hauptknopf/Eingriff · Pause/Zurücksetzen · Tempo/Anzeige) | .kasten.parameter rechts
+   .row 2: Ansicht – Kästen nach Thema (Ebenen in der Bühne, Text darunter) mit Kästchen · Vollbild (#btn-fs) rechts außen
+   dann „Tastatur“. Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
 .card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
-.controls{display:grid;gap:6px;font-size:13.5px;line-height:1.35}
-.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.controls{display:grid;gap:12px;font-size:13.5px;line-height:1.35;padding-top:14px;container:leiste / inline-size}
+.controls>details.keys{margin-top:-5px}
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px 8px}
 .row .sp{flex:1 1 auto}
+.kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 auto;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+.kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);font-size:10.5px;line-height:13px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kasten .chk+.chk{margin-left:4px}
+.kasten .paar{display:flex;flex-wrap:wrap;gap:6px}
+.kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;justify-items:start;
+  gap:6px 10px;flex:0 1 auto}
+.kasten.steuerung:last-child{flex-grow:1}   /* ohne Parameter füllt die Steuerung die Zeile */
+.kasten.steuerung .zeile,.kasten.steuerung .zeile>.group{display:contents}   /* je .zeile: Knopf · Knopf · Überschrift · Auswahl */
+.kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+.kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;
+  flex:1 1 0;min-width:auto}   /* nimmt den Rest der Zeile neben der Steuerung; lange Auswahlreihen (.paar) brechen im Kasten um */
+#btn-fs{margin-left:auto;align-self:center}
+button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}  /* Ein/Aus-Knopf */
+/* Leiste 600–850 px breit (1280 × 720): Parameter-Überschrift über der Auswahl, damit Steuerung und Parameter nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){
+  .kasten.parameter{grid-template-columns:auto;gap:2px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:4px}}
 .group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
 .group.wert .group{flex-wrap:nowrap}
@@ -87,6 +110,7 @@ select{padding:2px 5px}
 input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
 input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
 .seg{display:inline-flex}
+.seg button,.kasten button{white-space:nowrap}
 .seg button{border-radius:0;margin-left:-1px}
 .seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
 .seg button:last-child{border-radius:0 5px 5px 0}
@@ -99,7 +123,12 @@ details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
 details.keys .hint{margin-top:6px}
 kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
 .sep{width:1px;align-self:stretch;background:var(--rule)}
-@media (max-width:640px){.sep{display:none}}
+@media (max-width:640px){.sep{display:none} .kasten{flex:1 1 100%}}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){   /* schmal: Steuerung als Zeilen statt Raster */
+  .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  .kasten.steuerung .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  .kasten.steuerung .zeile>.group{display:flex}
+  .kasten.steuerung .zeile>:empty{display:none}}
 
 /* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
 .diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
@@ -131,9 +160,12 @@ html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
 html.export .wrap>:not(.stage){display:none}
 
 /* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
-   16:9-Rahmen genau aus. Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und Texte entfallen. */
-html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
-html.buehne .wrap{width:100%;max-width:none;gap:0}
+   16:9-Rahmen genau aus und passt in jeden anders geformten Rahmen ganz hinein, mittig (v4: Moodle-Rahmen haben eine
+   feste Höhe, am Handy ist der Rahmen schmaler). Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und
+   Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden;height:100%}
+html.buehne body{display:grid;place-items:center}
+html.buehne .wrap{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));max-width:none;margin:0;gap:0}
 html.buehne .stage{border:0;border-radius:0}
 html.buehne .wrap>:not(.stage){display:none}
 
@@ -148,6 +180,9 @@ html.buehne .wrap>:not(.stage){display:none}
     overflow-x:hidden;overflow-y:auto;padding:8px 10px}
   html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
   html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{padding-top:14px}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten.parameter{grid-template-columns:auto}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten .sep{display:none}
 }
 
 /* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
@@ -187,10 +222,12 @@ html.vollbild #stage-svg,html.buehne #stage-svg{cursor:pointer}   /* dort heißt
 .merke{margin-top:10px;background:#fff6d5;border-left:4px solid #d4a600;padding:10px 12px;color:#1b2127;max-width:68ch}
 .merke b{color:#6b5200}
 .merke svg{width:17px;height:22px;vertical-align:-4px;margin-right:5px}
-#lblSchritt{min-width:4.4em;text-align:center;font-variant-numeric:tabular-nums}
 :is(input,button):disabled{opacity:.45;cursor:not-allowed}
 .vals td i{font-style:italic}
-#segPhase{flex-wrap:wrap;row-gap:4px}   /* fünf Phasen: am Handy in zwei Reihen, sonst wird die Seite breiter als das Fenster */
+#lblPhase{align-self:center;min-width:5.8em}   /* Name der aktuellen Phase neben den Nummernknöpfen; feste Breite, damit die Leiste nicht springt */
+#controls .paar{align-items:center}
+#schrittPaar{min-width:9em;justify-content:space-between;flex-wrap:nowrap}   /* ◀ Schritt ▶: bündig unter dem Hauptknopf */
+#controls .kasten.parameter>.cap{align-self:start;padding-top:4px}   /* Überschrift auf Höhe des Reglers, nicht zwischen Regler und Direktwahl */
 </style>
 </head>
 <body>
@@ -203,49 +240,62 @@ html.vollbild #stage-svg,html.buehne #stage-svg{cursor:pointer}   /* dort heißt
     </svg>
   </div>
 
-  <!-- 2 Bedienleiste: unmittelbar unter der Bühne, höchstens drei Zeilen, dann „Tastatur“ -->
+  <!-- 2 Bedienleiste in Kästen mit Überschrift (Layout-Norm v5, layout.md 4). Umgebaut am 21.11.2026 auf Wunsch der Lehrkraft
+       („Bedienelemente übersichtlicher anordnen“). Zeile 1: Steuerung links, Parameter rechts. Zeile 2: Ansicht, rechts außen Vollbild. -->
   <div class="controls" id="controls" role="toolbar" aria-label="Bedienung">
-    <div class="row">                                   <!-- Zeile 1 · Lauf: Hauptknopf, Tempo, Schritt, Zurücksetzen -->
-      <button id="bAct" class="primary" type="button">▶ Abspielen</button>
-      <div class="group"><span class="cap">Tempo</span>
-        <div class="seg" role="group" aria-label="Tempo">
-          <button type="button" data-tempo="0.5" aria-pressed="false">0,5×</button>
-          <button type="button" data-tempo="1" aria-pressed="true">1×</button>
-          <button type="button" data-tempo="2" aria-pressed="false">2×</button>
+    <div class="row">
+      <div class="kasten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <div class="zeile">                             <!-- Hauptknopf · Pause · Tempo -->
+          <button id="bAct" class="primary" type="button">▶ Abspielen</button>
+          <button id="bPause" type="button">Pause</button>
+          <div class="group"><span class="cap">Tempo</span>
+            <div class="seg" role="group" aria-label="Tempo">
+              <button type="button" data-tempo="0.5" aria-pressed="false">0,5×</button>
+              <button type="button" data-tempo="1" aria-pressed="true">1×</button>
+              <button type="button" data-tempo="2" aria-pressed="false">2×</button>
+            </div>
+          </div>
+        </div>
+        <div class="zeile">                             <!-- von Hand: Schritt zurück und weiter · Zurücksetzen · Phase direkt wählen -->
+          <div class="paar" id="schrittPaar" role="group" aria-label="Schrittweise">   <!-- so breit wie der Hauptknopf darüber -->
+            <button id="bZur" type="button" aria-label="Einen Schritt zurück" title="Einen Schritt zurück">◀</button>
+            <span class="cap">Schritt</span>
+            <button id="bVor" type="button" aria-label="Einen Schritt weiter" title="Einen Schritt weiter">▶</button>
+          </div>
+          <button id="bReset" type="button">Zurücksetzen</button>
+          <div class="group"><span class="cap">Phase</span>
+            <div class="paar">
+              <div class="seg" role="group" aria-label="Phase direkt wählen" id="segPhase">
+                <button type="button" data-phase="1" aria-pressed="true" title="Phase 1: Versuch" aria-label="Phase 1: Versuch">1</button>
+                <button type="button" data-phase="2" aria-pressed="false" title="Phase 2: Leistung" aria-label="Phase 2: Leistung">2</button>
+                <button type="button" data-phase="3" aria-pressed="false" title="Phase 3: Mittelwert" aria-label="Phase 3: Mittelwert">3</button>
+                <button type="button" data-phase="4" aria-pressed="false" title="Phase 4: Formel" aria-label="Phase 4: Formel">4</button>
+                <button type="button" data-phase="5" aria-pressed="false" title="Phase 5: Merke" aria-label="Phase 5: Merke">5</button>
+              </div>
+              <span class="hint" id="lblPhase" aria-hidden="true">Versuch</span>   <!-- Name der aktuellen Phase; alle Namen als Kurzinfo an den Knöpfen -->
+            </div>
+          </div>
         </div>
       </div>
-      <div class="group" role="group" aria-label="Schrittweise"><span class="cap">Schritt</span>
-        <button id="bZur" type="button" aria-label="Einen Schritt zurück">◀</button>
-        <span id="lblSchritt" class="hint">1 / 31</span>
-        <button id="bVor" type="button" aria-label="Einen Schritt weiter">▶</button>
-      </div>
-      <button id="bReset" type="button">Zurücksetzen</button>
-    </div>
-    <div class="row">                                   <!-- Zeile 2 · Einstellen: Phase direkt wählen, Scheitelwert û -->
-      <div class="group"><span class="cap">Phase</span>
-        <div class="seg" role="group" aria-label="Phase direkt wählen" id="segPhase">
-          <button type="button" data-phase="1" aria-pressed="true">1 Versuch</button>
-          <button type="button" data-phase="2" aria-pressed="false">2 Leistung</button>
-          <button type="button" data-phase="3" aria-pressed="false">3 Mittelwert</button>
-          <button type="button" data-phase="4" aria-pressed="false">4 Formel</button>
-          <button type="button" data-phase="5" aria-pressed="false">5 Merke</button>
+      <div class="kasten parameter" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
+        <label class="cap" for="num-uh"><i>û</i> in V</label>
+        <div class="paar">                              <!-- Regler mit Zahlenfeld, dahinter (bei wenig Platz darunter) die Direktwahl -->
+          <div class="group wert">
+            <input id="rng-uh" type="range" min="0" max="9" step="0.01" aria-label="Scheitelwert û der Wechselspannung in Volt">
+            <input id="num-uh" type="number" min="0" max="9" step="0.1" aria-label="Scheitelwert û in Volt">
+          </div>
+          <div class="paar" role="group" aria-label="Scheitelwert direkt wählen">
+            <button type="button" data-uh="6" title="Scheitelwert wie die Gleichspannung">6 V</button>
+            <button type="button" data-uh="n" title="Scheitelwert, bei dem beide Lampen gleich hell sind">8,49 V</button>
+          </div>
         </div>
       </div>
-      <div class="group wert">
-        <input id="rng-uh" type="range" min="0" max="9" step="0.01" aria-label="Scheitelwert û der Wechselspannung in Volt">
-        <label class="group" for="num-uh"><span class="cap"><i>û</i> in V</span>
-          <input id="num-uh" type="number" min="0" max="9" step="0.1">
-        </label>
-      </div>
-      <div class="group" role="group" aria-label="Scheitelwert direkt wählen"><span class="cap">Direkt</span>
-        <button type="button" data-uh="6">6 V</button>
-        <button type="button" data-uh="n">8,49 V</button>
-      </div>
     </div>
-    <div class="row">                                   <!-- Zeile 3 · Ansicht: Ebenen ein/aus, rechts außen Vollbild -->
-      <label class="chk" for="chk-erkl"><input id="chk-erkl" type="checkbox" checked>Erklärung</label>
-      <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox" checked>Rechnung</label>
-      <span class="sp"></span>
+    <div class="row">                                   <!-- Zeile 2 · Ansicht: Text in der Bühne und darunter (Kästchen), rechts außen Vollbild -->
+      <div class="kasten" role="group" aria-labelledby="lg-text"><span class="lg" id="lg-text">Text</span>
+        <label class="chk" for="chk-erkl"><input id="chk-erkl" type="checkbox" checked>Erklärung</label>
+        <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox" checked>Rechnung</label>
+      </div>
       <button type="button" id="btn-fs">Vollbild</button>
     </div>
     <details class="keys">
@@ -303,7 +353,10 @@ const HTML = document.documentElement;
    – Gleichspannung fest U = 6 V; einstellbar ist nur der Scheitelwert û der Wechselspannung.
    Festlegungen vom 15.11.2026:
    – Die eingetragenen Punkte der Leistung liegen über dem Spannungspfeil (sonst verdeckt der Pfeil z. B. den Punkt 1 W bei u = 2 V).
-   – Alle Tempostufen laufen doppelt so schnell wie im ersten Stand (tempoBasis). */
+   – Alle Tempostufen laufen doppelt so schnell wie im ersten Stand (tempoBasis).
+   Festlegung vom 21.11.2026: Bedienelemente übersichtlicher – Bedienleiste auf die Layout-Norm v5 umgebaut (Kästen Steuerung,
+   Parameter, Text). Dabei: eigener Knopf „Pause“, Phasenknöpfe nur mit Nummer (Name der aktuellen Phase daneben), der
+   Schrittzähler steht nur noch in der Bühne und in der Textkarte. */
 const CFG = {
   U: 6,                       // Gleichspannung an E1 in V (Arbeitsblatt)
   R: 4,                       // Widerstand jeder Lampe in Ω (Arbeitsblatt: R_E1 = R_E2 = 4 Ω)
@@ -592,6 +645,15 @@ const AKTIONEN = {
     if (st.trans) { ankunft(); S.playing = false; }
     else if (st.k < LETZTER) { starte(st.k + 1); S.playing = st.trans; }
   },
+  start() {                                                      // Hauptknopf: abspielen bzw. fortsetzen; läuft die Automatik schon, geschieht nichts
+    if (S.playing && S.auto) return;
+    if (S.playing) { S.auto = true; return; }                    // ein von Hand gestarteter Schritt läuft gerade: danach automatisch weiter
+    AKTIONEN.play();
+  },
+  pause() {                                                      // Knopf „Pause“ / „Weiter“: anhalten und an derselben Stelle fortsetzen
+    if (S.playing) S.playing = false;
+    else if (st.trans || st.wait > 0) S.playing = true;
+  },
   zurueck() { S.auto = false; springe(st.trans ? st.from : st.k - 1); },
   reset() { S.auto = false; springe(0); },
 };
@@ -752,7 +814,7 @@ const knZur = buehnenKnopf(1560, 160, '◂ Zurück', 'zurueck', 'Einen Schritt z
 const knVor = buehnenKnopf(1736, 164, 'Weiter ▸', 'weiter', 'Einen Schritt weiter');
 
 /* ===== QR-Code rechts oben in der Bühne (Festlegungen der Lehrkraft, 12.11.2026, Animation W) =====
-   Führt zur Adresse der Animation auf GitHub Pages (technik.md Abschnitt 8). Die Zeile `const QR = …;` erzeugt
+   Führt zur Adresse der Animation auf GitHub Pages (veroeffentlichen.md 3). Die Zeile `const QR = …;` erzeugt
    python3 scripts/qr_buehne.py <Adresse> quelle.html  – null heißt: noch keine Adresse, die Ecke bleibt frei.
    Beim Öffnen steht dort nur ein Platzhalter (QR-Symbol, „QR-Code“). Klick oder Enter darauf zeigt den QR-Code,
    Klick auf den QR-Code blendet ihn wieder aus. ?qr=1 in der Adresse zeigt ihn gleich (Link für den Beamer).
@@ -975,8 +1037,12 @@ function draw() {
 
   // --- Bedienung nachführen
   const amEnde = st.k === LETZTER && !st.trans;
-  setze($('bAct'), 'html', S.playing ? '⏸ Pause' : amEnde ? '↺ Von vorn' : (st.trans || st.wait > 0) ? '▶ Weiter' : '▶ Abspielen');
-  setze($('lblSchritt'), 'html', `${st.k + 1} / ${SCHRITTE.length}`);
+  const offen = st.trans || st.wait > 0;                          // ein Übergang oder eine Lesezeit ist angehalten
+  setze($('bAct'), 'html', amEnde ? '↺ Von vorn' : '▶ Abspielen');
+  $('bAct').disabled = S.playing && S.auto;
+  setze($('bPause'), 'html', !S.playing && offen ? 'Weiter' : 'Pause');
+  $('bPause').disabled = !S.playing && !offen;
+  setze($('lblPhase'), 'html', PHASEN[s.phase]);
   $('bZur').disabled = st.k === 0 && !st.trans; $('bVor').disabled = amEnde;
   knZur.classList.toggle('aus', st.k === 0 && !st.trans); knVor.classList.toggle('aus', amEnde);
   document.querySelectorAll('[data-phase]').forEach((b) => setze(b, 'aria-pressed', String(Number(b.dataset.phase) === s.phase)));
@@ -1007,7 +1073,8 @@ function readStart() { const m = /^#s(\d+)$/.exec(location.hash || ''); return m
 
 /* ================= 9 Bedienung ================= */
 const act = (name) => { AKTIONEN[name](); draw(); };
-$('bAct').addEventListener('click', () => act('play'));
+$('bAct').addEventListener('click', () => act('start'));
+$('bPause').addEventListener('click', () => act('pause'));
 $('bVor').addEventListener('click', () => act('weiter'));
 $('bZur').addEventListener('click', () => act('zurueck'));
 $('bReset').addEventListener('click', () => act('reset'));
@@ -1069,7 +1136,7 @@ window.anim = {
   schritte: SCHRITTE.map((s) => s.id),
   model,
   set(k) { S.auto = false; springe(typeof k === 'string' ? IDX[k] : k); draw(); return st.k; },   // Schritt k (Nummer oder Name), Endzustand
-  act,                                                                                             // 'play', 'weiter', 'zurueck', 'reset', 'phase1' … 'phase5'
+  act,                                                                                             // 'start', 'pause', 'play' (Leertaste: beides), 'weiter', 'zurueck', 'reset', 'phase1' … 'phase5'
   advance(sek) { const n = Math.max(1, Math.ceil(sek * 120)); for (let i = 0; i < n; i++) step(sek / n); draw(); return st.k; },
   pause(on = true) { S.gehalten = !!on; },                                                           // Bildschleife anhalten; advance() wirkt weiter
   opt(key, val) {
