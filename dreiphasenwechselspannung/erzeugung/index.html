@@ -6,10 +6,12 @@
 <title>Erzeugung von Dreiphasenwechselspannung</title>
 <meta name="description" content="Generatormodell mit Polrad und drei um 120° versetzten Spulen: Drehzeiger und Liniendiagramm zeigen, wie die Strangspannungen u1, u2, u3 entstehen. Stränge L1 bis L3 einzeln zuschaltbar, Erregerstrom einstellbar (auch am roten Balken), Summe u1 + u2 + u3 = 0 und Feldlinien einblendbar.">
 <style>
-/* LAYOUT-NORM:begin v3 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+/* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
    Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
    gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
-   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit. */
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit.
+   v4 (20.11.2026): Die Vorschau ?buehne=1 passt die Bühne in jeden Rahmen ganz ein (Moodle-Rahmen mit fester Höhe).
+   v5 (20.11.2026): Bedienleiste in Kästen mit Überschrift – oben Steuerung links, Parameter rechts, darunter Ansicht. */
 :root{
   /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
   --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
@@ -67,12 +69,33 @@ sub,sup{font-size:.72em;line-height:0}
 #stage-svg .qr-knopf:focus{outline:none}
 #stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
 
-/* 4 Bedienleiste: höchstens drei Zeilen – 1 Lauf (und Wert), 2 Einstellen (nur wenn nötig), 3 Ansicht – dann „Tastatur“.
-   Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+/* 4 Bedienleiste in Kästen mit Überschrift auf dem Rahmen (v5, Festlegung der Lehrkraft 20.11.2026, layout.md 4):
+   .row 1: .kasten.steuerung links (Raster: Hauptknopf/Eingriff · Pause/Zurücksetzen · Tempo/Anzeige) | .kasten.parameter rechts
+   .row 2: Ansicht – Kästen nach Thema (Ebenen in der Bühne, Text darunter) mit Kästchen · Vollbild (#btn-fs) rechts außen
+   dann „Tastatur“. Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
 .card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
-.controls{display:grid;gap:6px;font-size:13.5px;line-height:1.35}
-.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.controls{display:grid;gap:12px;font-size:13.5px;line-height:1.35;padding-top:14px;container:leiste / inline-size}
+.controls>details.keys{margin-top:-5px}
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px 8px}
 .row .sp{flex:1 1 auto}
+.kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 auto;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+.kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);font-size:10.5px;line-height:13px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kasten .chk+.chk{margin-left:4px}
+.kasten .paar{display:flex;flex-wrap:wrap;gap:6px}
+.kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;justify-items:start;
+  gap:6px 10px;flex:0 1 auto}
+.kasten.steuerung:last-child{flex-grow:1}   /* ohne Parameter füllt die Steuerung die Zeile */
+.kasten.steuerung .zeile,.kasten.steuerung .zeile>.group{display:contents}   /* je .zeile: Knopf · Knopf · Überschrift · Auswahl */
+.kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+.kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;
+  flex:1 1 0;min-width:auto}   /* nimmt den Rest der Zeile neben der Steuerung; lange Auswahlreihen (.paar) brechen im Kasten um */
+#btn-fs{margin-left:auto;align-self:center}
+button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}  /* Ein/Aus-Knopf */
+/* Leiste 600–850 px breit (1280 × 720): Parameter-Überschrift über der Auswahl, damit Steuerung und Parameter nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){
+  .kasten.parameter{grid-template-columns:auto;gap:2px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:4px}}
 .group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
 .group.wert .group{flex-wrap:nowrap}
@@ -87,6 +110,7 @@ select{padding:2px 5px}
 input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
 input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
 .seg{display:inline-flex}
+.seg button,.kasten button{white-space:nowrap}
 .seg button{border-radius:0;margin-left:-1px}
 .seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
 .seg button:last-child{border-radius:0 5px 5px 0}
@@ -99,7 +123,12 @@ details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
 details.keys .hint{margin-top:6px}
 kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
 .sep{width:1px;align-self:stretch;background:var(--rule)}
-@media (max-width:640px){.sep{display:none}}
+@media (max-width:640px){.sep{display:none} .kasten{flex:1 1 100%}}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){   /* schmal: Steuerung als Zeilen statt Raster */
+  .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  .kasten.steuerung .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  .kasten.steuerung .zeile>.group{display:flex}
+  .kasten.steuerung .zeile>:empty{display:none}}
 
 /* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
 .diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
@@ -131,9 +160,12 @@ html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
 html.export .wrap>:not(.stage){display:none}
 
 /* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
-   16:9-Rahmen genau aus. Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und Texte entfallen. */
-html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden}
-html.buehne .wrap{width:100%;max-width:none;gap:0}
+   16:9-Rahmen genau aus und passt in jeden anders geformten Rahmen ganz hinein, mittig (v4: Moodle-Rahmen haben eine
+   feste Höhe, am Handy ist der Rahmen schmaler). Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und
+   Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden;height:100%}
+html.buehne body{display:grid;place-items:center}
+html.buehne .wrap{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));max-width:none;margin:0;gap:0}
 html.buehne .stage{border:0;border-radius:0}
 html.buehne .wrap>:not(.stage){display:none}
 
@@ -148,6 +180,9 @@ html.buehne .wrap>:not(.stage){display:none}
     overflow-x:hidden;overflow-y:auto;padding:8px 10px}
   html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
   html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{padding-top:14px}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten.parameter{grid-template-columns:auto}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten .sep{display:none}
 }
 
 /* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
@@ -189,6 +224,15 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
    Die kleine Farbmarke ist eine Legende, keine Knopffarbe (darstellung.md 2: Bedienelemente neutral). */
 .strang .marke{display:inline-block;width:14px;height:5px;border-radius:2px;vertical-align:middle;margin-right:6px}
 .erreg input[type=range]{width:120px}
+/* Steuerung als Spalte (wie „Blindleistungskompensation“, 20.11.2026): drei Zeilen untereinander, schmal */
+.kasten.steuerung.spalte{display:flex;flex-direction:column;align-items:stretch;justify-content:center;flex:0 0 auto}
+.kasten.steuerung.spalte .zeile{display:flex;align-items:center;gap:6px 10px}
+.kasten.steuerung.spalte .zeile>button{flex:1 1 auto}
+.kasten.steuerung.spalte .zeile>.group>.cap{margin-left:0}
+.kasten .group.wert .cap.teil{margin-left:14px}
+/* schmale Bildschirme: Teilung bricht unter den Winkelregler um, statt die Seite waagerecht zu verbreitern */
+.kasten.parameter>*{min-width:0} .kasten.parameter .group.wert{flex-wrap:wrap}
+@media (max-width:640px){.kasten.steuerung.spalte{flex:1 1 100%}}   /* wie die Norm: auf dem Handy Kästen untereinander */
 .erreg .proz{min-width:3.2em;text-align:right;font-variant-numeric:tabular-nums}
 
 /* Erregerstrom in der Bühne ziehen (Wunsch der Lehrkraft, 16.11.2026); Kennzeichnung nach darstellung.md 8:
@@ -224,78 +268,79 @@ html.calc .nur-berechnung{display:inline}
     </svg>
   </div>
 
-  <!-- 2 Bedienleiste: unmittelbar unter der Bühne, höchstens drei Zeilen, dann „Tastatur“ (references/layout.md 4) -->
+  <!-- 2 Bedienleiste in Kästen (Layout-Norm v5, layout.md 4; umgebaut am 21.11.2026 auf Wunsch der Lehrkraft:
+       „Bedienelemente übersichtlicher anordnen“). Zeile 1: Steuerung links, Parameter rechts; Zeile 2: Ansicht. -->
   <div class="controls" id="controls">
-    <div class="row">                                   <!-- Zeile 1 · Lauf und Wert -->
-      <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
-      <label class="group" for="sel-speed"><span class="cap">Umdrehung in</span>
-        <select id="sel-speed">
-          <option value="6">6 s</option>
-          <option value="12" selected>12 s</option>
-          <option value="24">24 s</option>
-          <option value="48">48 s</option>
-        </select>
-      </label>
-      <button id="btn-reset" type="button">Zurücksetzen</button>
-      <div class="group wert">
-        <input id="rng-alpha" type="range" min="0" max="360" step="0.5" value="60" aria-label="Drehwinkel α_G in Grad">
-        <label class="group" for="num-alpha"><span class="cap"><i>α</i><sub>G</sub> in °</span>
+    <div class="row">
+      <!-- Steuerung als schmale Spalte wie bei „Blindleistungskompensation“ (20.11.2026), damit die Parameter Platz haben:
+           Abspielen · Zurücksetzen / Umdrehung / Stränge (Festlegung der Lehrkraft, 21.11.2026: L1–L3 als Knöpfe in der
+           Steuerung). Die Schrittknöpfe entfallen (Platz, Layout-Norm v5): ← → springen im 30°-Raster, mit Umschalt ±0,5°. -->
+      <div class="kasten steuerung spalte" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <div class="zeile">
+          <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
+          <button id="btn-reset" type="button">Zurücksetzen</button>
+        </div>
+        <div class="zeile">
+          <label class="group" for="sel-speed"><span class="cap">Umdrehung in</span>
+            <select id="sel-speed">
+              <option value="6">6 s</option>
+              <option value="12" selected>12 s</option>
+              <option value="24">24 s</option>
+              <option value="48">48 s</option>
+            </select>
+          </label>
+        </div>
+        <div class="zeile">
+          <div class="group" role="group" aria-label="Stränge ein- und ausschalten"><span class="cap">Stränge</span>
+            <div class="paar strang">
+              <button type="button" class="ein" id="btn-l1" aria-pressed="true" title="Strang U (u₁): Spule, Zeiger und Kurve – Taste 1"><span class="marke" style="background:var(--u1)"></span>L1</button>
+              <button type="button" class="ein" id="btn-l2" aria-pressed="true" title="Strang V (u₂): Spule, Zeiger und Kurve – Taste 2"><span class="marke" style="background:var(--u2)"></span>L2</button>
+              <button type="button" class="ein" id="btn-l3" aria-pressed="true" title="Strang W (u₃): Spule, Zeiger und Kurve – Taste 3"><span class="marke" style="background:var(--u3)"></span>L3</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="kasten parameter" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
+        <label class="cap" for="num-alpha">Winkel <i>α</i><sub>G</sub> in °</label>
+        <div class="group wert">
+          <input id="rng-alpha" type="range" min="0" max="360" step="0.5" value="60" aria-label="Drehwinkel α_G in Grad">
           <input id="num-alpha" type="number" min="0" max="360" step="0.5" value="60">
-        </label>
-      </div>
-    </div>
-    <div class="row">                                   <!-- Zeile 2 · Einstellen: Erregung, Schritte, Direktwahl, Teilung -->
-      <label class="group erreg" for="rng-erreg"><span class="cap">Erregerstrom <i>I</i><sub>f</sub></span>
-        <input id="rng-erreg" type="range" min="0" max="100" step="1" value="100" aria-label="Erregerstrom I_f in Prozent des Höchstwerts">
-        <span class="cap proz" id="erreg-proz">100 %</span>
-      </label>
-      <div class="group" role="group" aria-label="Schrittweise drehen">
-        <span class="cap">Schritt</span>
-        <button type="button" data-step="-15">−15°</button>
-        <button type="button" data-step="-0.5">−0,5°</button>
-        <button type="button" data-step="0.5">+0,5°</button>
-        <button type="button" data-step="15">+15°</button>
-      </div>
-      <div class="group" role="group" aria-label="Winkel direkt wählen" id="presets">
+          <span class="cap teil">Teilung</span>
+          <span class="seg" role="group" aria-label="Teilung der Winkelachse" id="seg-div"><button type="button" data-div="30" aria-pressed="false">30°</button><button type="button" data-div="90" aria-pressed="false">90°</button><button type="button" data-div="120" aria-pressed="true">120°</button></span>
+        </div>
         <span class="cap">Direkt</span>
+        <div class="paar" role="group" aria-label="Winkel direkt wählen" id="presets"></div>
+        <label class="cap" for="rng-erreg">Erregerstrom <i>I</i><sub>f</sub></label>
+        <div class="group erreg">
+          <input id="rng-erreg" type="range" min="0" max="100" step="1" value="100" aria-label="Erregerstrom I_f in Prozent des Höchstwerts">
+          <span class="cap proz" id="erreg-proz">100 %</span>
+        </div>
       </div>
-      <label class="group" for="sel-div"><span class="cap">Teilung</span>
-        <select id="sel-div">
-          <option value="30">30°</option>
-          <option value="90">90°</option>
-          <option value="120" selected>120°</option>
-        </select>
-      </label>
     </div>
-    <div class="row">                                   <!-- Zeile 3 · Ansicht: Stränge, Ebenen ein/aus, rechts außen Vollbild -->
-      <span class="seg strang" role="group" aria-label="Stränge ein- und ausschalten">
-        <button type="button" id="btn-l1" aria-pressed="true" title="Strang U (u₁): Spule, Zeiger und Kurve – Taste 1"><span class="marke" style="background:var(--u1)"></span>L1</button>
-        <button type="button" id="btn-l2" aria-pressed="true" title="Strang V (u₂): Spule, Zeiger und Kurve – Taste 2"><span class="marke" style="background:var(--u2)"></span>L2</button>
-        <button type="button" id="btn-l3" aria-pressed="true" title="Strang W (u₃): Spule, Zeiger und Kurve – Taste 3"><span class="marke" style="background:var(--u3)"></span>L3</button>
-      </span>
-      <label class="chk" for="chk-proj"><input id="chk-proj" type="checkbox" checked>Projektionslinien</label>
-      <label class="chk" for="chk-trace"><input id="chk-trace" type="checkbox" checked>Kurve mitzeichnen</label>
-      <label class="chk" for="chk-arc"><input id="chk-arc" type="checkbox" checked>Winkelbogen α</label>
-      <label class="chk" for="chk-ro"><input id="chk-ro" type="checkbox" checked>Winkelwerte</label>
-      <label class="chk" for="chk-rad"><input id="chk-rad" type="checkbox">Bogenmaß</label>
-      <label class="group" for="sel-pfeil"><span class="cap">Pfeil am Nordpol</span>
-        <select id="sel-pfeil">
-          <option value="ann" selected>Annäherung</option>
-          <option value="lauf">Laufrichtung</option>
-          <option value="beide">beide</option>
-          <option value="aus">aus</option>
-        </select>
-      </label>
-      <label class="chk" for="chk-fl"><input id="chk-fl" type="checkbox">Feldlinien</label>
-      <label class="chk" for="chk-sum"><input id="chk-sum" type="checkbox">Summe</label>
-      <span class="seg"><button type="button" id="btn-calc" aria-pressed="false">Berechnung</button></span>
-      <span class="sp"></span>
+    <div class="row">                                   <!-- Zeile 2 · Ansicht: Kästen nach Thema (Kästchen), rechts außen Vollbild -->
+      <div class="kasten" role="group" aria-labelledby="lg-gen"><span class="lg" id="lg-gen">Generator</span>
+        <label class="chk" for="chk-fl"><input id="chk-fl" type="checkbox">Feldlinien</label>
+        <!-- Pfeil am Nordpol als zwei Kästchen (Festlegung der Lehrkraft, 21.11.2026; vorher Auswahlliste) -->
+        <label class="chk" for="chk-ann" title="Pfeil am Nordpol: Anteil in Richtung jeder Spulenachse"><input id="chk-ann" type="checkbox" checked>Annäherung</label>
+        <label class="chk" for="chk-lauf" title="Pfeil am Nordpol: Laufrichtung"><input id="chk-lauf" type="checkbox">Laufrichtung</label>
+      </div>
+      <div class="kasten" role="group" aria-labelledby="lg-diag"><span class="lg" id="lg-diag">Diagramme</span>
+        <label class="chk" for="chk-proj"><input id="chk-proj" type="checkbox" checked>Projektion</label>
+        <label class="chk" for="chk-trace"><input id="chk-trace" type="checkbox" checked>Kurve mitzeichnen</label>
+        <label class="chk" for="chk-arc"><input id="chk-arc" type="checkbox" checked>Winkelbogen</label>
+        <label class="chk" for="chk-rad"><input id="chk-rad" type="checkbox">Bogenmaß</label>
+        <label class="chk" for="chk-sum"><input id="chk-sum" type="checkbox">Summe</label>
+      </div>
+      <div class="kasten" role="group" aria-labelledby="lg-text"><span class="lg" id="lg-text">Text</span>
+        <label class="chk" for="chk-ro"><input id="chk-ro" type="checkbox" checked>Winkelwerte</label>
+        <label class="chk" for="chk-calc"><input id="chk-calc" type="checkbox">Berechnung</label>
+      </div>
       <button type="button" id="btn-fs">Vollbild</button>
     </div>
     <details class="keys">
       <summary>Tastatur und Verlinken</summary>
       <div class="hint">
-        <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> zum nächsten 30°-Wert · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> ±0,5° · <kbd>Pos1</kbd> 0° · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> L1, L2, L3 ein/aus · roten Balken <i>I</i><sub>f</sub> in der Bühne ziehen (oder anklicken, dann <kbd>←</kbd> <kbd>→</kbd>) · <kbd>F</kbd> Vollbild, <kbd>Esc</kbd> beendet es.
+        <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> zum nächsten 30°-Wert · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> ±0,5° (statt der früheren Schrittknöpfe) · <kbd>Pos1</kbd> 0° · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> L1, L2, L3 ein/aus · roten Balken <i>I</i><sub>f</sub> in der Bühne ziehen (oder anklicken, dann <kbd>←</kbd> <kbd>→</kbd>) · <code>?pfeil=beide</code> zeigt beide Pfeile am Nordpol · <kbd>F</kbd> Vollbild, <kbd>Esc</kbd> beendet es.
         Die Animation läuft beim Öffnen; ein verlinkter Winkel steht still, z.&nbsp;B. <code>#a135</code> oder <code>#a37-5</code> für 37,5°. <code>?auto=0</code> öffnet angehalten, <code>?qr=1</code> zeigt den QR-Code gleich, <code>?l2=0&amp;l3=0</code> öffnet nur mit L1, <code>?erreg=50</code> mit halbem Erregerstrom.
       </div>
     </details>
@@ -353,7 +398,7 @@ const CFG = {
   alphaMax: 360,                                            // eine Periode; Ende der α-Achse in °
   alphaStart: 60,                                           // Startwinkel der Seite in °
   erregStart: 1,                                            // Erregerstrom beim Öffnen und nach „Zurücksetzen“: voll
-  presets: [0, 60, 90, 120, 180, 210, 240, 300, 330, 360],  // Nullstellen und Maxima der drei Spannungen
+  presets: [0, 90, 120, 180, 210, 240, 270, 300, 360],     // Direktwahl (Festlegung der Lehrkraft, 21.11.2026)
   tastRaster: 30,                                           // ← → springen auf das nächste volle Vielfache in ° (Festlegung der Lehrkraft, 12.11.2026)
   /* Stränge: Spule U oben bei 90°, V und W je 120° weiter gegen den Uhrzeigersinn. Festlegung der Lehrkraft,
      16.11.2026: Polrad dreht wie die Zeiger mathematisch positiv, V links unten, W rechts unten.
@@ -394,7 +439,9 @@ function model(alphaDeg, erreg = 1) {
 }
 
 /* ================= Zustand ================= */
-const S = { alpha: CFG.alphaStart, playing: false, rev: 12, proj: true, trace: true, arc: true, ro: true, pfeil: 'ann', rad: false, fl: false,
+const S = { alpha: CFG.alphaStart, playing: false, rev: 12, proj: true, trace: true, arc: true, ro: true, rad: false, fl: false,
+  ann: true, lauf: false, /* Pfeil am Nordpol: Annäherung beim Öffnen an, Laufrichtung aus (zwei Kästchen seit 21.11.2026) */
+  erkl: false,            /* Erklärung unter der Bedienleiste, beim Öffnen zu */
   div: '120',             /* Teilung 120° wie in der Folie der Lehrkraft von 2019 (Annahme, 16.11.2026) */
   on: [true, true, true], /* alle drei Stränge beim Öffnen an (Festlegung der Lehrkraft, 16.11.2026) */
   sum: false,             /* Ebene „u1 + u2 + u3 = 0“: zuschaltbar, beim Öffnen aus (Festlegung der Lehrkraft, 16.11.2026) */
@@ -565,6 +612,8 @@ txt(40, UF.y + UF.h / 2, I('I') + SUB('f', 30), { class: 'lbl c-if', 'dominant-b
 const gUF = el('g', { id: 'if-regler', class: 'zieh', role: 'slider', tabindex: 0, 'aria-label': 'Erregerstrom I_f (ziehen oder Pfeiltasten)',
   'aria-valuemin': 0, 'aria-valuemax': 100 });
 el('title', {}, gUF).textContent = 'Erregerstrom: ziehen oder Pfeiltasten';
+/* Trefferfläche größer als der Rahmen (am Beamer-Laptop rund 48 CSS-px hoch), unsichtbar */
+el('rect', { x: 30, y: 56, width: UF.x + UF.w + 24 - 30, height: 94, fill: 'transparent', 'pointer-events': 'all' }, gUF);
 el('rect', { class: 'zieh-rahmen', x: UF.x - 14, y: UF.y - 14, width: UF.w + 28, height: UF.h + 28, rx: 6, fill: 'transparent',
   stroke: C.aus, 'stroke-width': 2, 'stroke-dasharray': '8 6', 'pointer-events': 'all' }, gUF);
 const ufBar = el('rect', { id: 'if-balken', x: UF.x, y: UF.y, width: UF.w, height: UF.h, fill: C.i }, gUF);
@@ -874,13 +923,13 @@ function render() {
     const [bx, by] = P(G.cx, G.cy, G.rotR + 6, m.thetaN), ux = Math.cos(a * D), uy = -Math.sin(a * D);   // an der Polfläche des Nordpols
     const tx2 = bx + 62 * ux, ty2 = by + 62 * uy, pol = e >= 0.1;
     vArrow.set(bx, by, tx2, ty2);
-    show(vArrow.g, pol && (S.pfeil === 'lauf' || S.pfeil === 'beide'));
+    show(vArrow.g, pol && S.lauf);
     CFG.str.forEach((s, k) => {
       const g = (90 + s.phase) * D, ex = Math.cos(g), ey = -Math.sin(g), c = 62 * (ux * ex + uy * ey);   // = 62 · u_k / (e · û)
       const px = bx + c * ex, py = by + c * ey;
       aArrows[k].ar.set(bx, by, px, py); setLine(aArrows[k].con, px, py, tx2, ty2);
-      show(aArrows[k].ar.g, pol && S.on[k] && (S.pfeil === 'ann' || S.pfeil === 'beide'));
-      show(aArrows[k].con, pol && S.on[k] && S.pfeil === 'beide' && Math.abs(c) > 1.5 && Math.abs(c) < 61.5);   // kein Lot, wenn der Anteil null ist oder die Laufrichtung selbst
+      show(aArrows[k].ar.g, pol && S.on[k] && S.ann);
+      show(aArrows[k].con, pol && S.on[k] && S.ann && S.lauf && Math.abs(c) > 1.5 && Math.abs(c) < 61.5);   // kein Lot, wenn der Anteil null ist oder die Laufrichtung selbst
     });
   }
   // Drehzeiger, Gegenkatheten, Projektionslinien und Momentanwerte; Punkte im Liniendiagramm aus dem Modell
@@ -1049,7 +1098,7 @@ function erklJetzt(a) {
   const teile = ak.map((k) => strangSatz(k, a) + (S.calc ? `: <i>u</i><sub>${CFG.str[k].idx}</sub>&nbsp;=&nbsp;${fmtLauf(CFG.uHat * (Math.abs(m.u[k]) < 0.0005 ? 0 : m.u[k]), 'V').replace(' ', '&#8239;')}` : ''));
   return kopf + 'Der Nordpol ' + teile.join('; er ') + '.';
 }
-erklBox.addEventListener('toggle', () => render());
+erklBox.addEventListener('toggle', () => { S.erkl = erklBox.open; render(); });
 
 /* ================= Bedienung ================= */
 const btnPlay = $('#btn-play'), rng = $('#rng-alpha'), num = $('#num-alpha'), rngE = $('#rng-erreg');
@@ -1059,8 +1108,8 @@ function syncUI() {
   if (document.activeElement !== num) num.value = v;
   btnPlay.textContent = S.playing ? '❚❚ Pause' : '▶ Abspielen';
   btnPlay.setAttribute('aria-pressed', String(S.playing));
-  const sp = $('#sel-pfeil'); if (sp && sp.value !== S.pfeil) sp.value = S.pfeil;
-  $('#btn-calc').setAttribute('aria-pressed', String(S.calc));
+  for (const k of ['fl', 'ann', 'lauf', 'proj', 'trace', 'arc', 'rad', 'sum', 'ro', 'calc']) { const c = $('#chk-' + k); if (c && c.checked !== !!S[k]) c.checked = !!S[k]; }
+  document.querySelectorAll('#seg-div button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.div === S.div)));
   document.documentElement.classList.toggle('calc', S.calc);
   for (let k = 0; k < 3; k++) $('#btn-l' + (k + 1)).setAttribute('aria-pressed', String(S.on[k]));
   const pz = Math.round(S.erreg * 100);
@@ -1136,11 +1185,11 @@ for (const p of CFG.presets) {
   presetBox.appendChild(b);
 }
 for (let k = 0; k < 3; k++) $('#btn-l' + (k + 1)).addEventListener('click', () => setStrang(k, !S.on[k]));
-for (const [id, key] of [['chk-proj', 'proj'], ['chk-trace', 'trace'], ['chk-arc', 'arc'], ['chk-ro', 'ro'], ['chk-rad', 'rad'], ['chk-fl', 'fl'], ['chk-sum', 'sum']]) {
+for (const [id, key] of [['chk-proj', 'proj'], ['chk-trace', 'trace'], ['chk-arc', 'arc'], ['chk-ro', 'ro'], ['chk-rad', 'rad'], ['chk-fl', 'fl'], ['chk-sum', 'sum'],
+                          ['chk-ann', 'ann'], ['chk-lauf', 'lauf'], ['chk-calc', 'calc']]) {
   $('#' + id).addEventListener('change', (e) => { S[key] = e.target.checked; if (key === 'sum' || key === 'rad') buildDivisionLabels(); render(); });
 }
-$('#sel-div').addEventListener('change', (e) => { S.div = e.target.value; buildDivisionLabels(); });
-$('#sel-pfeil').addEventListener('change', (e) => { S.pfeil = e.target.value; render(); });
+document.querySelectorAll('#seg-div button').forEach((b) => b.addEventListener('click', () => { S.div = b.dataset.div; buildDivisionLabels(); render(); }));
 /* Vollbild nach Normblock 10 (Layout-Norm v3, Baustein aus dem Gerüst): die ganze Seite; sichtbar ist nur die Bühne.
    Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
 function setVollbild(an) {
@@ -1170,7 +1219,6 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
   else if (e.key === 'Escape' && document.documentElement.classList.contains('vollbild')) setVollbild(false);
 });
-$('#btn-calc').addEventListener('click', () => { S.calc = !S.calc; render(); });
 /* Erregerstrom am roten Balken in der Bühne: Klick setzt, Ziehen ändert; Pfeiltasten ±5 %, mit Umschalt ±1 %, Pos1/Ende */
 function ufAusZeiger(ev) {
   const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
@@ -1185,6 +1233,8 @@ gUF.addEventListener('pointerdown', (ev) => {
   gUF.focus({ preventScroll: true }); ufGezogen(); setErreg(ufAusZeiger(ev));
 });
 gUF.addEventListener('pointermove', (ev) => { if (ufZieht) setErreg(ufAusZeiger(ev)); });
+/* Finger: touch-action wirkt an SVG-Elementen nicht zuverlässig – Blättern der Seite beim Ziehen hier verhindern */
+gUF.addEventListener('touchstart', (ev) => ev.preventDefault(), { passive: false });
 const ufEnde = () => { ufZieht = false; gUF.classList.remove('aktiv'); };
 for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) gUF.addEventListener(t, ufEnde);
 gUF.addEventListener('keydown', (ev) => {
@@ -1214,11 +1264,13 @@ window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S
 const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
 if (params.has('export') || location.hash === '#export') document.documentElement.classList.add('export');
 if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne (Normblock 8)
-for (const k of ['proj', 'trace', 'arc', 'ro', 'qr', 'calc', 'rad', 'fl', 'sum']) if (params.has(k)) { S[k] = params.get(k) !== '0'; const c = $('#chk-' + k); if (c) c.checked = S[k]; }
+for (const k of ['proj', 'trace', 'arc', 'ro', 'qr', 'calc', 'rad', 'fl', 'sum', 'ann', 'lauf']) if (params.has(k)) { S[k] = params.get(k) !== '0'; const c = $('#chk-' + k); if (c) c.checked = S[k]; }
 for (let k = 0; k < 3; k++) if (params.has('l' + (k + 1))) S.on[k] = params.get('l' + (k + 1)) !== '0';
 if (params.has('erreg')) { const v = parseFloat(params.get('erreg').replace(',', '.')); if (Number.isFinite(v)) S.erreg = clamp(v > 1 ? v / 100 : v, 0, 1); }
-if (params.has('div')) { S.div = params.get('div'); $('#sel-div').value = S.div; }
-if (params.has('pfeil')) { S.pfeil = params.get('pfeil'); $('#sel-pfeil').value = S.pfeil; }
+if (params.has('div')) S.div = params.get('div');
+/* ?pfeil=ann|lauf|beide|aus (wie vor dem Umbau): auf die beiden Kästchen abbilden */
+const setPfeil = (v) => { S.ann = v === 'ann' || v === 'beide'; S.lauf = v === 'lauf' || v === 'beide'; };
+if (params.has('pfeil')) setPfeil(params.get('pfeil'));
 window.anim = {
   bauart: 'stellgroesse',
   cfg: CFG,
@@ -1227,10 +1279,10 @@ window.anim = {
   opt(key, val) {
     if (/^l[123]$/.test(key)) { setStrang(Number(key[1]) - 1, val); return; }
     if (key === 'erreg') { setErreg(val); return; }
+    if (key === 'pfeil') { setPfeil(val); render(); return; }        // ältere Schreibweise: 'ann' | 'lauf' | 'beide' | 'aus'
+    if (key === 'erkl') { erklBox.open = !!val; S.erkl = !!val; render(); return; }
     S[key] = val;
     const c = $('#chk-' + key); if (c) c.checked = !!val;
-    if (key === 'div') $('#sel-div').value = val;
-    if (key === 'pfeil') $('#sel-pfeil').value = val;
     if (key === 'div' || key === 'sum' || key === 'rad') buildDivisionLabels();
     render();
   },
@@ -1241,7 +1293,7 @@ window.anim = {
     const m = model(S.alpha, S.erreg), uv = (k) => CFG.uHat * m.u[k];
     let sum = 0; for (let k = 0; k < 3; k++) if (S.on[k]) sum += uv(k);
     return { alpha: S.alpha, playing: S.playing, erreg: S.erreg, l1: S.on[0], l2: S.on[1], l3: S.on[2], sumOn: S.sum, fl: S.fl, calc: S.calc, qr: S.qr,
-      proj: S.proj, trace: S.trace, div: S.div, pfeil: S.pfeil, rad: S.rad,
+      proj: S.proj, trace: S.trace, div: S.div, ann: S.ann, lauf: S.lauf, erkl: S.erkl, rad: S.rad,
       uHat: CFG.uHat * S.erreg, u1: uv(0), u2: uv(1), u3: uv(2), sum };   // Spannungen in V
   },
 };
