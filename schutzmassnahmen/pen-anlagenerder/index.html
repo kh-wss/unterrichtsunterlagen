@@ -334,7 +334,9 @@ const svg = $('stage-svg');
    – Schaltbar sind vier Dinge: Laden (Auto an der Wallbox), PEN, Anlagenerder, Person. Startzustand beim Öffnen:
      Anlagenerder vorhanden, PEN intakt, Laden aus, niemand berührt – die Lehrkraft schaltet live.
    – Verbraucher (Rückmeldung vom 22.11.2026, 14 Uhr): statt der Heizung eine einphasige Wallbox mit kleinem Auto,
-     Ladestrom 32 A. Im Modell ist das Auto ein ohmscher Ersatzwiderstand R_Auto (im Quelltext RV, Schalter „laden“).
+     Ladestrom erst 32 A. Im Modell ist das Auto ein ohmscher Ersatzwiderstand R_Auto (im Quelltext RV, Schalter „laden“).
+   – Ladestrom (Rückmeldung vom 23.11.2026, 8 Uhr): Widerstand des Ladens so gesenkt, dass 28 A fließen. Bezug (Annahme von
+     Claude): Schaltung nach „Laden starten“ mit R_Ltg = 1 Ω, PEN intakt, R_A = 10 Ω. Daraus R_Auto = 6,29 Ω (vorher 7,19 Ω).
    – Standort der Person (Rückmeldung und Auswahlrunde vom 22.11.2026, 14:30 Uhr): Umschalter nah / weit weg. Nah heißt 0,2 m
      neben dem Anlagenerder (erst 1 m, dann auf Wunsch näher), dort steht sie beim Öffnen; weit weg heißt auf Bezugserde. Die Breite des Trichters folgt aus
      R_A (Halbkugelerder, r_0 = ρ/(2π·R_A)). Anlass: Der Unterschied mit und ohne Anlagenerder war der Lehrkraft zu klein.
@@ -344,13 +346,15 @@ const svg = $('stage-svg');
    – Stromfluss als rote Laufmarken in Zählpfeilrichtung, dazu Strompfeile. Es bewegt sich erst etwas, wenn Strom fließt.
    – Anlagenerder als Ein/Aus-Knopf in der Steuerung, R_A als Direktwahl bei den Parametern.
    – Potentialdiagramm mit blauer Linie, fester Maßstab bis 230 V, Lupe zuschaltbar (gewählt war ×10, siehe CFG.diag).
-   Vorschläge von Claude, nicht ausdrücklich bestätigt: R_Auto = 7,19 Ω als ohmscher Ersatz, R_B = 2 Ω, R_A = 10 Ω als Standard, Direktwahl der
+   Vorschläge von Claude, nicht ausdrücklich bestätigt: das Auto als ohmscher Ersatzwiderstand, R_B = 2 Ω, R_A = 10 Ω als Standard, Direktwahl der
    Widerstände, zuschaltbare Grenzlinie (erst 50 V, seit der Rückmeldung von 14:55 Uhr 25 V), Quelle als Strangwicklung. */
 const CFG = {
   U0: 230,                                  // Strangspannung in V (Netz 230/400 V)
   RL: 1, RLwahl: [0.1, 0.5, 1],             // Leiterwiderstand je Ader in Ω (R_L = R_PEN); 1 Ω ist überhöht, real etwa 0,02 bis 0,3 Ω
-                                            // (Startwert 1 Ω aus der Übergabe; mit dem 32-A-Verbraucher noch offen, ob 0,1 Ω der bessere Startwert ist)
-  RV: 7.19,                                 // Ersatzwiderstand des ladenden Autos in Ω: R = U/I = 230 V / 32 A = 7,19 Ω (Ladestrom 32 A, einphasig; P = 7,36 kW)
+                                            // (Startwert 1 Ω aus der Übergabe; R_Auto ist seit dem 23.11.2026 auf diesen Startwert ausgelegt)
+  RV: 6.29,                                 // Ersatzwiderstand des ladenden Autos in Ω, ausgelegt auf I_L = 28 A in der Startschaltung (Festlegung 23.11.2026):
+                                            // R_Auto = U_0/I_L − R_L − R_PEN·(R_B + R_A)/(R_PEN + R_B + R_A) = 230 V/28 A − 1 Ω − 0,923 Ω = 6,29 Ω
+  Iziel: 28,                                // dieser Ladestrom in A (nur für den Text unter „Modell und Vereinfachungen“)
   RB: 2,                                    // Betriebserder in Ω (Blatt „01 Info Schleifenimpedanz“: höchstens 2 Ω)
   RA: 10, RAwahl: [2, 10, 100],             // Anlagenerder in Ω (Annahme)
   RK: 1000,                                 // Körperwiderstand in Ω (Festlegung der Lehrkraft; Blatt „02 AB Berührspg“)
@@ -359,7 +363,7 @@ const CFG = {
                                             // Die dauernd zulässige Berührungsspannung im Fehlerfall wäre AC 50 V.
   rho: 100,                                 // spezifischer Erdwiderstand in Ωm (Annahme: feuchter Lehmboden); daraus folgt die Breite des Trichters
   DS: 0.2, DSwahl: [0.2, Infinity],         // Standort: Abstand d der Person vom Rand des Anlagenerders in m; Infinity = weit weg (Bezugserde).
-                                            // 0,2 m (Rückmeldung 22.11.2026, 14:49 Uhr: „nah noch näher, etwa 2 V“): U_B = 19,41 V · 0,2 m/(1,59 m + 0,2 m) = 2,17 V
+                                            // 0,2 m (Rückmeldung 22.11.2026, 14:49 Uhr: „nah noch näher, etwa 2 V“): U_B = 21,54 V · 0,2 m/(1,59 m + 0,2 m) = 2,40 V (mit R_Auto = 7,19 Ω waren es 2,17 V)
   start: { laden: false, pen: true, erder: true, person: false },   // Startzustand (Festlegung der Lehrkraft, 22.11.2026)
   /* Wirkung des Körperstroms, ab I_K in A. Quelle: Arbeitsbuch Elektrotechnik Lernfelder 1–4, Europa-Lehrmittel, S. 7, Bild 3.
      Die Stufen hängen in Wirklichkeit auch von der Einwirkdauer ab. */
@@ -371,7 +375,7 @@ const CFG = {
     { ab: 50e-3, text: 'Herzkammerflimmern' },
     { ab: 500e-3, text: 'häufig tödlich' },
   ],
-  skalaI: 3.75,                             // Strompfeile: px je A (32 A = 120 px)
+  skalaI: 3.75,                             // Strompfeile: px je A (28 A = 105 px, größter Wert 35,4 A = 133 px bei R_Ltg = 0,1 Ω)
   ikFaktor: 100,                            // der Pfeil I_K ist so viel mal vergrößert (sonst wären 228 mA neben 31 A unsichtbar)
   diag: { voll: 230, lupe: 5 },             // Potentialdiagramm: Bereich in V, Dehnung der Lupe. ×5 (bis 46 V) statt ×10 aus der Auswahlrunde:
                                             // Mit ×10 (bis 23 V) lägen die Grenzlinie 25 V und der Fall ohne Erder (25,0 V) außerhalb. Vorschlag von Claude, 22.11.2026.
@@ -559,7 +563,7 @@ function aufPfad(p, s) {
    Steckverbindung mit Buchse als „C“ und Stecker als dickem Strich · Schalter im Gerät · kein Gehäuse, sondern direktes
    Berühren des PE an der Außensteckdose · Erdungszeichen zusätzlich zu R_B und R_A · Spannungspfeil von der Berührstelle
    zum Erdreich mit Wert · Spannung an R_PEN · Potentialdiagramm ausblendbar · statt der Heizung eine einphasige Wallbox
-   mit kleinem Auto, Ladestrom 32 A · zwei Steckdosen übereinander in der Anordnung L1, PE, N, oben die Wallbox, unten die
+   mit kleinem Auto, Ladestrom erst 32 A, seit 23.11.2026 28 A · zwei Steckdosen übereinander in der Anordnung L1, PE, N, oben die Wallbox, unten die
    Person · alle Widerstände im Seitenverhältnis 3 : 1.
    Schaltzeichen nach dem Hausstil (schaltzeichen, Tabellenbuch S. 86/87): Widerstand als Rechteck, Wicklungsstrang mit
    Bögen, Schließer (senkrecht, Wurzel unten – die freigegebene Form), Erdung, Steckerbuchse und Steckerstift, Umrahmung
@@ -1187,13 +1191,16 @@ function schreibeAdresse() {
   const z = `#z${+st.laden}${+!st.pen}${+!st.erder}${+st.person}` + (st.RL !== CFG.RL ? `rl${st.RL}` : '') + (st.RA !== CFG.RA ? `ra${st.RA}` : '') + (isFinite(st.DS) ? '' : 'weit');
   try { if (location.hash !== z && /^https?:$/.test(location.protocol)) history.replaceState(null, '', z); } catch (e) { /* Vorschau ohne Adresse */ }
 }
+const AUSL = { U0: CFG.U0, RL: CFG.RL, RP: CFG.RL, RV: CFG.RV, RB: CFG.RB, RA: CFG.RA, RK: CFG.RK, laden: true, pen: true, erder: true, person: false, f: 0 };
+const mAusl = model(AUSL), mReal = model({ ...AUSL, RL: 0.1, RP: 0.1 });     // Startschaltung mit Laden; dieselbe mit R_Ltg = 0,1 Ω
+const rPar = CFG.RL * (CFG.RB + CFG.RA) / (CFG.RL + CFG.RB + CFG.RA);        // R_PEN parallel zu (R_B + R_A)
 $('notes').innerHTML = [
   `Gezeigt sind Effektivwerte in Zählpfeilrichtung. In Wirklichkeit ist es Wechselstrom, die Laufmarken zeigen nur die Zählrichtung. Ein negatives Potential ${fz('φ', 'S')} bedeutet Gegenphase zur Netzspannung.`,
-  `Der Leiterwiderstand ist je Ader zu einem Widerstand gebündelt: ${fz('R', 'L')} = ${fz('R', 'PEN')} = ${fz('R', 'Ltg')}. Der Standardwert ${fz('R', 'Ltg')} = ${Gg(CFG.RL, 'Ω')} ist etwa zehnfach überhöht, damit die Spannung an ${fz('R', 'PEN')} deutlich zu sehen ist. Für einen Stromkreis mit 32&#8239;A ist das unrealistisch: Am Auto kommen dann nur rund 180&#8239;V an. Real sind es etwa 0,02&#8239;Ω bis 0,3&#8239;Ω, zum Beispiel ${fz('R')} = ${bruch(fz('l'), `${fz('γ')} · ${fz('A')}`)} = ${bruch('300&#8239;m', '35&#8239;m/(Ω·mm²) · 50&#8239;mm²')} = 0,17&#8239;Ω (eigene Abschätzung).`,
+  `Der Leiterwiderstand ist je Ader zu einem Widerstand gebündelt: ${fz('R', 'L')} = ${fz('R', 'PEN')} = ${fz('R', 'Ltg')}. Der Standardwert ${fz('R', 'Ltg')} = ${Gg(CFG.RL, 'Ω')} ist etwa zehnfach überhöht, damit die Spannung an ${fz('R', 'PEN')} deutlich zu sehen ist. Für einen Ladestromkreis ist das unrealistisch: Am Auto kommen dann nur ${hw(fmtLauf(mAusl.U_V, 'V'))} an. Real sind es etwa 0,02&#8239;Ω bis 0,3&#8239;Ω, zum Beispiel ${fz('R')} = ${bruch(fz('l'), `${fz('γ')} · ${fz('A')}`)} = ${bruch('300&#8239;m', '35&#8239;m/(Ω·mm²) · 50&#8239;mm²')} = 0,17&#8239;Ω (eigene Abschätzung).`,
   `Nur ohmsche Widerstände. Vernachlässigt sind die Induktivität der Leitung, der Innenwiderstand des Transformators sowie die Widerstände von N und PE im Haus.`,
-  `Nur ein Außenleiter und eine Last: ein Auto, das einphasig an der Wallbox lädt. Sein Ladegerät ist durch einen ohmschen Widerstand ersetzt: ${fz('R', 'Auto')} = ${bruch(fz('U'), fz('I'))} = ${bruch('230&#8239;V', '32&#8239;A')} = ${Gg(CFG.RV, 'Ω')}, das entspricht ${fz('P')} = ${fz('U')} · ${fz('I')} = 230&#8239;V · 32&#8239;A = 7,36&#8239;kW. Andere Verbraucher und Nachbarhäuser am selben PEN fehlen.`,
-  `Grenze des Ersatzwiderstands: Ein echtes Ladegerät regelt den Ladestrom und schaltet bei zu kleiner Spannung ab. Die Werte bei PEN-Bruch („lädt kaum“) gelten deshalb für einen ohmschen Verbraucher gleicher Leistung, zum Beispiel ein Heizgerät. Im Normalbetrieb mit ${fz('R', 'Ltg')} = 0,1&#8239;Ω stimmt das Bild gut.`,
-  `Einphasig mit 32&#8239;A lädt man am öffentlichen Netz in Deutschland nicht: Geräte über 4,6&#8239;kVA sind dreiphasig anzuschließen (VDE-AR-N 4100, Abschnitt Symmetrie; FNN-Hinweis 12/2019). Einphasig ist bei 20&#8239;A Schluss. Die Animation rechnet trotzdem einphasig, weil nur dann der ganze Rückstrom über den PEN fließt – bei symmetrischer dreiphasiger Last wäre der PEN stromlos.`,
+  `Nur ein Außenleiter und eine Last: ein Auto, das einphasig an der Wallbox lädt. Sein Ladegerät ist durch einen ohmschen Widerstand ersetzt. Er ist so gewählt, dass nach „Laden starten“ mit den Werten beim Öffnen (${fz('R', 'Ltg')} = ${Gg(CFG.RL, 'Ω')}, PEN intakt, ${fz('R', 'A')} = ${Gg(CFG.RA, 'Ω')}) der Ladestrom ${fz('I', 'L')} = ${CFG.Iziel}&#8239;A fließt: ${fz('R', 'Auto')} = ${bruch(fz('U', '0'), fz('I', 'L'))} − ${fz('R', 'L')} − ${bruch(`${fz('R', 'PEN')} · (${fz('R', 'B')} + ${fz('R', 'A')})`, `${fz('R', 'PEN')} + ${fz('R', 'B')} + ${fz('R', 'A')}`)} = ${bruch(`${CFG.U0}&#8239;V`, `${CFG.Iziel}&#8239;A`)} − ${Gg(CFG.RL, 'Ω')} − ${rPar.toFixed(3).replace('.', ',')}&#8239;Ω = ${Gg(CFG.RV, 'Ω')}. Andere Verbraucher und Nachbarhäuser am selben PEN fehlen.`,
+  `Grenze des Ersatzwiderstands: Ein echtes Ladegerät regelt den Ladestrom und schaltet bei zu kleiner Spannung ab. Die Werte bei PEN-Bruch („lädt kaum“) gelten deshalb für einen ohmschen Verbraucher gleicher Leistung, zum Beispiel ein Heizgerät. Auch der Strom hängt im Modell vom Leiterwiderstand ab: Mit ${fz('R', 'Ltg')} = 0,1&#8239;Ω steigt er auf ${hw(fmtLauf(mReal.I_L, 'A'))}, direkt an ${CFG.U0}&#8239;V wären es ${hw(fmtLauf(CFG.U0 / CFG.RV, 'A'))}. Ein echtes Ladegerät hielte den eingestellten Ladestrom fest.`,
+  `Einphasig mit ${CFG.Iziel}&#8239;A lädt man am öffentlichen Netz in Deutschland nicht: Geräte über 4,6&#8239;kVA sind dreiphasig anzuschließen (VDE-AR-N 4100, Abschnitt Symmetrie; FNN-Hinweis 12/2019). Einphasig ist bei 20&#8239;A Schluss. Die Animation rechnet trotzdem einphasig, weil nur dann der ganze Rückstrom über den PEN fließt – bei symmetrischer dreiphasiger Last wäre der PEN stromlos.`,
   `Jeder Erder ist ein gebündelter Widerstand zur Bezugserde: Betriebserder ${fz('R', 'B')} = ${Gg(CFG.RB, 'Ω')}, Anlagenerder ${fz('R', 'A')} = ${Gg(CFG.RA, 'Ω')} (Annahmen). Der Abstand der Erder voneinander spielt keine Rolle. Der Erdungswiderstand sitzt im Erdreich direkt um den Erder – dort liegt der Potentialtrichter.`,
   `Standort der Person: Der Anlagenerder ist als Halbkugel gerechnet, Ersatzradius ${fz('r', '0')} = ${bruch(fz('ρ'), `2π · ${fz('R', 'A')}`)} mit ${fz('ρ')} = ${Gg(CFG.rho, 'Ωm')} (Annahme). Im Abstand ${fz('d')} vom Rand hat das Erdreich das Potential ${fz('φ', 'St')} = ${fz('φ', 'PE')} · ${bruch(fz('r', '0'), `${fz('r', '0')} + ${fz('d')}`)}. Die Berührungsspannung ist ${fz('U', 'B')} = ${fz('φ', 'PE')} − ${fz('φ', 'St')}. Im Netzwerk greift die Person nur den Teil ${fz('R', 'A1')} = ${fz('R', 'A')} · ${bruch(fz('d'), `${fz('r', '0')} + ${fz('d')}`)} des Erdungswiderstands ab – im Schaltbild zeigt das der gestrichelte Abgriff an ${fz('R', 'A')}. Ein kleiner ${fz('R', 'A')} heißt großer Erder und breiter Trichter. Ein Fundamenterder unter dem ganzen Haus ist größer als diese Halbkugel, die Rechnung ist eine Näherung. „Weit weg“ heißt: Standort auf Bezugserde, der ungünstigste Fall.`,
   `Potentialdiagramm: Die Höhe der Trichter ist maßstäblich. Steht die Person nah am Erder, sind rechts der Unterbrechung auch Form und Breite des Trichters maßstäblich (Halbkugelerder); die Maßlinie zeigt den Abstand ${fz('d')}. Sonst und am Betriebserder sind Form und Breite nur qualitativ. Die Ortsachse ist zwischen Trafostation und Haus unterbrochen, weil die Trafostation einige hundert Meter entfernt ist. Die Marken ${fz('φ', 'PE')} und ${fz('φ', 'S')} zeigen Potentiale von Leitern, nicht des Erdreichs. Mit „Lupe ×${CFG.diag.lupe}“ ist das Diagramm ${CFG.diag.lupe}-fach gedehnt, größere Werte sind dann abgeschnitten.`,
