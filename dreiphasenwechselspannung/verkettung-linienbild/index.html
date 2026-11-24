@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verkettung bei Dreiphasenwechselspannung: Linienbild</title>
+<meta name="description" content="Zwei Sternspannungen als Drehzeiger und im Linienbild: u2N mit der Spitze an die Spitze von u1N schieben – vom Fuß zum Fuß reicht die Außenleiterspannung u12 mit rund 400 V. Fünf Schritte, Winkel einstellbar, drei Vorhersage-Fragen.">
+<style>
+/* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+   Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
+   gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit.
+   v4 (20.11.2026): Die Vorschau ?buehne=1 passt die Bühne in jeden Rahmen ganz ein (Moodle-Rahmen mit fester Höhe).
+   v5 (20.11.2026): Bedienleiste in Kästen mit Überschrift – oben Steuerung links, Parameter rechts, darunter Ansicht. */
+:root{
+  /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
+  --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
+  --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
+  /* Bühne: immer weiß, ohne Karoraster – die Größenfarben der Fachkonventionen gelten für weißen Grund */
+  --stage:#ffffff; --ink:#1b2127;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-math:var(--font-ui);   /* Formeln in der Textschrift (Festlegung der Lehrkraft, 12.11.2026; fachkonventionen 3a) */
+  /* Bühnengröße = (Fensterhöhe − --reserve) · 16/9, höchstens 1920 px und höchstens die Seitenbreite.
+     --reserve: Ränder, Abstand und Bedienleiste. Derselbe Wert steht in scripts/pruefen.py (NORM). */
+  --reserve:250px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+    --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+  --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--page);color:var(--fg)}
+body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.45;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+sub,sup{font-size:.72em;line-height:0}
+
+/* 1 Seitenaufbau, immer in dieser Reihenfolge, alles gleich breit: Bühne (#stage) → Bedienleiste (#controls) →
+   Zusatzbereiche (.card, .info, optional) → Modellhinweise (.notes). Über der Bühne steht nichts. */
+.wrap{width:100%;max-width:min(1920px,max(min(100%,720px),calc((100dvh - var(--reserve)) * 16 / 9)));
+  margin:0 auto;display:grid;gap:12px}
+
+/* 2 Bühne: immer 16:9, logisch 1920 × 1080 (SVG-viewBox; Canvas darunter, SVG mit Titel und QR-Code darüber) */
+.stage{position:relative;background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.stage svg,.stage canvas{display:block;width:100%;height:100%}
+.stage canvas + svg{position:absolute;inset:0}
+.stage:fullscreen{border:0;border-radius:0;aspect-ratio:auto;width:100vw;height:100vh;max-width:none}   /* nur noch für Animationen vor v3 */
+
+/* 3 Schrift in der Bühne (Bühnenpixel bei 1920 Breite): Formelzeichen kursiv (.i), Einheiten, Zahlen, Indizes aufrecht */
+#stage-svg text{font-family:var(--font-math);fill:var(--ink)}
+#stage-svg .t-main{font-size:60px;font-weight:700}     /* Titel, oben rechts neben dem QR-Code */
+#stage-svg .t-panel{font-size:34px;font-weight:700}    /* Bereichsüberschrift */
+#stage-svg .ro{font-size:38px}                         /* Momentanwerte */
+#stage-svg .lbl{font-size:30px}                        /* Formelzeichen an Pfeilen und Bauteilen */
+#stage-svg .lbl-s{font-size:25px}
+#stage-svg .lbl-xs{font-size:22px}                     /* kleinste erlaubte Beschriftung */
+#stage-svg .sans{font-family:var(--font-ui)}
+#stage-svg .i{font-style:italic}
+#stage-svg .muted{fill:#58636e}
+#stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .qr-cap{font-family:var(--font-ui);font-size:22px}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
+
+/* 4 Bedienleiste in Kästen mit Überschrift auf dem Rahmen (v5, Festlegung der Lehrkraft 20.11.2026, layout.md 4):
+   .row 1: .kasten.steuerung links (Raster: Hauptknopf/Eingriff · Pause/Zurücksetzen · Tempo/Anzeige) | .kasten.parameter rechts
+   .row 2: Ansicht – Kästen nach Thema (Ebenen in der Bühne, Text darunter) mit Kästchen · Vollbild (#btn-fs) rechts außen
+   dann „Tastatur“. Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+.card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.controls{display:grid;gap:12px;font-size:13.5px;line-height:1.35;padding-top:14px;container:leiste / inline-size}
+.controls>details.keys{margin-top:-5px}
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px 8px}
+.row .sp{flex:1 1 auto}
+.kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 auto;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+.kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);font-size:10.5px;line-height:13px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kasten .chk+.chk{margin-left:4px}
+.kasten .paar{display:flex;flex-wrap:wrap;gap:6px}
+.kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;justify-items:start;
+  gap:6px 10px;flex:0 1 auto}
+.kasten.steuerung:last-child{flex-grow:1}   /* ohne Parameter füllt die Steuerung die Zeile */
+.kasten.steuerung .zeile,.kasten.steuerung .zeile>.group{display:contents}   /* je .zeile: Knopf · Knopf · Überschrift · Auswahl */
+.kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+.kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;
+  flex:1 1 0;min-width:auto}   /* nimmt den Rest der Zeile neben der Steuerung; lange Auswahlreihen (.paar) brechen im Kasten um */
+#btn-fs{margin-left:auto;align-self:center}
+button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}  /* Ein/Aus-Knopf */
+/* Leiste 600–850 px breit (1280 × 720): Parameter-Überschrift über der Auswahl, damit Steuerung und Parameter nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){
+  .kasten.parameter{grid-template-columns:auto;gap:2px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:4px}}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
+.group.wert .group{flex-wrap:nowrap}
+.group.wert input[type=range]{min-width:100px}
+.cap{font-size:12px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
+button{padding:3px 9px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:9em;font-weight:600}
+button.primary:hover{opacity:.92}
+select{padding:2px 5px}
+input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
+.seg{display:inline-flex}
+.seg button,.kasten button{white-space:nowrap}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
+.seg button:last-child{border-radius:0 5px 5px 0}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:14px;height:14px;margin:0}
+:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.keys .hint{margin-top:6px}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+.sep{width:1px;align-self:stretch;background:var(--rule)}
+@media (max-width:640px){.sep{display:none} .kasten{flex:1 1 100%}}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){   /* schmal: Steuerung als Zeilen statt Raster */
+  .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  .kasten.steuerung .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  .kasten.steuerung .zeile>.group{display:flex}
+  .kasten.steuerung .zeile>:empty{display:none}}
+
+/* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
+.diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
+.diag text{font-family:var(--font-math);fill:var(--ink)}           /* Schriftstufen wie in der Bühne (Bühnenpixel bei 1920) */
+.diag .lbl{font-size:30px} .diag .lbl-s{font-size:25px} .diag .lbl-xs{font-size:22px}
+.diag .sans{font-family:var(--font-ui)} .diag .i{font-style:italic} .diag .muted{fill:#58636e}
+.diag .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+.info{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.info{grid-template-columns:1fr}}
+.info h2{margin:0;font-size:19px}
+.info h3,.card h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#pText{margin:8px 0 0;max-width:68ch}
+.formulas{margin-top:10px;padding:10px 12px;border-left:3px solid var(--rule);background:var(--btn);border-radius:0 6px 6px 0;display:grid;gap:8px;font-family:var(--font-math);font-size:17px}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px;line-height:1.15}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 3px}
+.vals table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.vals td{padding:4px 0;border-bottom:1px solid var(--rule)}
+.vals td:last-child{text-align:right;font-weight:600}
+.vals tr:last-child td{border-bottom:0}
+
+/* 6 Modellhinweise: immer zuletzt, aufklappbar */
+.notes summary{cursor:pointer;font-weight:600}
+.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
+
+/* 7 Export (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
+html.export .wrap>:not(.stage){display:none}
+
+/* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
+   16:9-Rahmen genau aus und passt in jeden anders geformten Rahmen ganz hinein, mittig (v4: Moodle-Rahmen haben eine
+   feste Höhe, am Handy ist der Rahmen schmaler). Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und
+   Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden;height:100%}
+html.buehne body{display:grid;place-items:center}
+html.buehne .wrap{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));max-width:none;margin:0;gap:0}
+html.buehne .stage{border:0;border-radius:0}
+html.buehne .wrap>:not(.stage){display:none}
+
+/* 9 Handy quer (Fenster flach und höchstens 520 px hoch): Bühne links, so groß wie es die Höhe erlaubt; Bedienleiste
+   rechts daneben, bei Bedarf mit eigenem Rollbalken; alles Weitere darunter. Nicht in Vorschau und Export. */
+@media (orientation:landscape) and (max-height:520px){
+  html:not(.buehne):not(.export):not(.vollbild) .wrap{max-width:none;
+    grid-template-columns:min(calc((100dvh - 32px) * 16 / 9),calc(100% - 272px)) minmax(260px,1fr);align-items:start}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>*{grid-column:1 / -1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.stage{grid-column:1;grid-row:1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{grid-column:2;grid-row:1;min-width:0;max-height:calc(100dvh - 32px);
+    overflow-x:hidden;overflow-y:auto;padding:8px 10px}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{padding-top:14px}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten.parameter{grid-template-columns:auto}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten .sep{display:none}
+}
+
+/* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
+   sichtbar sind nur die Bühne und – wenn eingeschaltet – das Diagramm (#diagCard) darunter. Die Bühne bleibt 16:9 und wird
+   so groß, dass beides auf den Bildschirm passt (mit Diagramm: 1920 × 1480 Bühnenpixel zusammen). Ohne Vollbild-Schnittstelle
+   (iPhone, eingebettete Ansicht) füllt dieselbe Ansicht das Fenster; dann führt .vb-ende zurück.
+   Festlegung der Lehrkraft, 12.11.2026: „Vollbild nimmt ein eingeschaltetes Diagramm mit.“ */
+html.vollbild,html.vollbild body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.vollbild .wrap{position:fixed;inset:0;z-index:20;max-width:none;width:auto;margin:0;gap:0;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;--vb-h:1080}
+html.vollbild .wrap:has(>#diagCard:not([hidden])){--vb-h:1480}
+html.vollbild .wrap>*{display:none}
+html.vollbild .wrap>.stage{display:block;flex:none;border:0;border-radius:0;width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild .wrap>#diagCard:not([hidden]){display:block;flex:none;border:0;border-radius:0;padding:0;background:#fff;
+  width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild #diagCard h3{display:none}
+html.vollbild #diagCard .diag{border:0;border-radius:0}
+.vb-ende{display:none}
+html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:21;opacity:.8}
+/* LAYOUT-NORM:end */
+
+/* Nur diese Animation: Leiterfarben nach fachkonventionen, Abschnitt 6 (U1 orange, U2 und U23 grün, U3 und U31 lila) und
+   ihre Farbklassen in der Bühne. u12 dunkles Orange wie „Energie zum Blindwiderstand“ (Festlegung der Lehrkraft, 24.11.2026). */
+:root{ --u1:#FFC000; --u2:#00B050; --u3:#7030A0; --u12:#E07B00; }
+#stage-svg .c-1{fill:var(--u1);font-weight:700}
+#stage-svg .c-2{fill:var(--u2);font-weight:700}
+#stage-svg .c-3{fill:var(--u3);font-weight:700}
+#stage-svg .c-12{fill:var(--u12);font-weight:700}
+#stage-svg .c-w{fill:#fff}
+/* Knöpfe in der Bühne (Fragenfeld, Schritt vor und zurück) */
+#stage-svg .knopf{cursor:pointer}
+#stage-svg .knopf:focus{outline:none}
+#stage-svg .knopf:focus-visible>rect{stroke:#1565c0;stroke-width:4}
+#stage-svg .knopf:hover>rect{stroke-width:3.5}
+/* Frage in der Karte unter der Bedienleiste (fürs Handy): Knöpfe wie in der Bedienleiste, die richtige Antwort dunkel */
+#pFrage{font-family:var(--font-ui);font-size:15px}
+#pFrage .paar{display:flex;flex-wrap:wrap;gap:6px}
+#pFrage button{padding:5px 14px}
+#pFrage button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary);opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 1 Bühne: 16:9, logisch 1920 × 1080. Über ihr steht nichts. -->
+  <div class="stage" id="stage">
+    <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">Verkettung bei Dreiphasenwechselspannung: Linienbild</title>
+      <desc id="svg-desc">Links die Drehzeiger der Sternspannungen u1N und u2N, rechts ihr Linienbild. Der Pfeil u2N wird unverdreht verschoben, bis seine Spitze an der Spitze von u1N liegt; vom Fuß von u1N zum Fuß von u2N reicht die Außenleiterspannung u12 mit dem Scheitelwert 563 V und dem Effektivwert 398 V.</desc>
+    </svg>
+  </div>
+
+  <!-- 2 Bedienleiste in Kästen (Layout-Norm v5): Steuerung links, Parameter rechts, darunter Ansicht und Vollbild -->
+  <div class="controls" id="controls">
+    <div class="row">
+      <div class="kasten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <div class="zeile">
+          <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
+          <button id="btn-reset" type="button">Zurücksetzen</button>
+          <label class="group" for="sel-speed"><span class="cap">Tempo</span>
+            <select id="sel-speed">
+              <option value="6">1 Umlauf in 6 s</option>
+              <option value="12" selected>1 Umlauf in 12 s</option>
+              <option value="24">1 Umlauf in 24 s</option>
+            </select>
+          </label>
+        </div>
+        <div class="zeile">
+          <div class="paar">
+            <button id="btn-zurueck" type="button" aria-label="Einen Schritt zurück">◀ Zurück</button>
+            <button id="btn-weiter" type="button" aria-label="Einen Schritt weiter">Weiter ▶</button>
+          </div>
+          <span></span>
+          <div class="group" role="group" aria-label="Schritt wählen"><span class="cap">Schritt</span>
+            <div class="seg" id="seg-schritt"></div>
+          </div>
+        </div>
+      </div>
+      <div class="kasten parameter" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
+        <label class="cap" id="cap-x" for="num-x"></label>
+        <div class="group wert">
+          <input id="rng-x" type="range" aria-label="Winkel ωt">
+          <input id="num-x" type="number">
+        </div>
+        <span class="cap">Direkt</span>
+        <div class="paar" role="group" aria-label="Winkel direkt wählen" id="presets"></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="kasten" role="group" aria-labelledby="lg-ebenen"><span class="lg" id="lg-ebenen">Ebenen</span>
+        <label class="chk" for="chk-proj"><input id="chk-proj" type="checkbox" checked>Projektion</label>
+        <label class="chk" for="chk-u3"><input id="chk-u3" type="checkbox"><span><i>u</i><sub>3N</sub></span></label>
+        <label class="chk" for="chk-ull"><input id="chk-ull" type="checkbox"><span><i>u</i><sub>23</sub>, <i>u</i><sub>31</sub></span></label>
+      </div>
+      <div class="kasten" role="group" aria-labelledby="lg-text"><span class="lg" id="lg-text">Text</span>
+        <label class="chk" for="chk-ro"><input id="chk-ro" type="checkbox" checked>Momentanwerte</label>
+        <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox" checked>Berechnung</label>
+        <label class="chk" for="chk-fragen"><input id="chk-fragen" type="checkbox" checked>Fragen</label>
+        <label class="chk" for="chk-erkl"><input id="chk-erkl" type="checkbox" checked>Erklärung</label>
+      </div>
+      <button type="button" id="btn-fs">Vollbild</button>
+    </div>
+    <details class="keys">
+      <summary>Tastatur und Verlinken</summary>
+      <div class="hint">
+        <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> 0,5° · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> 15° · <kbd>Bild↓</kbd> oder <kbd>N</kbd> Schritt weiter · <kbd>Bild↑</kbd> oder <kbd>B</kbd> Schritt zurück · <kbd>Pos1</kbd> 0° · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
+        Verlinken: <code>#a90</code> stellt den Winkel ein, <code>?schritt=3</code> den Schritt, <code>?fragen=0</code> öffnet ohne Fragen.
+      </div>
+    </details>
+  </div>
+
+  <!-- 3 Zusatzbereich: Erklärung zum Schritt und Momentanwerte (ausblendbar) -->
+  <section class="card info" id="info">
+    <div>
+      <h3 id="pNr"></h3>
+      <h2 id="pTitel"></h2>
+      <p id="pText"></p>
+      <div class="formulas" id="pFrage" hidden>
+        <div id="pfText"></div>
+        <div class="paar" id="pfOpt" role="group" aria-label="Antwort wählen"></div>
+        <div id="pfFb"></div>
+        <div><button type="button" id="pfTun" hidden></button></div>
+      </div>
+    </div>
+    <div class="vals">
+      <h3>Werte</h3>
+      <table id="pWerte"></table>
+    </div>
+  </section>
+
+  <!-- 4 Modellhinweise -->
+  <details class="card notes">
+    <summary>Modell und Vereinfachungen</summary>
+    <ul>
+      <li>Symmetrisches Netz mit sinusförmigen Spannungen. Sternspannung <i>U</i><sub>LN</sub> = 230&#8239;V, Scheitelwert <i>û</i> = √2 · 230&#8239;V = 325&#8239;V.</li>
+      <li><i>u</i><sub>1N</sub> = <i>û</i> · sin <i>ωt</i>, <i>u</i><sub>2N</sub> = <i>û</i> · sin(<i>ωt</i> − 120°), <i>u</i><sub>3N</sub> = <i>û</i> · sin(<i>ωt</i> − 240°). Außenleiterspannung: <i>u</i><sub>12</sub> = <i>u</i><sub>1N</sub> − <i>u</i><sub>2N</sub>.</li>
+      <li>Drehzeiger: Länge = Scheitelwert, Drehsinn gegen den Uhrzeigersinn, 0° liegt rechts. Der Momentanwert ist die Höhe der Zeigerspitze über der waagerechten Achse.</li>
+      <li>Zeigerbild und Linienbild haben denselben Spannungsmaßstab. <i>û</i><sub>12</sub> = √3 · <i>û</i> = 563&#8239;V, <i>U</i><sub>12</sub> = 563&#8239;V / √2 = 398&#8239;V; die Nennspannung heißt 400&#8239;V.</li>
+      <li>Der Pfeil <i>u</i><sub>1N</sub>, der verschobene Pfeil <i>u</i><sub>2N</sub> und der Pfeil <i>u</i><sub>12</sub> liegen im Linienbild auf derselben Senkrechten. Damit man sie unterscheiden kann, sind sie verschieden breit; die Breite hat keine Bedeutung.</li>
+      <li>Pfeilrechnung „Spitze an Spitze“: Der gestrichelte Pfeil ist <i>u</i><sub>2N</sub>, nur verschoben – gleiche Länge, gleiche Richtung, deshalb ohne Vorzeichen. Seine Spitze liegt an der Spitze von <i>u</i><sub>1N</sub>; <i>u</i><sub>12</sub> reicht vom Fuß von <i>u</i><sub>1N</sub> zum Fuß des verschobenen Pfeils. Daraus liest man <i>u</i><sub>12</sub> + <i>u</i><sub>2N</sub> = <i>u</i><sub>1N</sub> ab. Für die Drehzeiger gilt dasselbe.</li>
+      <li>Laufende Werte sind auf drei geltende Ziffern gerundet. An den Pfeilen stehen die Werte nur im Standbild; beim Abspielen steht dort nur das Formelzeichen.</li>
+      <li>Die Pfeilrechnung wird bei <i>ωt</i> = 90° gezeigt, weil der Pfeil <i>u</i><sub>1N</sub> bei 0° keine Länge hat. Sie gilt bei jedem Winkel.</li>
+    </ul>
+  </details>
+</div>
+
+<button type="button" class="vb-ende" id="vb-ende">Vollbild beenden</button>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const D = Math.PI / 180;
+
+/* ================= 1 Parameterblock =================
+   Alles, was die Lehrkraft später selbst ändern können soll: Werte, Bereiche, Geometrie, Farben.
+   Festlegungen der Lehrkraft, 24.11.2026:
+   – Drehzeiger starten bei ωt = 0° (û1N waagrecht nach rechts), damit nach dem Durchschieben in der zweiten
+     Animation L1 links, L2 rechts oben und L3 rechts unten liegt.
+   – Farben: die hinterlegten Leiterfarben (fachkonventionen 6) – u1N orange, u2N und u23 grün, u3N und u31 lila.
+     u12 dunkles Orange E07B00, derselbe Ton wie „Energie zum Blindwiderstand“ in „Blindleistung pendelt“
+     (Rückmeldung zum Prototyp: „Der dünne gelbe Zeiger auf dem dicken gelben Zeiger sieht doof aus, mach u12 dunkel“).
+   – Keine Tabelle: Momentanwerte als Pfeile im Linienbild, an denen u12 = u1N − u2N geometrisch zu sehen ist.
+   – Pfeilrechnung „Spitze an Spitze“ (Rückmeldung zum Prototyp, 24.11.2026): Der Pfeil u2N wird NICHT umgedreht.
+     Er wird unverändert verschoben, bis seine Spitze an der Spitze von u1N liegt; u12 reicht dann vom Fuß von u1N
+     zum Fuß von u2N (u12 + u2N = u1N). Ebenso die Drehzeiger. Kein Vorzeichen am verschobenen Pfeil.
+   – Steht beim Öffnen mit Vorhersage-Frage.
+   – „Momentanwerte“ zeigt nur Momentanwerte (Rückmeldung 24.11.2026): An den Pfeilen, die sich aufsubtrahieren, steht im
+     Standbild „Formelzeichen = Wert Einheit“, dazu die Rechnung u12 = u1N − u2N. Scheitel- und Effektivwert (Ergebnis in
+     Schritt 5) gehören zur „Berechnung“ und stehen im Linienbild.
+   – Formelzeichen springen nicht von einer Seite auf die andere (24.11.2026): an den Zeigern immer in Drehrichtung
+     voraus; im Linienbild u1N und u2N immer links vom Zeitstrich, u12 immer rechts. */
+const CFG = {
+  x: { zeichen: 'ωt', einheit: '°', min: 0, max: 360, step: 0.5, big: 15, start: 0, hash: 'a',
+       presets: [0, 60, 90, 150, 240] },
+  U: 230,                                      // Effektivwert der Sternspannung U_LN in V
+  demo: 90,                                    // Winkel in °, bei dem die Pfeilrechnung gezeigt wird (u1N bei 0° ohne Länge; bei 90° stehen die Werte frei neben den Pfeilen)
+  dz: { cx: 410, cy: 640, r: 210 },            // Drehzeiger: Mittelpunkt, Radius = û
+  ld: { x0: 870, y0: 640, kx: 2.4, xEnd: 1790 },   // Liniendiagramm: Ursprung, px je Grad (rechts bleibt Platz für „u12 = … V“ am Zeitstrich), Ende der Achse
+  col: { u1: '#FFC000', u2: '#00B050', u3: '#7030A0', u12: '#E07B00', ink: '#1b2127' },   // Leiterfarben nach fachkonventionen 6; u12 dunkles Orange
+  tw: 0.9,                                     // Dauer von „verschieben“ und „u12 einzeichnen“ in s
+  fussK: 0.2,                                  // Formelzeichen am verschobenen Zeiger û2N: Anteil der Zeigerlänge vom Fuß aus
+  dreh: 90,                                    // Hindrehen auf den Winkel der Pfeilrechnung in °/s
+  dashDot: '26 6 3 6',                         // Strich-Punkt-Linie (Mittellinie)
+};
+
+/* ================= 2 Physikalisches Modell (rein, ohne Darstellung) =================
+   Symmetrisches Dreiphasennetz, Sternspannungen sinusförmig, Phasenfolge L1 – L2 – L3:
+     u1N = û · sin(ωt),  u2N = û · sin(ωt − 120°),  u3N = û · sin(ωt − 240°),  û = √2 · U_LN
+   Außenleiterspannungen als Potenzialdifferenz (N ist Bezugspunkt), Zählpfeil vom ersten zum zweiten Index:
+     u12 = u1N − u2N,  u23 = u2N − u3N,  u31 = u3N − u1N
+   Folge: u12 = √3 · û · sin(ωt + 30°), also û12 = √3 · û und U12 = √3 · U_LN.
+   Drehzeiger: Länge = Scheitelwert, Drehsinn mathematisch positiv, 0° rechts; Momentanwert = Höhe der Spitze. */
+const UHAT = CFG.U * Math.SQRT2;               // û in V
+const UHAT12 = UHAT * Math.sqrt(3);            // û12 in V
+const U12 = CFG.U * Math.sqrt(3);              // U12 in V
+function model(x) {
+  const s = (a) => UHAT * Math.sin(a * D);
+  const u1N = s(x), u2N = s(x - 120), u3N = s(x - 240);
+  return { u1N, u2N, u3N, u12: u1N - u2N, u23: u2N - u3N, u31: u3N - u1N };
+}
+
+/* ================= 3 Zustand =================
+   schritt 1…5; sb = Fortschritt „u2N verschieben“ (0…1), kl = Fortschritt „u12 einzeichnen“ (0…1); spur = bis zu welchem Winkel die
+   Kurve u12 in Schritt 4 schon gezeichnet ist; box = Nummer der offenen Frage oder null. */
+const S = { x: CFG.x.start, playing: false, dauer: 12, schritt: 1, kl: 0, sb: 0, spur: 0, xZiel: null, halt: false,
+  proj: true, ro: true, rech: true, fragen: true, erkl: true, u3: false, ull: false, qr: false,
+  box: null, antwort: [null, null, null] };
+const sbZiel = () => (S.schritt >= 2 ? 1 : 0), klZiel = () => (S.schritt >= 3 ? 1 : 0);
+
+/* ================= 4 Hilfen ================= */
+const $ = (s) => document.querySelector(s);
+const svg = $('#stage-svg');
+function el(tag, attrs = {}, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function txt(x, y, html, attrs = {}, parent = svg) { const t = el('text', { x, y, ...attrs }, parent); t.innerHTML = html; return t; }
+const I = (s) => `<tspan class="i">${s}</tspan>`;                                  // Formelzeichen kursiv
+const P = (cx, cy, R, deg) => [cx + R * Math.cos(deg * D), cy - R * Math.sin(deg * D)];   // math. Winkel → SVG
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const show = (e, on) => { e.style.display = on ? '' : 'none'; };
+const ease = (p) => p * p * (3 - 2 * p);                                           // weicher Anlauf und Auslauf
+
+/* Formelzeile in SVG: Teile sind Text oder [Formelzeichen, Index, Farbe]. Der Index steht tief; das Teil danach
+   setzt die Grundlinie wieder hoch – so bleibt nichts versehentlich tiefgestellt. */
+function fz(size, ...teile) {
+  let out = '', hoch = false;
+  for (const p of teile) {
+    if (Array.isArray(p)) {
+      const [sym, idx, col] = p, f = col ? ` fill="${col}" font-weight="700"` : '';
+      out += `<tspan class="i"${f}${hoch ? ` dy="${-size * 0.3}"` : ''}>${sym}</tspan>`;
+      hoch = false;
+      if (idx) { out += `<tspan dy="${size * 0.3}" font-size="${size * 0.7}"${f}>${idx}</tspan>`; hoch = true; }
+    } else if (p !== '') {
+      out += hoch ? `<tspan dy="${-size * 0.3}">${p}</tspan>` : p;
+      hoch = false;
+    }
+  }
+  return out;
+}
+
+/* Zahlen nach fachkonventionen, Abschnitt 4: Dezimalkomma, Einheitenvorsatz, echtes Minuszeichen. */
+function dez(v, nk) {
+  let s = Math.abs(v).toFixed(nk).replace('.', ',');
+  if (v < 0 && Number(s.replace(',', '.')) !== 0) s = '−' + s;
+  return s;
+}
+/* Laufende Werte mit drei geltenden Ziffern: „−32,2 V“, „488 V“ (Festlegung der Lehrkraft, 12.11.2026, W). */
+function fmtLauf(v, einheit) {
+  if (!isFinite(v)) return '–';
+  if (Math.abs(v) < 5e-10) return '0 ' + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let i = vors.findIndex(([f]) => Math.abs(v) >= f * 0.9995); if (i < 0) i = vors.length - 1;
+  for (;;) {
+    const [f, p] = vors[i], m = v / f, a = Math.abs(m), nk = a >= 99.95 ? 0 : a >= 9.995 ? 1 : 2;
+    if (Math.abs(Number(m.toFixed(nk))) >= 1000 && i > 0) { i--; continue; }
+    return dez(m, nk) + ' ' + p + einheit;
+  }
+}
+const fmtGrad = (a) => { const r = Math.round(a * 100) / 100; return (Number.isInteger(r) ? dez(r, 0) : dez(r, 2)) + '°'; };
+const inKl = (v, einheit) => (v < -5e-10 ? '(' + fmtLauf(v, einheit) + ')' : fmtLauf(v, einheit));   // negativer Wert in Klammern
+
+function arrowHead(x2, y2, ux, uy, L, W) {
+  const bx = x2 - ux * L, by = y2 - uy * L;
+  return `${x2},${y2} ${bx - uy * W},${by + ux * W} ${bx + uy * W},${by - ux * W}`;
+}
+/* Pfeil, dessen Länge einem Wert folgt; bei sehr kurzen Pfeilen schrumpft die Spitze mit.
+   opt.dash: gestrichelter Schaft (Hilfspfeil) · opt.rand: weißer Rand in px, damit der Pfeil auf einem breiteren
+   Pfeil gleicher Farbe sichtbar bleibt · opt.nurSpitze: Rand nur an der Spitze (der Schaft darf den Pfeil darunter zeigen). */
+function makeArrow(parent, color, sw, L, W, opt = {}) {
+  const g = el('g', {}, parent);
+  const unter = opt.rand && !opt.nurSpitze ? el('line', { stroke: '#fff', 'stroke-width': sw + 2 * opt.rand }, g) : null;
+  const line = el('line', { stroke: color, 'stroke-width': sw }, g);
+  if (opt.dash) line.setAttribute('stroke-dasharray', opt.dash);
+  const head = el('polygon', { fill: color }, g);
+  if (opt.rand) for (const [k, v] of [['stroke', '#fff'], ['stroke-width', 2 * opt.rand], ['paint-order', 'stroke'], ['stroke-linejoin', 'round']]) head.setAttribute(k, v);
+  return {
+    g,
+    set(x1, y1, x2, y2) {
+      const dx = x2 - x1, dy = y2 - y1, raw = Math.hypot(dx, dy), len = raw || 1, ux = dx / len, uy = dy / len;
+      const Lc = Math.min(L, raw * 0.6), Wc = W * Lc / L;
+      const ex = x2 - ux * Math.max(Lc - 1, 0), ey = y2 - uy * Math.max(Lc - 1, 0);
+      for (const l of unter ? [unter, line] : [line]) { l.setAttribute('x1', x1); l.setAttribute('y1', y1); l.setAttribute('x2', ex); l.setAttribute('y2', ey); }
+      head.setAttribute('points', arrowHead(x2, y2, ux, uy, Lc, Wc));
+      g.style.visibility = raw < 1.5 ? 'hidden' : '';
+    },
+  };
+}
+
+/* ================= 5 Statische Zeichnung (einmal) =================
+   Reihenfolge der Gruppen = Reihenfolge der Ebenen: hinten → vorn. */
+const { dz: Z, ld: L, col: C } = CFG;
+const K = Z.r / UHAT;                          // Maßstab in px je V, für Zeiger und Linienbild gleich
+const R12 = K * UHAT12;                        // Länge von û12 in px
+const yV = (u) => L.y0 - K * u;
+const xW = (a) => L.x0 + L.kx * a;
+const SYM = { u1: ['u', '1N', C.u1], u2: ['u', '2N', C.u2], u3: ['u', '3N', C.u3], u12: ['u', '12', C.u12],
+  h1: ['û', '1N', C.u1], h2: ['û', '2N', C.u2], h12: ['û', '12', C.u12], U12: ['U', '12', C.u12], wt: ['ωt', '', ''] };
+
+const gBack = el('g', { id: 'back' });
+const gCurve = el('g', { id: 'curve' });
+const gDyn = el('g', { id: 'dyn' });
+const gLbl = el('g', { id: 'labels' });
+const gKnopf = el('g', { id: 'knoepfe' });
+const gFrage = el('g', { id: 'frage' });
+
+/* Titel in zwei Zeilen (Umbenennung durch die Lehrkraft, 24.11.2026: „Verkettung bei Dreiphasenwechselspannung: Linienbild“):
+   Name der Reihe klein (Größe wie t-panel), der Teil groß (t-main). Beide rücken neben den QR-Code (syncUI). */
+const titel0 = txt(1872, 66, 'Verkettung bei Dreiphasenwechselspannung:', { class: 't-panel', 'text-anchor': 'end' }, gBack);
+const titel = txt(1872, 130, 'Linienbild', { class: 't-main', 'text-anchor': 'end' }, gBack);
+// Bereichsüberschriften als Bildunterschriften: Oben stehen Momentanwerte und Fragenfeld, die Bilder brauchen die Höhe.
+txt(60, 1052, 'Drehzeiger', { class: 't-panel' }, gBack);
+txt(1860, 1052, 'Liniendiagramm', { class: 't-panel', 'text-anchor': 'end' }, gBack);
+
+el('circle', { cx: Z.cx, cy: Z.cy, r: Z.r, fill: 'none', stroke: C.ink, 'stroke-width': 1.8 }, gBack);
+const kreis12 = el('circle', { cx: Z.cx, cy: Z.cy, r: R12, fill: 'none', stroke: C.u12, 'stroke-width': 2.5, 'stroke-dasharray': '4 12' }, gBack);
+el('line', { x1: Z.cx - Z.r - 28, y1: Z.cy, x2: L.x0 - 20, y2: Z.cy, stroke: C.ink, 'stroke-width': 1.3, 'stroke-dasharray': CFG.dashDot }, gBack);
+el('line', { x1: Z.cx, y1: Z.cy - Z.r - 24, x2: Z.cx, y2: Z.cy + Z.r + 24, stroke: C.ink, 'stroke-width': 1.3, 'stroke-dasharray': CFG.dashDot }, gBack);
+
+const ax = makeArrow(gBack, C.ink, 2.2, 20, 6.5); ax.set(L.x0 - 4, L.y0, L.xEnd, L.y0);
+const ay = makeArrow(gBack, C.ink, 2.2, 20, 6.5); ay.set(L.x0, L.y0 + R12 + 6, L.x0, L.y0 - R12 - 22);
+const lU = txt(L.x0 + 16, L.y0 - R12 - 2, I('u'), { class: 'lbl halo' }, gLbl);                 // Augenblickswert: Kleinbuchstabe
+const lAchse = txt(L.xEnd, L.y0 - 16, I('ωt'), { class: 'lbl halo', 'text-anchor': 'end' }, gLbl);
+const TEIL = [];                                 // Winkelbeschriftungen: verschwinden, solange die Momentanwert-Pfeile dort stehen
+for (let d = 30; d <= CFG.x.max; d += 30) {
+  const x = xW(d);
+  el('line', { x1: x, y1: L.y0 - 10, x2: x, y2: L.y0 + 10, stroke: C.ink, 'stroke-width': 2 }, gBack);
+  if (d % 90 === 0) TEIL.push([d, d === 360
+    ? txt(x + 12, L.y0 + 44, `${d}°`, { class: 'lbl-s halo' }, gLbl)                 // rechts neben dem Kurvenende
+    : txt(x, L.y0 + 44, `${d}°`, { class: 'lbl-s halo', 'text-anchor': 'middle' }, gLbl)]);
+}
+// Marken für die Scheitelwerte (ab Schritt 5): gestrichelte Höhenlinien, Formelzeichen links neben der u-Achse
+const gMarke = el('g', { id: 'marken' }, gBack);
+const lMarke = [];
+for (const [u, sym] of [[UHAT, SYM.h1], [UHAT12, SYM.h12]]) {
+  el('line', { x1: L.x0, y1: yV(u), x2: xW(360), y2: yV(u), stroke: sym[2], 'stroke-width': 2, 'stroke-dasharray': '14 10' }, gMarke);
+  lMarke.push(txt(L.x0 - 14, yV(u) + 10, fz(30, sym), { class: 'lbl', 'text-anchor': 'end' }, gMarke));
+}
+
+function kurve(key, farbe, breite) {
+  let d = '';
+  for (let a = 0; a <= CFG.x.max + 1e-9; a += 0.5) d += (d ? ' L ' : 'M ') + xW(a).toFixed(2) + ' ' + yV(model(a)[key]).toFixed(2);
+  return el('path', { d, fill: 'none', stroke: farbe, 'stroke-width': breite, 'stroke-linejoin': 'round' }, gCurve);
+}
+// Sternspannungen dünn, Außenleiterspannungen kräftig – gleiche Leiterfarbe (Festlegung der Lehrkraft, 24.11.2026)
+const k23 = kurve('u23', C.u2, 7), k31 = kurve('u31', C.u3, 7);
+const k3 = kurve('u3N', C.u3, 4), k2 = kurve('u2N', C.u2, 4), k1 = kurve('u1N', C.u1, 4);
+const spurRect = el('rect', { x: L.x0 - 6, y: 150, width: 0, height: 900 }, el('clipPath', { id: 'spur' }, gCurve));
+const k12 = kurve('u12', C.u12, 7); k12.setAttribute('clip-path', 'url(#spur)');
+// Formelzeichen an den Kurven, über dem jeweiligen Scheitel
+const kLab = (a, u, sym, f) => txt(xW(a), yV(u) - 16, fz(30, [sym[0], sym[1]]), { class: 'lbl halo ' + f, 'text-anchor': 'middle' }, gLbl);
+const lU1 = kLab(90, UHAT, SYM.u1, 'c-1'), lU2 = kLab(210, UHAT, SYM.u2, 'c-2'), lU3 = kLab(330, UHAT, SYM.u3, 'c-3');
+const lU12 = kLab(60, UHAT12, ['u', '12'], 'c-12'), lU23 = kLab(180, UHAT12, ['u', '23'], 'c-2'), lU31 = kLab(300, UHAT12, ['u', '31'], 'c-3');
+
+/* ================= 6 Dynamische Elemente (einmal anlegen, in render() nur Attribute setzen) ================= */
+const bogen = el('path', { fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gDyn);          // Winkel ωt am Zeiger û1N
+const lBogen = txt(0, 0, I('ωt'), { class: 'lbl-s halo', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gLbl);
+/* Projektionslinien liegen in einer Gruppe mit Maske: Rund um jedes Formelzeichen an einem Zeiger wird die Linie
+   ausgespart (auch ein Stück links davon) – ein Strich der Linie vor „û1N“ läse sich sonst wie ein Minuszeichen.
+   Die Beschriftung selbst bleibt an ihrem Platz (Festlegung der Lehrkraft, 24.11.2026: Formelzeichen springen nicht). */
+const pMaske = el('mask', { id: 'pm', maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: 1920, height: 1080 }, gDyn);
+el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: '#fff' }, pMaske);
+const pLoch = Array.from({ length: 7 }, () => el('rect', { x: 0, y: 0, width: 0, height: 44, fill: '#000' }, pMaske));
+// dasselbe für die ortsfesten Beschriftungen des Linienbilds: Eine Projektionslinie durch „90°“ läse sich wie „−90°“
+const FEST = [...TEIL.map(([, t]) => t), lAchse, lU, lU1, lU2, lU3, lU12, lU23, lU31];
+const fLoch = FEST.map(() => el('rect', { x: 0, y: 0, width: 0, height: 0, fill: '#000' }, pMaske));
+const gProj = el('g', { mask: 'url(#pm)' }, gDyn);
+const mkProj = (farbe) => el('line', { stroke: farbe, 'stroke-width': 2, 'stroke-dasharray': '12 9' }, gProj);
+const p3 = mkProj(C.u3), p2 = mkProj(C.u2), p1 = mkProj(C.u1), p12 = mkProj(C.u12);
+// Zeiger: Sternspannungen 7 px, Außenleiterspannungen 11 px, verschobener Zeiger û2N gestrichelt
+const z23 = makeArrow(gDyn, C.u2, 11, 34, 13), z31 = makeArrow(gDyn, C.u3, 11, 34, 13);
+const z12 = makeArrow(gDyn, C.u12, 11, 34, 13);
+const z3 = makeArrow(gDyn, C.u3, 7, 28, 10), z2 = makeArrow(gDyn, C.u2, 7, 28, 10), z1 = makeArrow(gDyn, C.u1, 7, 28, 10);
+const zk = makeArrow(gDyn, C.u2, 5, 26, 9, { dash: '12 7', rand: 1.5 });
+el('circle', { cx: Z.cx, cy: Z.cy, r: 6, fill: C.ink }, gDyn);
+/* Momentanwerte im Linienbild als Pfeile, Spitze auf der Kurve (kein Punkt zusätzlich). Sie liegen auf derselben
+   Senkrechten: hinten u12 (breit, dunkles Orange), darauf u1N und der verschobene Pfeil u2N (gestrichelt), dessen
+   Spitze an der Spitze von u1N liegt – so bleibt „u12 und dann u2N führt zur Spitze von u1N“ im breiten Pfeil sichtbar. */
+const a12 = makeArrow(gDyn, C.u12, 18, 34, 17);
+const a3 = makeArrow(gDyn, C.u3, 5, 22, 8);
+const a1 = makeArrow(gDyn, C.u1, 8, 24, 10);
+const a2 = makeArrow(gDyn, C.u2, 5, 22, 8);
+const ak = makeArrow(gDyn, C.u2, 5, 22, 8, { dash: '10 6', rand: 2, nurSpitze: true });
+const mkLz = (sym, f) => txt(0, 0, fz(30, [sym[0], sym[1]]), { class: 'lbl halo ' + f, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, gLbl);
+const lz1 = mkLz(SYM.h1, 'c-1'), lz2 = mkLz(SYM.h2, 'c-2'), lz3 = mkLz(['û', '3N'], 'c-3');
+const lz12 = mkLz(['û', '12'], 'c-12'), lz23 = mkLz(['û', '23'], 'c-2'), lz31 = mkLz(['û', '31'], 'c-3');
+const lzk = mkLz(['û', '2N'], 'c-2');   // verschobener Zeiger: derselbe Zeiger û2N, deshalb ohne Vorzeichen (Festlegung der Lehrkraft, 24.11.2026)
+/* Formelzeichen an den Momentanwert-Pfeilen, im Standbild mit Wert und Einheit. Feste Seiten: u1N und u2N links vom
+   Zeitstrich, u12 rechts. Liegen u1N und u2N auf gleicher Höhe (das geschieht bei u12 ≈ 0), rückt u2N stetig weiter nach links. */
+/* Unterlage (weiß) hinter jeder dieser Beschriftungen: Achse, Kurven und Projektionslinien sind darunter ausgespart –
+   ein Strich zwischen „u12“, „=“ und „0 V“ läse sich sonst wie durchgestrichen. */
+const mkUnter = () => el('rect', { fill: '#fff', 'fill-opacity': 0.94, rx: 5 }, gLbl);
+const un1 = mkUnter(), unk = mkUnter(), un12 = mkUnter();
+// Kasten einer ortsfesten Beschriftung (einmal messen, auch wenn sie gerade ausgeblendet ist)
+const festKasten = (t) => {
+  if (!t._k) { const d = t.style.display; t.style.display = ''; const b = t.getBBox(); t.style.display = d; if (!b.width) return b; t._k = b; }
+  return t._k;
+};
+const la1 = txt(0, 0, '', { id: 'la-u1', class: 'lbl-s halo', 'text-anchor': 'end', 'dominant-baseline': 'central' }, gLbl);
+const la12 = txt(0, 0, '', { id: 'la-u12', class: 'lbl-s halo', 'dominant-baseline': 'central' }, gLbl);
+const lak = txt(0, 0, '', { id: 'la-u2', class: 'lbl-s halo', 'text-anchor': 'end', 'dominant-baseline': 'central' }, gLbl);
+const setze = (t, html) => { if (t._h !== html) { t.innerHTML = html; t._h = html; } };   // nur schreiben, wenn sich der Text ändert
+// Wertezeilen links unter der Titelzeile; die Ecke oben rechts gehört dem QR-Code, daneben steht der Titel
+const ro1 = txt(60, 178, '', { class: 'ro' }, gLbl);
+const ro2 = txt(60, 228, '', { class: 'ro' }, gLbl);
+// Ergebnis in Schritt 5 (Schalter „Berechnung“): Scheitelwert und Effektivwert, im freien Feld links unten im Linienbild
+const unErg = mkUnter();   // Unterlage: Mit allen Kurven eingeblendet laufen u23 und u31 durch dieses Feld
+const er1 = txt(L.x0 + 18, 925, '', { class: 'lbl halo' }, gLbl), er2 = txt(L.x0 + 18, 972, '', { class: 'lbl halo' }, gLbl);
+const cap = txt(960, 1050, '', { class: 'lbl', 'text-anchor': 'middle' }, gLbl);   // Bildunterschrift: Schritt
+
+/* Schritte: Kurzname (Bedienleiste, Bühne), Überschrift und Erklärung (Karte unter der Bedienleiste) */
+const H = { u1: '<i>u</i><sub>1N</sub>', u2: '<i>u</i><sub>2N</sub>', u12: '<i>u</i><sub>12</sub>', h1: '<i>û</i><sub>1N</sub>',
+  h2: '<i>û</i><sub>2N</sub>', h12: '<i>û</i><sub>12</sub>', U12: '<i>U</i><sub>12</sub>', wt: '<i>ωt</i>' };
+const V = (v) => fmtLauf(v, 'V').replace(' ', '&#8239;');
+const SCHRITTE = [null,
+  { kurz: 'Sternspannungen', cap: fz(30, 'Sternspannungen ', ['u', '1N'], ' und ', ['u', '2N']),
+    titel: 'Zwei Sternspannungen',
+    text: `Die Drehzeiger ${H.h1} und ${H.h2} sind so lang wie der Scheitelwert ${V(UHAT)} und drehen gegen den Uhrzeigersinn. ${H.h2} läuft 120° hinterher. Die Höhe einer Zeigerspitze über der waagerechten Achse ist der Momentanwert: Im Linienbild zeigen ihn die Pfeile ${H.u1} und ${H.u2}.` },
+  { kurz: 'verschieben', cap: fz(30, ['u', '2N'], ' verschieben: Spitze an Spitze'),
+    titel: 'Spitze an Spitze',
+    text: `Der Pfeil ${H.u2} wird verschoben, ohne ihn zu drehen, bis seine Spitze an der Spitze von ${H.u1} liegt. Mit dem Drehzeiger ${H.h2} geschieht dasselbe. Länge und Richtung bleiben, deshalb braucht der verschobene Pfeil kein Vorzeichen.` },
+  { kurz: 'u12 einzeichnen', cap: fz(30, ['u', '12'], ' vom Fuß von ', ['u', '1N'], ' zum Fuß von ', ['u', '2N']),
+    titel: 'Vom Fuß zum Fuß',
+    text: `${H.u12} reicht vom Fuß des Pfeils ${H.u1} bis zum Fuß des verschobenen Pfeils ${H.u2}. Am Bild liest man ab: ${H.u12} und danach ${H.u2} führen zur selben Spitze wie ${H.u1}, also ${H.u12} + ${H.u2} = ${H.u1} und damit ${H.u12} = ${H.u1} − ${H.u2}. Zeigt ${H.u2} nach unten, wird ${H.u12} größer als ${H.u1}. Mit den Drehzeigern gilt dasselbe: ${H.h12} reicht vom Mittelpunkt zum Fuß des verschobenen Zeigers ${H.h2}.` },
+  { kurz: 'Verlauf', cap: fz(30, 'Verlauf von ', ['u', '12']),
+    titel: 'Die Spitze zeichnet die Kurve',
+    text: `Die Zeiger drehen weiter, ${H.h12} dreht mit und bleibt immer gleich lang. Seine Spitze zeichnet ${H.u12}: wieder eine Sinuslinie, aber höher als ${H.u1} und 30° früher.` },
+  { kurz: 'Ergebnis', cap: 'Ergebnis',
+    titel: 'Aus 230 V werden 400 V',
+    text: `Der Scheitelwert von ${H.u12} ist ${H.h12} = ${V(UHAT12)}. Der Effektivwert ist ${H.U12} = ${H.h12} / √2 = ${V(U12)}, gerundet 400&#8239;V. Zwischen zwei Außenleitern liegen deshalb rund 400&#8239;V, obwohl jede Sternspannung nur 230&#8239;V hat.` },
+];
+const NS_MAX = SCHRITTE.length - 1;
+
+/* ===== Vorhersage-Fragen in der Bühne (Wunsch der Lehrkraft, 24.11.2026): anklicken, dann Auflösung. Abschaltbar. ===== */
+const m0 = model(CFG.x.start), m60 = model(60);
+const FRAGEN = [
+  { schritt: 1,
+    z: [['Zwischen L1 und L2 liegt ', SYM.u12, ' = ', SYM.u1, ' − ', SYM.u2, '.'],
+        ['Jetzt: ', SYM.u1, ` = ${fmtLauf(m0.u1N, 'V')}, `, SYM.u2, ` = ${fmtLauf(m0.u2N, 'V')}. Wie groß ist `, SYM.u12, '?']],
+    opt: [fmtLauf(-m0.u12, 'V'), '0 V', fmtLauf(m0.u12, 'V')], richtig: 2,
+    fb: [[SYM.u12, ` = ${fmtLauf(m0.u1N, 'V')} − ${inKl(m0.u2N, 'V')} = ${fmtLauf(m0.u12, 'V')}.`], ['Minus mal minus ergibt plus.']],
+    knopf: 'Weiter ▶', tun: () => weiter() },
+  { schritt: 4,
+    z: [['Die Zeiger drehen weiter, ', SYM.u12, ' ändert sich.'],
+        ['Bei welchem Winkel ', SYM.wt, ' ist ', SYM.u12, ' am größten?']],
+    opt: ['60°', '90°', '120°'], richtig: 0,
+    fb: [['Bei 60° ist ', SYM.u12, ` = ${fmtLauf(m60.u1N, 'V')} − ${inKl(m60.u2N, 'V')} = ${fmtLauf(m60.u12, 'V')}.`], ['Prüfen Sie es im Durchlauf.']],
+    knopf: '▶ Durchlauf', tun: () => durchlauf() },
+  { schritt: 5,
+    z: [[SYM.u12, ' ist sinusförmig, Scheitelwert ', SYM.h12, ` = ${fmtLauf(UHAT12, 'V')}.`],
+        ['Wie groß ist der Effektivwert ', SYM.U12, '?']],
+    opt: [fmtLauf(UHAT, 'V'), fmtLauf(U12, 'V'), fmtLauf(2 * CFG.U, 'V')], richtig: 1,
+    fb: [[SYM.U12, ' = ', SYM.h12, ` / √2 = ${fmtLauf(UHAT12, 'V')} / √2 = ${fmtLauf(U12, 'V')}.`], ['Gerundet 400 V zwischen zwei Außenleitern.']],
+    knopf: 'Schließen', tun: () => { S.box = null; render(); } },
+];
+const fh = (...teile) => teile.map((t) => (Array.isArray(t) ? `<i>${t[0]}</i>` + (t[1] ? `<sub>${t[1]}</sub>` : '') : t)).join('');   // dieselbe Zeile als HTML
+const frageZu = (schritt) => FRAGEN.findIndex((q) => q.schritt === schritt);
+
+/* Knopf in der Bühne (für Vollbild und Moodle-Vorschau, wo die Bedienleiste fehlt): Rechteck mit Text, per Maus und Tastatur */
+function knopf(parent, x, y, w, h, label, tun, size = 30) {
+  const g = el('g', { class: 'knopf', role: 'button', tabindex: 0, 'aria-label': label }, parent);
+  const r = el('rect', { x, y, width: w, height: h, rx: 8, fill: '#fff', stroke: '#58636e', 'stroke-width': 2 }, g);
+  const t = txt(x + w / 2, y + h / 2 + 1, label, { class: size >= 30 ? 'lbl' : 'lbl-s', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
+  g.addEventListener('click', (e) => { e.stopPropagation(); tun(); });
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); tun(); } });
+  return { g, r, t };
+}
+const BOX = { x: 40, y: 24, w: 720, h: 228 };
+el('rect', { x: BOX.x, y: BOX.y, width: BOX.w, height: BOX.h, rx: 10, fill: '#fff', stroke: '#58636e', 'stroke-width': 2.5 }, gFrage);
+txt(BOX.x + 20, BOX.y + 38, '', { class: 'lbl-s', id: 'fr-z1' }, gFrage);
+txt(BOX.x + 20, BOX.y + 72, '', { class: 'lbl-s', id: 'fr-z2' }, gFrage);
+const frZ = [$('#fr-z1'), $('#fr-z2')];
+const frOpt = [0, 1, 2].map((j) => knopf(gFrage, BOX.x + 20 + j * 166, BOX.y + 88, 150, 52, '', () => antworten(j)));
+const frTun = knopf(gFrage, BOX.x + BOX.w - 196, BOX.y + 88, 176, 52, '', () => { const q = FRAGEN[S.box]; if (q) q.tun(); }, 25);
+const frFb = [txt(BOX.x + 20, BOX.y + 174, '', { class: 'lbl-s' }, gFrage), txt(BOX.x + 20, BOX.y + 211, '', { class: 'lbl-s' }, gFrage)];
+const pfOpt = [0, 1, 2].map((j) => { const b = document.createElement('button'); b.type = 'button'; b.addEventListener('click', () => antworten(j)); $('#pfOpt').appendChild(b); return b; });
+$('#pfTun').addEventListener('click', () => { const q = FRAGEN[S.box]; if (q) q.tun(); });
+const kZur = knopf(gKnopf, 492, 1016, 60, 46, '◀', () => zurueck());
+const kVor = knopf(gKnopf, 1368, 1016, 60, 46, '▶', () => weiter());
+kZur.g.setAttribute('aria-label', 'Einen Schritt zurück'); kVor.g.setAttribute('aria-label', 'Einen Schritt weiter');
+
+/* ================= 7 Darstellung: Zustand → Bild ================= */
+/* Formelzeichen an einem Zeiger aus dem Mittelpunkt. Festlegung der Lehrkraft, 24.11.2026: Das Formelzeichen bleibt
+   immer auf derselben Seite seines Zeigers und springt nie auf die andere – hier bei allen Zeigern in Drehrichtung
+   voraus (SEITE +1 = gegen den Uhrzeigersinn). Stört eine Linie, wird die Linie ausgespart (Maske oben), nicht die
+   Beschriftung umgesetzt. */
+const SEITE = 1;
+function zLabel(t, th, len, frac, off) {
+  const [bx, by] = P(Z.cx, Z.cy, len * frac, th), [ox, oy] = P(0, 0, off, th + 90 * SEITE);
+  t.setAttribute('x', bx + ox); t.setAttribute('y', by + oy);
+}
+function render() {
+  const a = S.x, m = model(a), sch = S.schritt;
+  const s = ease(S.sb), e = ease(S.kl), fertig = S.kl >= 1, export_ = document.documentElement.classList.contains('export');
+  const A1 = P(Z.cx, Z.cy, Z.r, a), A2 = P(Z.cx, Z.cy, Z.r, a - 120), A3 = P(Z.cx, Z.cy, Z.r, a - 240);
+  const v1 = [A1[0] - Z.cx, A1[1] - Z.cy], v2 = [A2[0] - Z.cx, A2[1] - Z.cy], v3 = [A3[0] - Z.cx, A3[1] - Z.cy];
+  const A12 = [Z.cx + v1[0] - v2[0], Z.cy + v1[1] - v2[1]];
+  const xd = xW(a), y1 = yV(m.u1N), y2 = yV(m.u2N), y3 = yV(m.u3N), y12 = yV(m.u12);
+  const ull = S.ull && sch >= 5;
+
+  // Zeigerbild
+  z1.set(Z.cx, Z.cy, A1[0], A1[1]); z2.set(Z.cx, Z.cy, A2[0], A2[1]); z3.set(Z.cx, Z.cy, A3[0], A3[1]);
+  // verschobener Zeiger û2N: wandert unverdreht, bis seine Spitze an der Spitze von û1N liegt (s: 0 → 1); sein Fuß ist dann die Spitze von û12
+  const fx = Z.cx + s * (v1[0] - v2[0]), fy = Z.cy + s * (v1[1] - v2[1]), kx2 = fx + v2[0], ky2 = fy + v2[1];
+  zk.set(fx, fy, kx2, ky2); show(zk.g, S.sb > 0);
+  z12.set(Z.cx, Z.cy, Z.cx + e * (A12[0] - Z.cx), Z.cy + e * (A12[1] - Z.cy)); show(z12.g, S.kl > 0); show(kreis12, fertig);   // û12 wächst vom Mittelpunkt zum Fuß von û2N
+  z23.set(Z.cx, Z.cy, Z.cx + v2[0] - v3[0], Z.cy + v2[1] - v3[1]); z31.set(Z.cx, Z.cy, Z.cx + v3[0] - v1[0], Z.cy + v3[1] - v1[1]);
+  show(z3.g, S.u3); show(z23.g, ull); show(z31.g, ull);
+  zLabel(lz1, a, Z.r, 0.66, 34); zLabel(lz2, a - 120, Z.r, 0.66, 34); zLabel(lz3, a - 240, Z.r, 0.66, 34);
+  zLabel(lz12, a + 30, R12, 0.8, 38); zLabel(lz23, a - 90, R12, 0.8, 38); zLabel(lz31, a + 150, R12, 0.8, 38);
+  show(lz3, S.u3); show(lz12, fertig); show(lz23, ull); show(lz31, ull);
+  {                                                    // verschobener Zeiger û2N: Formelzeichen im fußnahen Drittel, feste Seite (voraus – am Ende ist das außen)
+    const tF = CFG.fussK, mx = fx + tF * (kx2 - fx), my = fy + tF * (ky2 - fy), [ox, oy] = P(0, 0, 36, a - 120 + 90 * SEITE), len = Z.r;
+    lzk.setAttribute('x', mx + ox); lzk.setAttribute('y', my + oy);
+    show(lzk, S.sb > 0.5 && len > 60);
+  }
+  if (a >= 3) {                                        // Winkelbogen ωt
+    const [bx, by] = P(Z.cx, Z.cy, 62, a);
+    bogen.setAttribute('d', `M ${Z.cx + 62} ${Z.cy} A 62 62 0 ${a > 180 ? 1 : 0} 0 ${bx.toFixed(2)} ${by.toFixed(2)}`);
+    const wb = a >= 40 ? a - 20 : a / 2;             // läuft stetig 20° hinter û1N her – dort liegt nie ein anderer Zeiger
+    const [tx, ty] = P(Z.cx, Z.cy, 100, wb); lBogen.setAttribute('x', tx); lBogen.setAttribute('y', ty);
+  }
+  show(bogen, a >= 3); show(lBogen, a >= 24);
+  [lz1, lz2, lz3, lz12, lz23, lz31, lzk].forEach((t, i) => {      // Aussparung der Projektionslinien um jedes sichtbare Formelzeichen
+    const an = t.style.display !== 'none', x = Number(t.getAttribute('x')), y = Number(t.getAttribute('y'));
+    pLoch[i].setAttribute('x', x - 84); pLoch[i].setAttribute('y', y - 22); pLoch[i].setAttribute('width', an ? 126 : 0);
+  });
+
+  // Linienbild
+  a1.set(xd, L.y0, xd, y1); a2.set(xd, L.y0, xd, y2); a3.set(xd, L.y0, xd, y3);
+  a2.g.style.opacity = 1 - 0.7 * s;                    // der Pfeil u2N an der Achse tritt zurück, sobald er verschoben ist
+  const yF = L.y0 + s * (y1 - y2), yK = yF + (y2 - L.y0);   // verschobener Pfeil u2N: Fuß yF, Spitze yK; am Ende liegt die Spitze auf der Spitze von u1N
+  ak.set(xd, yF, xd, yK); show(ak.g, S.sb > 0);
+  a12.set(xd, L.y0, xd, L.y0 + e * (y12 - L.y0)); show(a12.g, S.kl > 0); show(a3.g, S.u3);   // u12 wächst vom Fuß von u1N zum Fuß von u2N
+  // Formelzeichen an den Pfeilen; im Standbild mit Wert und Einheit (Schalter „Momentanwerte“)
+  const steht = !S.playing && S.xZiel === null, mitWert = S.ro && steht;
+  const anPfeil = (sym, v) => fz(25, sym, mitWert ? ` = ${fmtLauf(v, 'V')}` : '');
+  setze(la1, anPfeil(SYM.u1, m.u1N)); setze(lak, anPfeil(SYM.u2, m.u2N)); setze(la12, anPfeil(SYM.u12, m.u12));
+  const yL1 = (L.y0 + y1) / 2, yL2 = (yF + yK) / 2;
+  const eng = ease(clamp((100 - Math.abs(yL1 - yL2)) / 64, 0, 1));          // 0 … 1: u1N und u2N liegen auf gleicher Höhe
+  la1.setAttribute('x', xd - 26); la1.setAttribute('y', yL1);
+  lak.setAttribute('x', xd - 26 - eng * (la1.getComputedTextLength() + 18)); lak.setAttribute('y', yL2);   // rückt stetig nach links, bleibt links
+  la12.setAttribute('x', xd + 24); la12.setAttribute('y', (L.y0 + y12) / 2); show(la12, fertig);
+  const unter = (r, t, an) => {                        // Unterlage auf den Kasten der Beschriftung setzen
+    show(r, an); if (!an) return null;
+    const b = t.getBBox();
+    r.setAttribute('x', b.x - 6); r.setAttribute('y', b.y - 3); r.setAttribute('width', b.width + 12); r.setAttribute('height', b.height + 6);
+    return b;
+  };
+  const dyn = [unter(un1, la1, true), unter(unk, lak, true), unter(un12, la12, fertig)];
+  // ortsfeste Beschriftung liegt unter einem dieser Kästen: Sie verschwindet, statt überdeckt zu werden
+  const verdeckt = (t) => { const k = festKasten(t); return dyn.some((b) => b && k.x < b.x + b.width + 8 && b.x < k.x + k.width + 8 && k.y < b.y + b.height + 5 && b.y < k.y + k.height + 5); };
+
+  // Projektion: Höhe der Zeigerspitze = Momentanwert
+  const pr = (p, A, y, on) => { p.setAttribute('x1', A[0]); p.setAttribute('y1', A[1]); p.setAttribute('x2', xd); p.setAttribute('y2', y); show(p, S.proj && on); };
+  pr(p1, A1, y1, true); pr(p2, A2, y2, true); pr(p3, A3, y3, S.u3); pr(p12, A12, y12, fertig);
+
+  // Kurven, Spur von u12, Marken
+  spurRect.setAttribute('width', sch >= 5 ? L.kx * 360 + 12 : sch === 4 ? L.kx * S.spur + 6 : 0);
+  const frei = (w) => Math.abs(a - w) >= 17;           // der Zeitstrich mit seinen Pfeilen steht nicht an dieser Stelle
+  show(k12, sch >= 4); show(lU12, (sch >= 5 || (sch === 4 && S.spur >= 78)) && frei(60) && !verdeckt(lU12));
+  show(lU1, frei(90) && !verdeckt(lU1)); show(lU2, frei(210) && !verdeckt(lU2));
+  show(k3, S.u3); show(lU3, S.u3 && frei(330) && !verdeckt(lU3)); show(k23, ull); show(k31, ull);
+  show(lU23, ull && frei(180) && !verdeckt(lU23)); show(lU31, ull && frei(300) && !verdeckt(lU31));
+  // Winkelzahlen und Achsenbeschriftung weichen dem Zeitstrich und den Werten an den Pfeilen (verschwinden, statt zu überdecken)
+  for (const [w, t] of TEIL) show(t, Math.abs(a - w) >= 10 && !(w === 360 && a < 4) && !verdeckt(t));
+  show(lAchse, !verdeckt(lAchse));
+  show(gMarke, sch >= 5);
+  if (sch >= 5) for (const t of lMarke) show(t, !verdeckt(t));
+  FEST.forEach((t, i) => {                             // Projektionslinien um jede sichtbare ortsfeste Beschriftung aussparen
+    const an = t.style.display !== 'none', k = an ? festKasten(t) : null, r = fLoch[i];
+    if (an) { r.setAttribute('x', k.x - 34); r.setAttribute('y', k.y - 2); r.setAttribute('height', k.height + 4); }
+    r.setAttribute('width', an ? k.width + 46 : 0);
+  });
+
+  // Momentanwerte und Ergebnis (zwei Zeilen); das Fragenfeld liegt an derselben Stelle
+  const box = S.fragen && S.box !== null && !export_ ? FRAGEN[S.box] : null;
+  const offenF = !!box && S.antwort[S.box] === null;   // offene Frage: nichts zeigen, was die Antwort verrät
+  show(ro1, S.ro && !box); show(ro2, S.rech && !box);
+  if (S.ro && !box) setze(ro1, fz(38, SYM.wt, ` = ${fmtGrad(a)}`));
+  if (S.rech && !box) setze(ro2, fertig && steht
+    ? fz(38, SYM.u12, ' = ', SYM.u1, ' − ', SYM.u2, ` = ${fmtLauf(m.u1N, 'V')} − ${inKl(m.u2N, 'V')} = ${fmtLauf(m.u12, 'V')}`)   // Formel → Werte → Ergebnis, nur im Standbild
+    : fz(38, SYM.u12, ' = ', SYM.u1, ' − ', SYM.u2));
+  const erg = S.rech && sch >= 5 && !offenF && !export_;
+  show(er1, erg); show(er2, erg); show(unErg, erg);
+  if (erg) {
+    setze(er1, fz(30, SYM.h12, ` = ${fmtLauf(UHAT12, 'V')}`));
+    setze(er2, fz(30, SYM.U12, ' = ', SYM.h12, ` / √2 = ${fmtLauf(U12, 'V')} ≈ 400 V`));
+    const b1 = er1.getBBox(), b2 = er2.getBBox();
+    unErg.setAttribute('x', b1.x - 8); unErg.setAttribute('y', b1.y - 4);
+    unErg.setAttribute('width', Math.max(b1.width, b2.width) + 16); unErg.setAttribute('height', b2.y + b2.height - b1.y + 8);
+  }
+  cap.innerHTML = `Schritt ${sch} von ${NS_MAX}: ` + SCHRITTE[sch].cap;
+  show(gKnopf, !export_);
+  kZur.g.style.opacity = sch > 1 ? 1 : 0.35; kVor.g.style.opacity = sch < NS_MAX ? 1 : 0.35;
+
+  // Fragenfeld
+  show(gFrage, !!box);
+  if (box) {
+    const gew = S.antwort[S.box], beantwortet = gew !== null;
+    frZ[0].innerHTML = fz(25, ...box.z[0]); frZ[1].innerHTML = fz(25, ...box.z[1]);
+    frOpt.forEach((o, j) => {
+      const ok = beantwortet && j === box.richtig, falsch = beantwortet && j === gew && j !== box.richtig;
+      o.t.textContent = box.opt[j] + (ok ? ' ✓' : falsch ? ' ✗' : '');
+      o.r.setAttribute('fill', ok ? C.ink : falsch ? '#e3e6ea' : '#fff');
+      o.t.setAttribute('class', 'lbl' + (ok ? ' c-w' : falsch ? ' muted' : ''));
+      o.g.setAttribute('aria-label', box.opt[j]); o.g.style.cursor = beantwortet ? 'default' : 'pointer';
+    });
+    frTun.t.textContent = box.knopf; frTun.g.setAttribute('aria-label', box.knopf); show(frTun.g, beantwortet);
+    const urteil = gew === box.richtig ? 'Richtig. ' : 'Nicht ganz. ';
+    frFb[0].innerHTML = beantwortet ? fz(25, urteil, ...box.fb[0]) : '';
+    frFb[1].innerHTML = beantwortet ? fz(25, ...box.fb[1]) : '';
+    // dieselbe Frage in der Karte unter der Bedienleiste: am Handy ist das Fragenfeld in der Bühne zu klein zum Antippen
+    $('#pfText').innerHTML = fh(...box.z[0]) + '<br>' + fh(...box.z[1]);
+    pfOpt.forEach((b, j) => {
+      b.textContent = box.opt[j] + (beantwortet && j === box.richtig ? ' ✓' : beantwortet && j === gew ? ' ✗' : '');
+      b.disabled = beantwortet; b.setAttribute('aria-pressed', String(beantwortet && j === box.richtig));
+    });
+    $('#pfFb').innerHTML = beantwortet ? urteil + fh(...box.fb[0]) + ' ' + fh(...box.fb[1]) : '';
+    $('#pfTun').textContent = box.knopf; $('#pfTun').hidden = !beantwortet;
+  }
+  $('#pFrage').hidden = !box;
+
+  // Karte „Erklärung“ unter der Bedienleiste
+  $('#info').hidden = !S.erkl;
+  if (S.erkl) {
+    $('#pNr').textContent = `Schritt ${sch} von ${NS_MAX}`;
+    const offen = !!box && S.antwort[S.box] === null;  // offene Frage: Überschrift, Erklärung und Ergebniswerte verraten die Antwort nicht
+    $('#pTitel').textContent = offen ? SCHRITTE[sch].kurz.replace(/^./, (c) => c.toUpperCase()) : SCHRITTE[sch].titel;
+    $('#pText').innerHTML = offen ? 'Erst die Frage beantworten – danach steht hier die Erklärung.' : SCHRITTE[sch].text;
+    const z = [[H.wt, fmtGrad(a)], [H.u1, V(m.u1N)], [H.u2, V(m.u2N)]];
+    if (sch >= 3) z.push([`${H.u12} = ${H.u1} − ${H.u2}`, V(m.u12)]);
+    if (sch >= 5 && !offen) z.push([H.h12, V(UHAT12)], [`${H.U12} = ${H.h12} / √2`, V(U12)]);
+    $('#pWerte').innerHTML = z.map(([n, w]) => `<tr><td>${n}</td><td>${w}</td></tr>`).join('');
+  }
+  syncUI();
+}
+
+/* ===== QR-Code rechts oben in der Bühne (Festlegungen der Lehrkraft, 12.11.2026, Animation W) =====
+   Führt zur Adresse der Animation auf GitHub Pages (veroeffentlichen.md 3). Die Zeile `const QR = …;` erzeugt
+   python3 scripts/qr_buehne.py <Adresse> quelle.html  – null heißt: noch keine Adresse, die Ecke bleibt frei.
+   Beim Öffnen steht dort nur ein Platzhalter (QR-Symbol, „QR-Code“). Klick oder Enter darauf zeigt den QR-Code,
+   Klick auf den QR-Code blendet ihn wieder aus. ?qr=1 in der Adresse zeigt ihn gleich (Link für den Beamer).
+   Unter 800 px Fensterbreite fehlen beide (am Handy ist die Animation schon offen); im Export nur mit ?qr=1.
+   6 px je Modul (rund 270 px), ganzzahlig und auf ganze Pixel gesetzt: vom Beamer aus lesbar, auch verkleinert.
+   pruefen.py prüft Platzhalter und Umschalten und liest den Code in 1920 und 1280 px Breite. */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/dreiphasenwechselspannung/verkettung-linienbild/", "n": 41, "d": "M0 0h7v1h-7zM9 0h1v1h-1zM12 0h2v1h-2zM17 0h5v1h-5zM23 0h2v1h-2zM28 0h1v1h-1zM30 0h3v1h-3zM34 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM11 1h2v1h-2zM14 1h1v1h-1zM17 1h1v1h-1zM20 1h2v1h-2zM26 1h3v1h-3zM32 1h1v1h-1zM34 1h1v1h-1zM40 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h3v1h-3zM12 2h2v1h-2zM16 2h4v1h-4zM21 2h3v1h-3zM27 2h1v1h-1zM31 2h1v1h-1zM34 2h1v1h-1zM36 2h3v1h-3zM40 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM10 3h2v1h-2zM15 3h1v1h-1zM19 3h1v1h-1zM21 3h1v1h-1zM24 3h2v1h-2zM27 3h3v1h-3zM32 3h1v1h-1zM34 3h1v1h-1zM36 3h3v1h-3zM40 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h2v1h-2zM11 4h2v1h-2zM16 4h5v1h-5zM22 4h2v1h-2zM28 4h5v1h-5zM34 4h1v1h-1zM36 4h3v1h-3zM40 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM11 5h3v1h-3zM17 5h1v1h-1zM20 5h2v1h-2zM25 5h1v1h-1zM27 5h4v1h-4zM34 5h1v1h-1zM40 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h1v1h-1zM32 6h1v1h-1zM34 6h7v1h-7zM8 7h3v1h-3zM12 7h5v1h-5zM20 7h2v1h-2zM26 7h3v1h-3zM32 7h1v1h-1zM0 8h1v1h-1zM2 8h5v1h-5zM10 8h3v1h-3zM16 8h3v1h-3zM22 8h1v1h-1zM24 8h2v1h-2zM27 8h3v1h-3zM34 8h5v1h-5zM0 9h1v1h-1zM3 9h3v1h-3zM8 9h2v1h-2zM11 9h3v1h-3zM15 9h6v1h-6zM22 9h2v1h-2zM28 9h1v1h-1zM30 9h7v1h-7zM38 9h3v1h-3zM1 10h2v1h-2zM4 10h3v1h-3zM8 10h2v1h-2zM15 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h2v1h-2zM27 10h4v1h-4zM32 10h1v1h-1zM34 10h2v1h-2zM0 11h1v1h-1zM2 11h4v1h-4zM7 11h2v1h-2zM10 11h2v1h-2zM13 11h1v1h-1zM21 11h1v1h-1zM31 11h3v1h-3zM35 11h3v1h-3zM0 12h1v1h-1zM2 12h1v1h-1zM5 12h3v1h-3zM15 12h1v1h-1zM17 12h1v1h-1zM19 12h2v1h-2zM24 12h4v1h-4zM29 12h1v1h-1zM31 12h1v1h-1zM37 12h2v1h-2zM0 13h1v1h-1zM2 13h3v1h-3zM7 13h1v1h-1zM10 13h1v1h-1zM12 13h1v1h-1zM16 13h1v1h-1zM25 13h1v1h-1zM28 13h1v1h-1zM31 13h7v1h-7zM40 13h1v1h-1zM0 14h1v1h-1zM3 14h1v1h-1zM5 14h5v1h-5zM11 14h2v1h-2zM14 14h1v1h-1zM20 14h1v1h-1zM22 14h6v1h-6zM32 14h2v1h-2zM0 15h2v1h-2zM5 15h1v1h-1zM8 15h1v1h-1zM11 15h1v1h-1zM14 15h1v1h-1zM16 15h1v1h-1zM21 15h3v1h-3zM27 15h2v1h-2zM34 15h1v1h-1zM36 15h2v1h-2zM0 16h1v1h-1zM2 16h1v1h-1zM4 16h3v1h-3zM8 16h6v1h-6zM16 16h2v1h-2zM22 16h5v1h-5zM29 16h1v1h-1zM31 16h3v1h-3zM35 16h1v1h-1zM38 16h2v1h-2zM3 17h2v1h-2zM7 17h1v1h-1zM9 17h4v1h-4zM16 17h1v1h-1zM19 17h2v1h-2zM22 17h2v1h-2zM25 17h1v1h-1zM28 17h5v1h-5zM34 17h3v1h-3zM40 17h1v1h-1zM0 18h1v1h-1zM4 18h1v1h-1zM6 18h6v1h-6zM14 18h1v1h-1zM16 18h1v1h-1zM18 18h1v1h-1zM22 18h1v1h-1zM24 18h4v1h-4zM29 18h1v1h-1zM33 18h2v1h-2zM36 18h3v1h-3zM0 19h1v1h-1zM3 19h1v1h-1zM5 19h1v1h-1zM7 19h1v1h-1zM9 19h1v1h-1zM11 19h3v1h-3zM19 19h1v1h-1zM23 19h1v1h-1zM26 19h2v1h-2zM30 19h1v1h-1zM36 19h2v1h-2zM39 19h2v1h-2zM2 20h15v1h-15zM18 20h1v1h-1zM21 20h4v1h-4zM27 20h1v1h-1zM29 20h1v1h-1zM31 20h2v1h-2zM38 20h1v1h-1zM40 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM8 21h2v1h-2zM11 21h2v1h-2zM15 21h1v1h-1zM17 21h1v1h-1zM19 21h3v1h-3zM23 21h1v1h-1zM25 21h1v1h-1zM28 21h13v1h-13zM0 22h1v1h-1zM2 22h1v1h-1zM4 22h5v1h-5zM10 22h1v1h-1zM13 22h2v1h-2zM16 22h2v1h-2zM21 22h2v1h-2zM25 22h3v1h-3zM30 22h1v1h-1zM35 22h2v1h-2zM38 22h1v1h-1zM1 23h1v1h-1zM3 23h1v1h-1zM5 23h1v1h-1zM9 23h3v1h-3zM13 23h1v1h-1zM15 23h1v1h-1zM19 23h1v1h-1zM21 23h3v1h-3zM27 23h2v1h-2zM30 23h1v1h-1zM35 23h1v1h-1zM37 23h1v1h-1zM40 23h1v1h-1zM2 24h2v1h-2zM6 24h4v1h-4zM11 24h1v1h-1zM13 24h5v1h-5zM22 24h1v1h-1zM25 24h7v1h-7zM35 24h1v1h-1zM38 24h1v1h-1zM40 24h1v1h-1zM1 25h2v1h-2zM7 25h1v1h-1zM12 25h1v1h-1zM15 25h1v1h-1zM19 25h2v1h-2zM23 25h1v1h-1zM25 25h1v1h-1zM28 25h1v1h-1zM30 25h2v1h-2zM33 25h5v1h-5zM40 25h1v1h-1zM1 26h1v1h-1zM3 26h7v1h-7zM12 26h1v1h-1zM14 26h2v1h-2zM18 26h1v1h-1zM22 26h1v1h-1zM26 26h3v1h-3zM32 26h3v1h-3zM0 27h3v1h-3zM4 27h1v1h-1zM7 27h2v1h-2zM13 27h2v1h-2zM18 27h5v1h-5zM24 27h1v1h-1zM28 27h1v1h-1zM31 27h2v1h-2zM35 27h1v1h-1zM37 27h1v1h-1zM39 27h1v1h-1zM2 28h2v1h-2zM5 28h7v1h-7zM13 28h1v1h-1zM15 28h1v1h-1zM17 28h1v1h-1zM19 28h1v1h-1zM22 28h2v1h-2zM25 28h3v1h-3zM29 28h1v1h-1zM31 28h1v1h-1zM35 28h1v1h-1zM37 28h2v1h-2zM0 29h4v1h-4zM7 29h2v1h-2zM11 29h2v1h-2zM14 29h1v1h-1zM16 29h1v1h-1zM18 29h1v1h-1zM20 29h2v1h-2zM24 29h2v1h-2zM28 29h10v1h-10zM39 29h2v1h-2zM0 30h1v1h-1zM4 30h1v1h-1zM6 30h4v1h-4zM12 30h2v1h-2zM15 30h2v1h-2zM19 30h1v1h-1zM22 30h1v1h-1zM25 30h4v1h-4zM33 30h2v1h-2zM37 30h1v1h-1zM0 31h1v1h-1zM2 31h1v1h-1zM8 31h6v1h-6zM16 31h1v1h-1zM18 31h4v1h-4zM24 31h1v1h-1zM27 31h1v1h-1zM30 31h5v1h-5zM36 31h2v1h-2zM39 31h1v1h-1zM0 32h1v1h-1zM3 32h2v1h-2zM6 32h2v1h-2zM9 32h1v1h-1zM11 32h2v1h-2zM17 32h1v1h-1zM19 32h2v1h-2zM22 32h1v1h-1zM24 32h3v1h-3zM28 32h2v1h-2zM31 32h10v1h-10zM8 33h2v1h-2zM11 33h4v1h-4zM17 33h1v1h-1zM19 33h3v1h-3zM23 33h1v1h-1zM25 33h2v1h-2zM28 33h1v1h-1zM32 33h1v1h-1zM36 33h2v1h-2zM39 33h2v1h-2zM0 34h7v1h-7zM9 34h3v1h-3zM14 34h2v1h-2zM17 34h1v1h-1zM20 34h2v1h-2zM25 34h8v1h-8zM34 34h1v1h-1zM36 34h2v1h-2zM0 35h1v1h-1zM6 35h1v1h-1zM8 35h1v1h-1zM10 35h4v1h-4zM15 35h1v1h-1zM17 35h2v1h-2zM20 35h3v1h-3zM25 35h1v1h-1zM30 35h3v1h-3zM36 35h2v1h-2zM0 36h1v1h-1zM2 36h3v1h-3zM6 36h1v1h-1zM8 36h1v1h-1zM10 36h1v1h-1zM12 36h1v1h-1zM20 36h2v1h-2zM24 36h1v1h-1zM26 36h4v1h-4zM32 36h5v1h-5zM38 36h1v1h-1zM0 37h1v1h-1zM2 37h3v1h-3zM6 37h1v1h-1zM8 37h3v1h-3zM12 37h4v1h-4zM18 37h6v1h-6zM28 37h6v1h-6zM35 37h1v1h-1zM37 37h1v1h-1zM0 38h1v1h-1zM2 38h3v1h-3zM6 38h1v1h-1zM8 38h2v1h-2zM11 38h1v1h-1zM13 38h3v1h-3zM17 38h1v1h-1zM25 38h3v1h-3zM33 38h6v1h-6zM0 39h1v1h-1zM6 39h1v1h-1zM10 39h1v1h-1zM15 39h1v1h-1zM18 39h1v1h-1zM20 39h2v1h-2zM24 39h1v1h-1zM26 39h1v1h-1zM28 39h1v1h-1zM32 39h2v1h-2zM36 39h1v1h-1zM39 39h1v1h-1zM0 40h7v1h-7zM8 40h2v1h-2zM13 40h1v1h-1zM17 40h2v1h-2zM24 40h3v1h-3zM28 40h2v1h-2zM31 40h1v1h-1zM34 40h3v1h-3zM38 40h1v1h-1z"};
+const gQR = el('g', { id: 'qr', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code ausblenden' });        // zuletzt angelegt:
+const gQRPlatz = el('g', { id: 'qr-platz', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code anzeigen' }); // liegen über allem
+const QR_BOX = QR && (() => {
+  const m = 6, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
+  gQR.dataset.url = QR.url;
+  el('title', {}, gQR).textContent = 'Klicken: QR-Code ausblenden';
+  el('rect', { x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1 }, gQR);
+  el('path', { d: QR.d, fill: '#000', transform: `translate(${x0 + q} ${y0 + q}) scale(${m})`, 'shape-rendering': 'crispEdges' }, gQR);
+  txt(x0 + w / 2, y0 + w + 26, 'Am eigenen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  txt(x0 + w / 2, y0 + w + 52, 'Gerät öffnen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  // Platzhalter, rechts oben bündig mit dem QR-Code: gestrichelter Rahmen, Symbol (drei Suchmuster und einige
+  // Module – kein lesbarer Code), darunter „QR-Code“
+  const p = 96, px = 1900 - p, s = 3, o = Math.round((p - 21 * s) / 2);
+  el('title', {}, gQRPlatz).textContent = 'Klicken: QR-Code anzeigen';
+  el('rect', { x: px, y: y0, width: p, height: p, rx: 8, fill: '#fff', stroke: '#9aa3ad', 'stroke-width': 2, 'stroke-dasharray': '8 6' }, gQRPlatz);
+  let d = '';
+  for (const [cx, cy] of [[0, 0], [14, 0], [0, 14]]) d += `M${cx} ${cy}h7v7h-7zM${cx + 1} ${cy + 1}v5h5v-5zM${cx + 2} ${cy + 2}h3v3h-3z`;
+  for (const [x, y] of [[9, 1], [11, 2], [9, 4], [12, 4], [10, 6], [12, 8], [8, 9], [10, 10], [14, 9], [16, 10], [18, 9], [20, 11], [1, 9], [3, 10], [5, 9],
+    [2, 12], [9, 12], [11, 13], [15, 14], [17, 15], [19, 16], [14, 17], [16, 19], [18, 18], [20, 20], [9, 15], [11, 17], [9, 19], [12, 20]]) d += `M${x} ${y}h1v1h-1z`;
+  el('path', { d, fill: '#5b6570', 'fill-rule': 'evenodd', transform: `translate(${px + o} ${y0 + o}) scale(${s})`, 'shape-rendering': 'crispEdges' }, gQRPlatz);
+  txt(px + p / 2, y0 + p + 28, 'QR-Code', { class: 'qr-cap', 'text-anchor': 'middle' }, gQRPlatz);
+  return { x0, y0, w };
+})();
+const qrGross = () => window.innerWidth >= 800, qrExport = () => document.documentElement.classList.contains('export');
+function qrSichtbar() { return !!QR && S.qr && (qrGross() || qrExport()); }
+function qrPlatzSichtbar() { return !!QR && !S.qr && qrGross() && !qrExport(); }
+function qrUmschalten() {
+  S.qr = !S.qr; render();
+  const z = S.qr ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({ preventScroll: true });
+}
+for (const g of [gQR, gQRPlatz]) {
+  g.addEventListener('click', qrUmschalten);
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
+}
+
+
+/* ================= 8 Bedienung ================= */
+const btnPlay = $('#btn-play'), rng = $('#rng-x'), num = $('#num-x');
+for (const e of [rng, num]) { e.min = CFG.x.min; e.max = CFG.x.max; e.step = CFG.x.step; e.value = CFG.x.start; }
+$('#cap-x').innerHTML = `<i>${CFG.x.zeichen}</i> in ${CFG.x.einheit}`;
+const segKn = [];
+for (let k = 1; k <= NS_MAX; k++) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = String(k); b.title = SCHRITTE[k].kurz; b.setAttribute('aria-label', `Schritt ${k}: ${SCHRITTE[k].kurz}`);
+  b.addEventListener('click', () => geheZu(k));
+  $('#seg-schritt').appendChild(b); segKn[k] = b;
+}
+const SCHALTER = ['proj', 'u3', 'ull', 'ro', 'rech', 'fragen', 'erkl'];   // Schlüssel in S, zu jedem gehört <input id="chk-…">
+function syncUI() {
+  const v = Math.round(S.x * 100) / 100;
+  rng.value = v;
+  if (document.activeElement !== num) num.value = v;
+  btnPlay.textContent = S.playing ? '❚❚ Pause' : '▶ Abspielen';
+  btnPlay.setAttribute('aria-pressed', String(S.playing));
+  for (let k = 1; k <= NS_MAX; k++) segKn[k].setAttribute('aria-pressed', String(k === S.schritt));
+  $('#btn-zurueck').disabled = S.schritt <= 1; $('#btn-weiter').disabled = S.schritt >= NS_MAX;
+  for (const k of SCHALTER) $('#chk-' + k).checked = !!S[k];
+  show(gQR, qrSichtbar()); show(gQRPlatz, qrPlatzSichtbar());
+  for (const t of [titel0, titel]) t.setAttribute('x', (qrSichtbar() || qrPlatzSichtbar()) ? QR_BOX.x0 - 60 : 1872);   // springt beim Umschalten nicht
+}
+/* Ein Zeitschritt – derselbe für die Bildschleife und für anim.advance. Reihenfolge: erst auf den Winkel der
+   Pfeilrechnung drehen, dann u2N verschieben, dann u12 einzeichnen (rückwärts umgekehrt), sonst dreht der Winkel weiter. */
+function vor(dt) {
+  if (S.xZiel !== null) {
+    const w = CFG.dreh * dt;
+    if (Math.abs(S.xZiel - S.x) <= w) { S.x = S.xZiel; S.xZiel = null; } else S.x += Math.sign(S.xZiel - S.x) * w;
+    return;
+  }
+  const kz = klZiel(), sz = sbZiel(), d = dt / CFG.tw;
+  if (S.kl > kz) { S.kl = Math.max(kz, S.kl - d); return; }
+  if (S.sb !== sz) { S.sb = sz > S.sb ? Math.min(sz, S.sb + d) : Math.max(sz, S.sb - d); return; }
+  if (S.kl < kz) { S.kl = Math.min(kz, S.kl + d); return; }
+  if (S.playing) {
+    S.x += dt * 360 / S.dauer;
+    if (S.schritt === 4) S.spur = Math.max(S.spur, Math.min(S.x, 360));
+    if (S.x >= 360) S.x -= 360;                        // Endlosschleife über genau eine Periode
+  }
+}
+const braucht = () => !S.halt && (S.playing || S.xZiel !== null || S.kl !== klZiel() || S.sb !== sbZiel());
+let last = null, laeuft = false;
+function tick(ts) {
+  if (!braucht()) { laeuft = false; last = null; syncUI(); return; }
+  if (last !== null) { vor(Math.min((ts - last) / 1000, 0.1)); render(); }
+  last = ts;
+  requestAnimationFrame(tick);
+}
+function start() { if (!laeuft && braucht()) { laeuft = true; last = null; requestAnimationFrame(tick); } }
+
+function geheZu(k, animiert = true) {
+  k = clamp(Math.round(k), 1, NS_MAX);
+  const alt = S.schritt;
+  S.schritt = k; S.box = null;
+  if (!animiert) { S.kl = klZiel(); S.sb = sbZiel(); S.xZiel = null; } else S.halt = false;
+  if (k === 4 && alt !== 4) S.spur = 0;
+  if (k >= 5) S.spur = 360;
+  const q = frageZu(k);
+  if (S.fragen && q >= 0 && (k !== alt || !animiert)) S.box = q;
+  if (animiert && k !== alt) {
+    // Pfeilrechnung: Bei 0° hat der Pfeil u1N keine Länge – beim ersten „Weiter“ drehen die Zeiger auf 30°.
+    if (k === 2 && alt === 1 && S.x < CFG.demo) { S.playing = false; S.xZiel = CFG.demo; }
+    if (k === 4 && S.box === null) { S.x = 0; S.playing = true; }      // ohne Frage läuft der Durchlauf gleich
+  }
+  render(); start();
+}
+const weiter = () => geheZu(S.schritt + 1), zurueck = () => geheZu(S.schritt - 1);
+function durchlauf() {                                 // Schritt 4: Kurve u12 von 0° an zeichnen
+  if (S.schritt !== 4) { S.schritt = 4; }
+  S.box = null; S.x = 0; S.spur = 0; S.xZiel = null; S.playing = true;
+  render(); start();
+}
+function antworten(j) {
+  if (S.box === null || S.antwort[S.box] !== null) return;
+  S.antwort[S.box] = j; render();
+}
+function setX(v, fromUser = true) {
+  if (!Number.isFinite(v)) return;
+  if (fromUser) { S.playing = false; S.xZiel = null; S.box = null; }
+  S.x = clamp(v, CFG.x.min, CFG.x.max);
+  if (S.schritt === 4) S.spur = Math.max(S.spur, S.x);
+  render();
+  if (fromUser) writeHash();
+}
+function writeHash() {
+  try { history.replaceState(null, '', location.pathname + location.search + '#' + CFG.x.hash + String(Math.round(S.x * 100) / 100).replace('.', '-')); } catch (e) { /* Rahmen erlaubt es nicht */ }
+}
+function readStart() {
+  try {
+    const h = new RegExp('^#' + CFG.x.hash + '(\\d+)(?:-(\\d+))?$').exec(location.hash || '');
+    if (h) return parseFloat(h[1] + (h[2] ? '.' + h[2] : ''));
+  } catch (e) { /* ignorieren */ }
+  return CFG.x.start;
+}
+function togglePlay() {
+  S.playing = !S.playing;
+  if (S.playing) { S.box = null; S.halt = false; }
+  render(); start();
+  if (!S.playing) writeHash();
+}
+function reset() {                                     // Startbild: Schritt 1, 0°, Fragen offen
+  Object.assign(S, { x: CFG.x.start, playing: false, schritt: 1, kl: 0, sb: 0, spur: 0, xZiel: null, halt: false, antwort: [null, null, null] });
+  S.box = S.fragen ? frageZu(1) : null; if (S.box < 0) S.box = null;
+  render(); writeHash();
+}
+btnPlay.addEventListener('click', togglePlay);
+$('#btn-reset').addEventListener('click', reset);
+$('#btn-weiter').addEventListener('click', weiter);
+$('#btn-zurueck').addEventListener('click', zurueck);
+$('#sel-speed').addEventListener('change', (e) => { S.dauer = Number(e.target.value); });
+rng.addEventListener('input', () => setX(parseFloat(rng.value)));
+num.addEventListener('change', () => setX(parseFloat(String(num.value).replace(',', '.'))));
+for (const p of CFG.x.presets) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = String(p).replace('.', ',') + CFG.x.einheit;
+  b.addEventListener('click', () => setX(p));
+  $('#presets').appendChild(b);
+}
+function setOpt(key, val) {
+  S[key] = !!val;
+  if (key === 'fragen') { const q = frageZu(S.schritt); S.box = S.fragen && q >= 0 ? q : null; }
+  render();
+}
+for (const key of SCHALTER) $('#chk-' + key).addEventListener('change', (e) => setOpt(key, e.target.checked));
+/* Vollbild nach Normblock 10: die ganze Seite; sichtbar sind nur Bühne und eingeschaltetes Diagramm.
+   Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
+function setVollbild(an) {
+  const html = document.documentElement;
+  html.classList.toggle('vollbild', an);
+  try {
+    if (an && !document.fullscreenElement) html.requestFullscreen?.().catch(() => {});
+    if (!an && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* nicht verfügbar: Ersatz über die Klasse */ }
+  render();
+}
+const toggleFullscreen = () => setVollbild(!document.documentElement.classList.contains('vollbild'));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.documentElement.classList.contains('vollbild')) setVollbild(false); });
+$('#btn-fs').addEventListener('click', toggleFullscreen);
+$('#vb-ende').addEventListener('click', () => setVollbild(false));
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  const inField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if (e.key === ' ' && !inField && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); return; }
+  if (inField && t.type !== 'checkbox') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setX(S.x + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? CFG.x.big : CFG.x.step)); }
+  else if (e.key === 'PageDown' || e.key === 'n' || e.key === 'N') { e.preventDefault(); weiter(); }
+  else if (e.key === 'PageUp' || e.key === 'b' || e.key === 'B') { e.preventDefault(); zurueck(); }
+  else if (e.key === 'Home') { e.preventDefault(); setX(CFG.x.min); }
+  else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  else if (e.key === 'Escape' && document.documentElement.classList.contains('vollbild')) setVollbild(false);
+});
+window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S.x) setX(v, false); });
+window.addEventListener('resize', syncUI);
+
+/* ================= 9 Schnittstelle für Prüfung und Export (Pflicht) =================
+   scripts/pruefen.py und scripts/video.py steuern die Seite nur hierüber. */
+const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
+if (params.has('export')) { document.documentElement.classList.add('export'); S.fragen = false; }   // Standbild und Video ohne Fragenfeld
+if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne
+for (const k of SCHALTER) if (params.has(k)) S[k] = params.get(k) !== '0';
+if (params.has('qr')) S.qr = params.get('qr') !== '0';      // ?qr=1: QR-Code gleich sichtbar (Beamer-Link)
+window.anim = {
+  bauart: 'stellgroesse',
+  cfg: CFG,
+  model,                                                       // reine Physik, zum Nachrechnen
+  set(x) { S.playing = false; S.xZiel = null; S.x = clamp(x, CFG.x.min, CFG.x.max); if (S.schritt === 4) S.spur = Math.max(S.spur, S.x); render(); return S.x; },
+  schritt(k) { geheZu(k, false); return S.schritt; },          // Schritt ohne Übergang einstellen (Endzustand)
+  antwort(i, j) { S.antwort[i] = j; render(); },               // Frage i (0…2) mit Auswahl j beantworten; null = offen
+  opt(key, val) { setOpt(key, val); },
+  act(name) { ({ reset, weiter, zurueck, durchlauf, play: togglePlay })[name]?.(); },
+  advance(sek) { for (let t = 0; t < sek - 1e-9; t += 1 / 60) vor(1 / 60); render(); },   // feste Schritte, unabhängig von der Bildrate
+  pause(an = true) { S.halt = !!an; if (an) S.playing = false; else start(); syncUI(); },   // hält jede eigene Schleife an
+  vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },   // Normblock 10
+  get state() {
+    const { halt, ...z } = S;
+    return { ...z, antwort: [...S.antwort], ...model(S.x), uHat: UHAT, uHat12: UHAT12, U12 };
+  },
+};
+
+/* ================= 10 Start =================
+   Festlegung der Lehrkraft, 24.11.2026: steht beim Öffnen mit Vorhersage-Frage (kein Autostart). */
+S.x = clamp(readStart(), CFG.x.min, CFG.x.max);
+geheZu(params.has('schritt') ? Number(params.get('schritt')) || 1 : 1, false);   // öffnet auch das Fragenfeld des Schritts
+render();
+})();
+</script>
+</body>
+</html>

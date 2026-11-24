@@ -25,6 +25,9 @@
     "wechselspannung/wirk-blind-scheingroessen/": { "reihenfolge": 3 },
 
     "dreiphasenwechselspannung/erzeugung/": { "reihenfolge": 1 },
+    "dreiphasenwechselspannung/verkettung-netzsystem/": { "reihenfolge": 2 },
+    "dreiphasenwechselspannung/verkettung-linienbild/": { "reihenfolge": 3 },
+    "dreiphasenwechselspannung/verkettung-zeigerbild/": { "reihenfolge": 4 },
 
     "drehfeld/konzentrierte-wicklung/": { "reihenfolge": 1 },
     "drehfeld/verteilte-wicklung/":     { "reihenfolge": 2 },
