@@ -327,7 +327,7 @@ html.vollbild #stage-svg,html.buehne #stage-svg{cursor:pointer}   /* dort heißt
       <li>Gleich hell bei <i>û</i>&nbsp;=&nbsp;√2&nbsp;·&nbsp;6&#8239;V&nbsp;=&nbsp;8,4853&#8239;V, angezeigt als 8,49&#8239;V. Mit diesem genauen Wert ist <i>p̂</i>&nbsp;=&nbsp;18&#8239;W. Wer mit 8,49&#8239;V nachrechnet, erhält 18,02&#8239;W. Der Regler rastet bei diesem Wert ein.</li>
       <li>Glatte Ergebnisse stehen wie auf dem Arbeitsblatt ohne Nachkommastellen (9&#8239;W), alle anderen Werte mit drei geltenden Ziffern.</li>
       <li>Die Helligkeit der Lampen ist nur qualitativ gezeichnet und folgt dem Mittelwert <i>P</i> der Leistung. Die Lampe flackert nicht mit <i>p</i>: Der Glühfaden ist träge und folgt einem Wechsel mit üblicher Frequenz (zum Beispiel 100-mal je Sekunde bei <i>f</i>&nbsp;=&nbsp;50&#8239;Hz) kaum.</li>
-      <li>Die Fläche unter der Leistungskurve ist die Energie <i>W</i>&nbsp;=&nbsp;<i>P</i>&nbsp;·&nbsp;<i>t</i>. Das Klappen ist exakt: Jede halbe Spitze wird um 180° um den Schnittpunkt von Leistungskurve und Mittelwertlinie gedreht. Die Kurve ist zu diesem Punkt punktsymmetrisch, deshalb füllt die halbe Spitze das Tal genau aus.</li>
+      <li>Die Fläche unter der Leistungskurve ist die Energie <i>W</i>&nbsp;=&nbsp;<i>P</i>&nbsp;·&nbsp;Δ<i>t</i>, für eine Periode <i>W</i>&nbsp;=&nbsp;<i>P</i>&nbsp;·&nbsp;<i>T</i>. Bei Wechselspannung ist <i>P</i> dabei der Mittelwert der Leistung. Beide Diagramme zeigen dieselbe Zeit <i>T</i>; deshalb bedeutet gleiche mittlere Leistung gleiche Fläche. Das Klappen ist exakt: Jede halbe Spitze wird um 180° um den Schnittpunkt von Leistungskurve und Mittelwertlinie gedreht. Die Kurve ist zu diesem Punkt punktsymmetrisch, deshalb füllt die halbe Spitze das Tal genau aus.</li>
       <li>Der Spannungspfeil an der Wechselspannungsquelle ist wie auf dem Arbeitsblatt mit dem Scheitelwert <i>û</i> beschriftet; seine Länge folgt <i>û</i>. Oszilloskop und Masseanschlüsse des Arbeitsblatts sind weggelassen: Die beiden Liniendiagramme zeigen, was das Oszilloskop misst.</li>
       <li>Der Mittelwert der Leistung heißt hier <i>P</i> (Wirkleistung), nicht <i>P</i><sub>eff</sub>: Er ist ein arithmetischer Mittelwert, kein Effektivwert.</li>
     </ul>
@@ -354,6 +354,9 @@ const HTML = document.documentElement;
    Festlegungen vom 15.11.2026:
    – Die eingetragenen Punkte der Leistung liegen über dem Spannungspfeil (sonst verdeckt der Pfeil z. B. den Punkt 1 W bei u = 2 V).
    – Alle Tempostufen laufen doppelt so schnell wie im ersten Stand (tempoBasis).
+   Festlegung vom 24.11.2026: Als Info ergänzt, dass die Energie die Fläche unter der Kurve ist und sich die gleiche mittlere Leistung
+   in der gleichen Fläche widerspiegelt; Formel W = P · Δt = P · T. Umsetzung in Phase 3: Formel und Merksatz im Feld rechts oben,
+   Beschriftung „W = P · T“ in beiden Flächen (bleibt bis zum Schluss stehen), Texte der Schritte „fl_dc“ und „klapp2“.
    Festlegung vom 21.11.2026: Bedienelemente übersichtlicher – Bedienleiste auf die Layout-Norm v5 umgebaut (Kästen Steuerung,
    Parameter, Text). Dabei: eigener Knopf „Pause“, Phasenknöpfe nur mit Nummer (Name der aktuellen Phase daneben), der
    Schrittzähler steht nur noch in der Bühne und in der Textkarte. */
@@ -514,12 +517,12 @@ const FORMEL = {
   wert: (uh, u) => ['*p* = ', { z: '*u*²', n: '*R*' }, ' = ', { z: `(${fmtZ(u, 'V')})²`, n: R_T() }, ' = ', { b: fmtZ(u * u / CFG.R, 'W') }],
   spitze: (uh) => ['*p̂* = ', { z: '*û*²', n: '*R*' }, ' = ', { z: `(${fmtZ(uh, 'V')})²`, n: R_T() }, ' = ', { b: fmtZ(uh * uh / CFG.R, 'W') }],
   negspitze: (uh) => ['*p̂* = ', { z: '*u*²', n: '*R*' }, ' = ', { z: `(${fmtZ(-uh, 'V')})²`, n: R_T() }, ' = ', { b: fmtZ(uh * uh / CFG.R, 'W') }],
-  energie: () => ['*W* = *P* · *t*'],
+  energie: () => ['*W* = *P* · Δ*t* = *P* · *T*'],                 // Fläche unter der Leistungskurve; für eine Periode ist Δt = T
   P: (uh) => ['*P* = ', { z: '*p̂*', n: '2' }, ' = ', { z: fmtZ(uh * uh / CFG.R, 'W'), n: '2' }, ' = ', { b: fmtZ(uh * uh / (2 * CFG.R), 'W') }],
   U: (uh) => ['*U* = ', { z: '*û*', n: '√2' }, ' = ', { z: fmtZ(uh, 'V'), n: '√2' }, ' = ', { b: fmtZ(uh / Math.SQRT2, 'V') }],
 };
 const FORMEL_TITEL = { allg: 'Leistung in einem Augenblick', wert: 'Leistung in einem Augenblick', spitze: 'Scheitelwert der Leistung', negspitze: 'Scheitelwert der Leistung',
-  energie: 'Fläche unter der Leistungskurve = Energie', P: 'Mittelwert der Leistung', U: 'Effektivwert der Spannung' };
+  energie: 'Energie = Fläche unter der Leistungskurve', P: 'Mittelwert der Leistung', U: 'Effektivwert der Spannung' };
 
 /* ================= 5 Ablauf: Schritte und Phasen =================
    Jeder Schritt hat einen Endzustand (Schlüsselwerte, set) und eine Dauer für den Übergang dorthin. Das Bild ist eine reine
@@ -571,17 +574,18 @@ schritt('ns_punkt', 2, 1.2, { pk: 270 }, `Die Leistung erreicht wieder ihren Sch
 schritt('rest', 2, 3.5, { cur: 360, pk: 360 },
   'Die Leistungskurve ist fertig. Die Leistung ist nie negativ. Sie hat zwei Berge in einer Periode: Sie schwingt doppelt so schnell wie die Spannung.', { calc: ['allg'], lin: true });
 schritt('fl_dc', 3, 1.2, { curOn: 0, dots: 0, fDC: 1 },
-  'Die Fläche unter der Leistungslinie ist die Energie *W* = *P* · *t*. So viel Energie setzt E1 in der Zeit *T* um.', { calc: ['energie'] });
+  'Die Fläche unter der Leistungslinie ist die Energie: *W* = *P* · Δ*t*. Für eine Periode ist Δ*t* = *T*. E1 setzt in dieser Zeit die Energie *W* = *P* · *T* um.', { calc: ['energie'] });
 schritt('fl_ac', 3, 1.2, { fAC: 1 },
   'Bei Wechselspannung ist die Energie die Fläche unter der Leistungskurve. Beide Lampen leuchten gleich hell. Also müssen beide Flächen gleich groß sein.', { calc: ['energie'] });
+const INFO_FLAECHE = ['Gleiche mittlere Leistung *P*', 'bedeutet gleiche Fläche.'];   // gilt, weil beide Diagramme dieselbe Zeit T zeigen
 schritt('mittel', 3, 1.2, { mi: 1 },
-  `Die Leistung von E2 schwankt zwischen ${W0} und ${W18}. Der Glühfaden ist träge und folgt dem schnellen Wechsel nicht. Für die Helligkeit zählt der Mittelwert.`, { calc: ['energie'] });
+  `Die Leistung von E2 schwankt zwischen ${W0} und ${W18}. Der Glühfaden ist träge und folgt dem schnellen Wechsel nicht. Für die Helligkeit zählt der Mittelwert.`, { calc: ['energie'], info: INFO_FLAECHE });
 schritt('spitzen', 3, 1.0, { sp: 1 },
-  `Liegt der Mittelwert bei ${W9}? Die Spitzen über der Linie sind genauso groß wie die Täler unter der Linie.`, { calc: ['energie'] });
+  `Liegt der Mittelwert bei ${W9}? Die Spitzen über der Linie sind genauso groß wie die Täler unter der Linie.`, { calc: ['energie'], info: INFO_FLAECHE });
 schritt('klapp1', 3, 3.0, { k1: 1 },
-  'Die erste Spitze wird geteilt. Beide Hälften klappen nach unten und füllen die Täler genau aus.', { calc: ['energie'] });
+  'Die erste Spitze wird geteilt. Beide Hälften klappen nach unten und füllen die Täler genau aus.', { calc: ['energie'], info: INFO_FLAECHE });
 schritt('klapp2', 3, 3.0, { k2: 1 },
-  `Die zweite Spitze füllt die restlichen Täler. Es entsteht ein Rechteck mit der Höhe ${W9}. Die Fläche ist gleich groß wie bei Gleichspannung.`, { calc: ['energie'] });
+  `Die zweite Spitze füllt die restlichen Täler. Es entsteht ein Rechteck mit der Höhe ${W9}. Die Fläche *W* = *P* · *T* ist gleich groß wie bei Gleichspannung: gleiche Energie, gleiche mittlere Leistung.`, { calc: ['energie'], info: INFO_FLAECHE });
 schritt('formel_p', 4, 0.8, { pL: 1 },
   'Der Mittelwert der Leistung ist halb so groß wie der Scheitelwert *p̂*. Dieser Mittelwert ist die Leistung *P* der Lampe E2.', { calc: ['P'] });
 schritt('rueckblick', 4, 2.5, { uh: CFG.uhStart },                     // erklärt die Beobachtung vom Anfang: gleicher Scheitelwert wie U, aber nur die halbe Leistung
@@ -778,6 +782,9 @@ const lKu = txt(0, 0, I('u'), { class: 'lbl c-u halo', 'text-anchor': 'middle' }
 const lKp = txt(0, 0, I('p'), { class: 'lbl c-p halo', 'text-anchor': 'end' }, gLbl);
 const lPac = txt(XR(180), 0, '', { class: 'lbl c-p halo', 'text-anchor': 'middle' }, gLbl);
 const lUeff = txt(XR(90), 0, '', { class: 'lbl c-u halo', 'text-anchor': 'middle' }, gLbl);
+const W_PT = `${I('W')} = ${I('P')} · ${I('T')}`;                                    // Energie = Fläche: Höhe P mal Breite T
+const lWdc = txt(XL(270), Y(P_DC / 2) + 10, W_PT, { id: 'lbl-w-dc', class: 'lbl halo', 'text-anchor': 'middle' }, gLbl);
+const lWac = txt(XR(270), 0, W_PT, { id: 'lbl-w-ac', class: 'lbl halo', 'text-anchor': 'middle' }, gLbl);
 // Zeitmarke: Momentanwert u als Pfeil, Spitze genau auf der Kurve (Festlegung 11.11.2026, W); Hilfslinien zum Übertragen
 const hiV = el('line', { stroke: C.hilf, 'stroke-width': 2.5, 'stroke-dasharray': '8 7' }, gCur);
 const hiH = el('line', { stroke: C.p, 'stroke-width': 2.5, 'stroke-dasharray': '8 7' }, gCur);
@@ -790,6 +797,7 @@ const CP = { x: 1115, y: 152, w: 490, h: 180 };
 const cpRahmen = el('rect', { x: CP.x, y: CP.y, width: CP.w, height: CP.h, rx: 12, fill: '#f5f7f9', stroke: '#c6ccd2', 'stroke-width': 2 }, gCalc);
 const cpTitel = txt(CP.x + 18, CP.y + 34, '', { class: 'lbl-xs sans muted' }, gCalc);
 const gFac = el('g', {}, gCalc);
+const cpInfo = el('text', { id: 'cp-info', class: 'lbl-s sans', 'text-anchor': 'middle' }, gCalc);   // Merksatz unter der Formel (Phase 3)
 
 // Erklärfeld („Sprechblase“) unter dem linken Diagramm; in Phase 5 wird es zum Merke-Kasten (gelb, Glühlampe, wie in Moodle)
 const BL = { x: 40, y: 872, w: 860, h: 196, pad: 24 };
@@ -896,7 +904,7 @@ function draw() {
   // --- links: Gleichspannung
   liPdc.setAttribute('x2', XL(360 * v.dcL)); zeig(liPdc, v.dcL > 0 ? 1 : 0);
   zeig(lPdc, v.dcL >= 0.6 ? (v.dcL - 0.6) / 0.4 : 0);
-  zeig(flDC, v.fDC * CFG.flaeche.hell);
+  zeig(flDC, v.fDC * CFG.flaeche.hell); zeig(lWdc, v.fDC);
   zeig(gFdc, S.rech ? v.dcR : 0);
 
   // --- rechts: Kurven
@@ -969,6 +977,8 @@ function draw() {
     zeig(l, v.sp * (1 - Math.min(1, k * 4)));
   });
 
+  lWac.setAttribute('y', (Y(m.P / 2) + 10).toFixed(1));                                 // in der Fläche, zwischen den Flanken des zweiten Bergs
+  zeig(lWac, m.P * PL.s >= 44 ? v.fAC * v.k2 : 0);                                      // erst wenn das Rechteck fertig geklappt ist
   // --- Mittelwert- und Effektivwertlinien
   liPac.setAttribute('y1', yP); liPac.setAttribute('y2', yP); zeig(liPac, v.mi);
   zeig(liRefP, v.mi);
@@ -981,11 +991,13 @@ function draw() {
   // --- Rechnung (rechts oben) und Text (Erklärfeld, Karte unter der Bedienleiste)
   const teile = s.calc ? FORMEL[s.calc[0]](v.uh, s.calc[1]) : null;
   zeig(cpRahmen, teile && S.rech ? 1 : 0); zeig(cpTitel, teile && S.rech ? 1 : 0); zeig(gFac, teile && S.rech ? 1 : 0);
-  const fKey = teile ? JSON.stringify(teile) : '';
+  zeig(cpInfo, teile && S.rech && s.info ? 1 : 0);
+  const fKey = teile ? JSON.stringify([teile, s.info || 0]) : '';
   if (teile && merk.get(gFac) !== fKey) {
     merk.set(gFac, fKey);
     const w = formelSVG(gFac, teile, 36), k = Math.min(1, (CP.w - 36) / w);
-    gFac.setAttribute('transform', `translate(${(CP.x + (CP.w - w * k) / 2).toFixed(1)} ${CP.y + 116}) scale(${k.toFixed(3)})`);
+    gFac.setAttribute('transform', `translate(${(CP.x + (CP.w - w * k) / 2).toFixed(1)} ${CP.y + (s.info ? 92 : 116)}) scale(${k.toFixed(3)})`);
+    cpInfo.innerHTML = (s.info || []).map((z, i) => `<tspan x="${CP.x + CP.w / 2}" y="${CP.y + 132 + 32 * i}">${mk(z)}</tspan>`).join('');
     cpTitel.textContent = FORMEL_TITEL[s.calc[0]];
   }
   const text = (v.frei && !merke) ? freiText(v, m) : s.text;
@@ -1015,6 +1027,7 @@ function draw() {
   const hForm = [];
   if (s.calcDC) hForm.push(formelHTML(FORMEL.dc()));
   if (teile) hForm.push(formelHTML(teile));
+  if (teile && s.info) hForm.push(mkH(s.info.join(' ')));
   setze($('pForm'), 'html', hForm.map((f) => `<div>${f}</div>`).join(''));
   $('pForm').hidden = !S.rech || !hForm.length;
 
