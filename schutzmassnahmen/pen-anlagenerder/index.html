@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PEN-Leiter und Anlagenerder: Potential am Schutzleiter</title>
-<meta name="description" content="Schaltbild eines TN-C-S-Netzes mit Trafostation, Leitung, Haus, Wallbox mit Auto und Person, darunter das Potential der Erdoberfläche. Laden eines Autos an der Wallbox, PEN-Leiter, Anlagenerder, Berührung und Standort der Person lassen sich schalten: Man sieht, wie sich das Potential des Schutzleiters, die Berührungsspannung und der Körperstrom ändern.">
+<meta name="description" content="Schaltbild eines TN-C-S-Netzes mit Trafostation, Leitung, Haus, Wallbox mit Auto und Person, darunter das Potential der Erdoberfläche. Laden eines Autos an der Wallbox, PEN-Leiter, Anlagenerder, Berührung und Standort der Person lassen sich schalten, das Netz auch auf ein TN-S-System umstellen: Man sieht, wie sich das Potential des Schutzleiters, die Berührungsspannung und der Körperstrom ändern.">
 <style>
 /* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
    Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
@@ -227,7 +227,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
   <div class="stage" id="stage">
     <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
       <title id="svg-title">PEN-Leiter und Anlagenerder: Potential am Schutzleiter</title>
-      <desc id="svg-desc">Oben das Schaltbild eines TN-C-S-Netzes: Trafostation mit Strangwicklung und Betriebserder, Leitung mit je einem Leiterwiderstand in L1 und PEN, Haus mit Haupterdungsschiene und Anlagenerder, an der Hauswand zwei Steckdosen übereinander mit den Kontakten L1, PE und N: oben die Wallbox mit einem ladenden Auto, unten die Außensteckdose, deren Schutzkontakt eine Person berührt. Die Person steht wahlweise 0,2 m neben dem Anlagenerder oder weit weg auf Bezugserde. Darunter das Potential der Erdoberfläche über dem Ort mit Potentialtrichtern an den Erdern und Marken für das Potential des Schutzleiters und des Sternpunkts.</desc>
+      <desc id="svg-desc">Oben das Schaltbild eines TN-C-S-Netzes, umschaltbar auf ein TN-S-System mit eigenem Schutzleiter vom Sternpunkt bis zur Haupterdungsschiene: Trafostation mit Strangwicklung und Betriebserder, Leitung mit je einem Leiterwiderstand in L1 und PEN, Haus mit Haupterdungsschiene und Anlagenerder, an der Hauswand zwei Steckdosen übereinander mit den Kontakten L1, PE und N: oben die Wallbox mit einem ladenden Auto, unten die Außensteckdose, deren Schutzkontakt eine Person berührt. Die Person steht wahlweise 0,2 m neben dem Anlagenerder oder weit weg auf Bezugserde. Darunter das Potential der Erdoberfläche über dem Ort mit Potentialtrichtern an den Erdern und Marken für das Potential des Schutzleiters und des Sternpunkts.</desc>
     </svg>
   </div>
 
@@ -244,18 +244,23 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
           </div>
         </div>
         <div class="zeile">                             <!-- Eingriff Person · Zurücksetzen · Standort der Person (Umschalter nah / weit weg, Auswahlrunde vom 22.11.2026) -->
-          <button id="ein-person" class="ein" type="button" aria-pressed="false">Person berührt</button>
+          <button id="ein-person" class="ein" type="button" aria-pressed="true">Person berührt</button>
           <button id="bReset" type="button">Zurücksetzen</button>
           <div class="group"><span class="cap">Standort</span>
             <div class="seg" role="group" aria-label="Abstand der Person vom Anlagenerder">
-              <button type="button" data-ds="nah" aria-pressed="true">0,2&#8239;m am Erder</button>
-              <button type="button" data-ds="weit" aria-pressed="false">weit weg</button>
+              <button type="button" data-ds="nah" aria-pressed="false">0,2&#8239;m am Erder</button>
+              <button type="button" data-ds="weit" aria-pressed="true">weit weg</button>
             </div>
           </div>
         </div>
         <div class="zeile">                             <!-- dritte Zeile (Abweichung von der Norm, die zwei Zeilen vorsieht): Eingriff im Haus.
                                                              Grund: Eine dritte Zeile bei den Parametern ließe die Leiste bei 1280 × 720 um 73 px überstehen. -->
-          <span></span><span></span>
+          <div class="group"><span class="cap">Netzsystem</span>            <!-- Rückmeldung vom 24.11.2026: TN-S als weitere Lösung; Überschrift und Auswahl in den beiden freien Spalten -->
+            <div class="seg" role="group" aria-label="Netzsystem">
+              <button type="button" data-sys="tncs" aria-pressed="true">TN-C-S</button>
+              <button type="button" data-sys="tns" aria-pressed="false">TN-S</button>
+            </div>
+          </div>
           <div class="group"><span class="cap">Haus</span>
             <div class="paar"><button id="ein-ohneerder" class="ein" type="button" aria-pressed="false">Anlagenerder entfernen</button></div>
           </div>
@@ -278,12 +283,12 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
     </div>
     <div class="row">                                   <!-- Zeile 2 · Ansicht: Kästen nach Thema (Kästchen), rechts außen Vollbild -->
       <div class="kasten" role="group" aria-labelledby="lg-buehne"><span class="lg" id="lg-buehne">Bühne</span>
-        <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox">Zahlenwerte</label>
+        <label class="chk" for="chk-werte"><input id="chk-werte" type="checkbox" checked>Zahlenwerte</label>
         <label class="chk" for="chk-fluss"><input id="chk-fluss" type="checkbox" checked>Stromfluss</label>
       </div>
       <div class="kasten" role="group" aria-labelledby="lg-diagramm"><span class="lg" id="lg-diagramm">Diagramm</span>
         <label class="chk" for="chk-diag"><input id="chk-diag" type="checkbox" checked>Diagramm</label>
-        <label class="chk" for="chk-lupe"><input id="chk-lupe" type="checkbox">Lupe ×5</label>
+        <label class="chk" for="chk-lupe"><input id="chk-lupe" type="checkbox" checked>Lupe ×5</label>
         <label class="chk" for="chk-grenze" title="Grenzlinie 25 V einblenden: ohne Basisschutz höchstens zulässige Spannung"><input id="chk-grenze" type="checkbox">25 V</label>
       </div>
       <div class="kasten" role="group" aria-labelledby="lg-text"><span class="lg" id="lg-text">Text</span>
@@ -295,12 +300,12 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
     </div>
     <details class="keys">
       <summary>Tastatur</summary>
-      <div class="hint"><kbd>Leertaste</kbd> Laden ein/aus · <kbd>P</kbd> PEN unterbrechen · <kbd>A</kbd> Anlagenerder entfernen · <kbd>B</kbd> Person berührt · <kbd>S</kbd> Standort nah oder weit weg · <kbd>D</kbd> Diagramm ein/aus · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden. Auto, PEN-Stelle, Anlagenerder und Person lassen sich auch in der Grafik anklicken. Ein Zustand lässt sich verlinken: vier Ziffern wie die vier Knöpfe (1 = gedrückt), zum Beispiel <kbd>#z1101</kbd> = Laden ein, PEN unterbrochen, Anlagenerder vorhanden, Person berührt; dazu <kbd>rl0.1</kbd> und <kbd>ra2</kbd> für die Widerstände und <kbd>weit</kbd> für den Standort auf Bezugserde.</div>
+      <div class="hint"><kbd>Leertaste</kbd> Laden ein/aus · <kbd>P</kbd> PEN (im TN-S-System den N) unterbrechen · <kbd>A</kbd> Anlagenerder entfernen · <kbd>B</kbd> Person berührt · <kbd>S</kbd> Standort nah oder weit weg · <kbd>T</kbd> Netzsystem TN-C-S oder TN-S · <kbd>D</kbd> Diagramm ein/aus · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden. Auto, PEN-Stelle, Anlagenerder und Person lassen sich auch in der Grafik anklicken. Ein Zustand lässt sich verlinken: vier Ziffern wie die vier Knöpfe (1 = gedrückt), zum Beispiel <kbd>#z1101</kbd> = Laden ein, PEN unterbrochen, Anlagenerder vorhanden, Person berührt; dazu <kbd>rl0.1</kbd> und <kbd>ra2</kbd> für die Widerstände, <kbd>weit</kbd> für den Standort auf Bezugserde (ohne <kbd>weit</kbd>: 0,2&#8239;m am Erder) und <kbd>tns</kbd> für das TN-S-System.</div>
     </details>
   </div>
 
-  <!-- 3 Zusatzbereich: Erklärung, Formeln, Berechnung und Werte – beim Öffnen alles aus (Festlegung der Lehrkraft, 22.11.2026:
-       Die Klasse rechnet erst selbst). -->
+  <!-- 3 Zusatzbereich: Erklärung, Formeln, Berechnung und Werte – beim Öffnen nur die Werte an (Festlegung der Lehrkraft, 24.11.2026:
+       Zahlenwerte an; vorher alles aus, damit die Klasse erst selbst rechnet). -->
   <section class="info" id="info" hidden>
     <article class="card">
       <h2 id="pTitle" aria-live="polite"></h2>
@@ -331,18 +336,25 @@ const svg = $('stage-svg');
 
 /* ================= 1 Parameterblock =================
    Festlegungen der Lehrkraft vom 22.11.2026 (Auftrag, Runde 1 zum Inhalt und Auswahlrunde zur Darstellung):
-   – Schaltbar sind vier Dinge: Laden (Auto an der Wallbox), PEN, Anlagenerder, Person. Startzustand beim Öffnen:
+   – Schaltbar sind vier Dinge: Laden (Auto an der Wallbox), PEN, Anlagenerder, Person. Startzustand beim Öffnen erst:
      Anlagenerder vorhanden, PEN intakt, Laden aus, niemand berührt – die Lehrkraft schaltet live.
+   – Startzustand neu (Rückmeldung vom 24.11.2026, 21:16 Uhr): Laden an, Standort weit weg, Person berührt, Lupe an,
+     Zahlenwerte an. Unverändert: PEN intakt, Anlagenerder vorhanden, Netzsystem TN-C-S. Die Animation läuft damit beim Öffnen.
    – Verbraucher (Rückmeldung vom 22.11.2026, 14 Uhr): statt der Heizung eine einphasige Wallbox mit kleinem Auto,
      Ladestrom erst 32 A. Im Modell ist das Auto ein ohmscher Ersatzwiderstand R_Auto (im Quelltext RV, Schalter „laden“).
    – Ladestrom (Rückmeldung vom 23.11.2026, 8 Uhr): Widerstand des Ladens so gesenkt, dass 28 A fließen. Bezug (Annahme von
      Claude): Schaltung nach „Laden starten“ mit R_Ltg = 1 Ω, PEN intakt, R_A = 10 Ω. Daraus R_Auto = 6,29 Ω (vorher 7,19 Ω).
    – Standort der Person (Rückmeldung und Auswahlrunde vom 22.11.2026, 14:30 Uhr): Umschalter nah / weit weg. Nah heißt 0,2 m
-     neben dem Anlagenerder (erst 1 m, dann auf Wunsch näher), dort steht sie beim Öffnen; weit weg heißt auf Bezugserde. Die Breite des Trichters folgt aus
+     neben dem Anlagenerder (erst 1 m, dann auf Wunsch näher), dort stand sie bis zum 24.11.2026 beim Öffnen; weit weg heißt auf Bezugserde. Die Breite des Trichters folgt aus
      R_A (Halbkugelerder, r_0 = ρ/(2π·R_A)). Anlass: Der Unterschied mit und ohne Anlagenerder war der Lehrkraft zu klein.
+   – Netzsystem (Rückmeldung vom 24.11.2026, 21 Uhr: „als weitere Lösung das Umschalten auf TN-S-System“): umschaltbar TN-C-S / TN-S,
+     beim Öffnen TN-C-S. Annahmen von Claude, nicht ausdrücklich bestätigt: TN-S ab dem Sternpunkt mit eigenem PE (R_PE = R_Ltg),
+     der untere Leiter bleibt der Rückleiter und heißt dann N; „PEN unterbrechen“ wird im TN-S-System zu „N unterbrechen“;
+     Umschalter als Auswahl „Netzsystem“ in der dritten Zeile der Steuerung, Taste T, Adresse mit „tns“.
    – L1 und PEN haben je einen gebündelten Leiterwiderstand, Standard 1 Ω je Ader (wie im SPS-Versuch), einstellbar.
    – Die Person ist ein „Widerstandsmännchen“ mit R_K = 1 kΩ und steht nur draußen auf Bezugserde.
-   – Zahlenwerte in der Bühne und Berechnung darunter sind beim Öffnen aus, beide zuschaltbar: Die Klasse rechnet erst selbst.
+   – Zahlenwerte in der Bühne und Berechnung darunter waren beim Öffnen aus (Die Klasse rechnet erst selbst); seit dem 24.11.2026
+     sind die Zahlenwerte beim Öffnen an, Erklärung, Formeln und Berechnung bleiben aus.
    – Stromfluss als rote Laufmarken in Zählpfeilrichtung, dazu Strompfeile. Es bewegt sich erst etwas, wenn Strom fließt.
    – Anlagenerder als Ein/Aus-Knopf in der Steuerung, R_A als Direktwahl bei den Parametern.
    – Potentialdiagramm mit blauer Linie, fester Maßstab bis 230 V, Lupe zuschaltbar (gewählt war ×10, siehe CFG.diag).
@@ -364,7 +376,7 @@ const CFG = {
   rho: 100,                                 // spezifischer Erdwiderstand in Ωm (Annahme: feuchter Lehmboden); daraus folgt die Breite des Trichters
   DS: 0.2, DSwahl: [0.2, Infinity],         // Standort: Abstand d der Person vom Rand des Anlagenerders in m; Infinity = weit weg (Bezugserde).
                                             // 0,2 m (Rückmeldung 22.11.2026, 14:49 Uhr: „nah noch näher, etwa 2 V“): U_B = 21,54 V · 0,2 m/(1,59 m + 0,2 m) = 2,40 V (mit R_Auto = 7,19 Ω waren es 2,17 V)
-  start: { laden: false, pen: true, erder: true, person: false },   // Startzustand (Festlegung der Lehrkraft, 22.11.2026)
+  start: { laden: true, pen: true, erder: true, person: true, tns: false, DS: Infinity },   // Startzustand (Festlegung der Lehrkraft, 24.11.2026): Laden an, Person berührt, Standort weit weg
   /* Wirkung des Körperstroms, ab I_K in A. Quelle: Arbeitsbuch Elektrotechnik Lernfelder 1–4, Europa-Lehrmittel, S. 7, Bild 3.
      Die Stufen hängen in Wirklichkeit auch von der Einwirkdauer ab. */
   stufen: [
@@ -406,9 +418,20 @@ const CFG = {
    keinen Trichter (f = 0).
    Sonderfall det = 0 (Laden aus, PEN unterbrochen, kein Anlagenerder, niemand berührt): Knoten H hat keinen Bezug,
    φ_PE ist unbestimmt (bezug = false, phi_PE = null).
-   Dasselbe Modell als Python-Skript: Referenzmodell_PEN_Anlagenerder.py (Funktion loese). */
+   Dasselbe Modell als Python-Skript: Referenzmodell_PEN_Anlagenerder.py (Funktion loese).
+   TN-S-System (p.tns, seit 24.11.2026): N und PE sind ab dem Sternpunkt getrennte Leiter, im Haus gibt es keine Verbindung
+   zwischen beiden. Das Auto liegt zwischen L1 und N; der Rückstrom fließt nur über R_N (im Quelltext weiter RP, „pen“ heißt
+   dann: N intakt): I_L = U_0/(R_L + R_V + R_N). Die Masche S – R_PE – H – R_A (und R_K) – E – R_B – S enthält keine Quelle,
+   also fließt dort kein Strom: I_PE = I_A = I_K = I_B = 0 und φ_PE = φ_S = φ_St = 0 V, U_B = 0 V – unabhängig von
+   Anlagenerder, Berührung und Standort. U_PEN und I_PEN stehen dann für U_N und I_N. φ_N ist das Potential des N im Haus:
+   I_N · R_N, bei N-Bruch mit eingeschaltetem Laden U_0 (über das Ladegerät am Außenleiter), sonst unbestimmt (null). */
 function model(p) {
   const { U0, RL, RP, RV, RB, RA, RK, laden, pen, erder, person } = p, f = erder ? (p.f || 0) : 0;
+  if (p.tns) {
+    const I = laden && pen ? U0 / (RL + RV + RP) : 0;
+    return { bezug: true, phi_PE: 0, phi_S: 0, phi_St: 0, I_L: I, I_PEN: I, I_PE: 0, I_A: 0, I_K: 0, I_B: 0, U_V: I * RV, U_PEN: I * RP, U_B: 0, P_V: I * I * RV,
+      phi_N: pen ? I * RP : (laden ? U0 : null) };
+  }
   const Gs = laden ? 1 / (RL + RV) : 0, GP = pen ? 1 / RP : 0, GB = 1 / RB;
   const RA1 = (1 - f) * RA, RA2 = f * RA;                                     // Anlagenerder: Teil bis zum Standort · Teil vom Standort zur Bezugserde
   const RX = erder ? (person ? RA1 * RK / (RA1 + RK) : RA1) : (person ? RK : Infinity);   // zwischen Schutzleiter und Standort
@@ -428,15 +451,15 @@ const anteilStandort = (RA, d) => (isFinite(d) ? r0von(RA) / (r0von(RA) + d) : 0
 function stufe(iK) { let k = 0; CFG.stufen.forEach((s, i) => { if (iK >= s.ab) k = i; }); return k; }
 
 /* ================= 3 Zustand ================= */
-const S = { werte: false, fluss: true, diag: true, lupe: false, grenze: false, erkl: false, form: false, rech: false, paused: false, qr: false };   // Anzeige und Bedienung
-const st = {};                                  // Schalter und Parameter: laden, pen (intakt), erder (vorhanden), person (berührt), RL, RA, DS (Standort)
+const S = { werte: true, fluss: true, diag: true, lupe: true, grenze: false, erkl: false, form: false, rech: false, paused: false, qr: false };   // Anzeige und Bedienung
+const st = {};                                  // Schalter und Parameter: laden, pen (intakt; im TN-S-System der N), erder (vorhanden), person (berührt), tns (Netzsystem TN-S), RL, RA, DS (Standort)
 const lauf = { t: 0, off: {} };                 // nur Zeichnung: Animationszeit und Versatz der Laufmarken je Zweig
 let M = null;                                   // Ergebnis des Modells für den aktuellen Zustand
 const eingaben = () => ({ U0: CFG.U0, RL: st.RL, RP: st.RL, RV: CFG.RV, RB: CFG.RB, RA: st.RA, RK: CFG.RK,
-  laden: st.laden, pen: st.pen, erder: st.erder, person: st.person, f: anteilStandort(st.RA, st.DS) });
+  laden: st.laden, pen: st.pen, erder: st.erder, person: st.person, tns: st.tns, f: anteilStandort(st.RA, st.DS) });
 const nahAmErder = () => st.erder && isFinite(st.DS);   // Person steht im Trichter des Anlagenerders
 function reset() {
-  Object.assign(st, CFG.start, { RL: CFG.RL, RA: CFG.RA, DS: CFG.DS });
+  Object.assign(st, { RL: CFG.RL, RA: CFG.RA, DS: CFG.DS }, CFG.start);     // der Startzustand legt auch den Standort fest
   lauf.t = 0; lauf.off = {};
 }
 /* Eingriffe von außen: Jeder hat einen Namen und ist über anim.act(name) erreichbar. */
@@ -446,6 +469,7 @@ const AKTIONEN = {
   erder() { st.erder = !st.erder; },
   person() { st.person = !st.person; },
   standort() { st.DS = isFinite(st.DS) ? Infinity : CFG.DS; },
+  system() { st.tns = !st.tns; },                       // Netzsystem TN-C-S ↔ TN-S
   reset,
 };
 
@@ -624,19 +648,28 @@ wire(`M ${XQ} ${YP} L ${XR - 66} ${YP} M ${XR + 66} ${YP} L ${XBR - 24} ${YP} M 
 widerstand(XR, YP, 132);
 // Im Haus: Am Knoten (XH, YP) wird der PEN in N und PE aufgeteilt (TN-C-S). Nach oben die Haupterdungsschiene mit dem
 // Schutzleiter, nach unten der Anlagenerder. Beide Steckdosen liegen parallel: Abzweige für L1 (nach unten), PE und N (nach oben).
-wire(`M ${XH} ${YP} L ${XH} ${YB}`);
+const wAuft = wire(`M ${XH} ${YP} L ${XH} ${YB}`);                        // TN-C-S: Aufteilung des PEN; TN-S: Erdungsleiter, kreuzt den N
 el('line', { x1: XH - 36, y1: YB, x2: XH + 60, y2: YB, stroke: C.ink, 'stroke-width': 9, 'stroke-linecap': 'round' }, gWire);
 wire(`M ${XH + 60} ${YB} L ${XB} ${YB}`);
 wire(`M ${XTL} ${YL} L ${XTL} ${KU.L} L ${XB} ${KU.L}`);
 wire(`M ${XTP} ${YB} L ${XTP} ${KO.PE} L ${XB} ${KO.PE}`);
 wire(`M ${XTN} ${YP} L ${XTN} ${KO.N} L ${XB} ${KO.N}`);
 for (const K of [KO, KU]) for (const y of [K.L, K.PE, K.N]) buchse(XB, y);
-knoten(XQ, YP); knoten(XH, YP); knoten(XTL, YL); knoten(XTP, YB); knoten(XTN, YP);
+knoten(XQ, YP); const kAuft = knoten(XH, YP); knoten(XTL, YL); knoten(XTP, YB); knoten(XTN, YP);
 // Anlagenerder (entfernbar): Erdungsleiter vom Knoten, R_A im Erdreich, Erdungszeichen
 const gErder = el('g', { id: 'erder' }, gWire);
 wire(`M ${XH} ${YP} L ${XH} ${YG + 22}`, gErder);
 widerstand(XH, YG + 57, 72, true, gErder);
 erdzeichen(XH, YG + 102, gErder);
+/* TN-S-System (umschaltbar, Rückmeldung der Lehrkraft vom 24.11.2026): eigener Schutzleiter PE mit R_PE vom Sternpunkt bis zur
+   Haupterdungsschiene. Er zweigt an der Leitung zum Sternpunkt ab (Punkt), läuft zwischen L1 und N und trifft vor dem Haus
+   abgewinkelt von links auf die Haupterdungsschiene – so kreuzt er keine Leitung und die Beschriftung der Schiene bleibt frei.
+   Der untere Leiter ist dann der N: Der Punkt der Aufteilung entfällt, der Erdungsleiter kreuzt den N ohne Punkt. */
+const YPE = 357, XPE = 968;                                               // Höhe des PE zwischen L1 und N · Abwinkelung vor der Hauswand
+const gTNS = el('g', { id: 'tns' }, gWire);
+wire(`M ${XQ} ${YPE} L ${XR - 66} ${YPE} M ${XR + 66} ${YPE} L ${XPE} ${YPE} L ${XPE} ${YB} L ${XH - 36} ${YB}`, gTNS);
+widerstand(XR, YPE, 132, false, gTNS);
+knoten(XQ, YPE, gTNS);
 // Wallbox mit Auto: Der Stecker steckt, das Auto (Schutzklasse I) hängt mit der Karosserie am PE. Im Auto liegen der
 // Ersatzwiderstand des Ladegeräts und der Schalter „Laden“ in Reihe zwischen L1 und N.
 const ax = (d) => AUTO.x0 + d;
@@ -669,7 +702,8 @@ el('polygon', { points: '0,0 15,0 7,17 17,17 -5,46 1,24 -9,24', transform: `tran
 
 // Feste Beschriftung: Leiter, Knoten, gegebene Größen
 txt(462, YL - 16, 'L1', { class: 'lbl sans', 'text-anchor': 'middle' }, gLbl);
-txt(462, YP - 16, 'PEN', { class: 'lbl sans', 'text-anchor': 'middle' }, gLbl);
+const lNameRueck = txt(462, YP - 16, 'PEN', { class: 'lbl sans', 'text-anchor': 'middle' }, gLbl);            // Rückleiter: PEN oder (TN-S) N
+const lNamePE = txt(462, YPE - 16, 'PE', { class: 'lbl sans', 'text-anchor': 'middle' }, gLbl);               // nur TN-S
 for (const K of [KO, KU]) for (const [name, y] of [['L1', K.L], ['PE', K.PE], ['N', K.N]]) txt(XW - 8, y - 10, name, { class: 'lbl-s sans', 'text-anchor': 'end' }, gLbl);
 txt(XQ - 22, YP + 11, 'S', { class: 'lbl sans', 'text-anchor': 'end' }, gLbl);
 txt(HAUS.x + 12, YB - 16, 'Haupterdungsschiene', { class: 'lbl-xs sans' }, gLbl);
@@ -681,6 +715,8 @@ txt(AUTO.x0, 390, gegeben('R', 'Auto', CFG.RV, 'Ω'), { class: 'lbl' }, gLbl);  
 txt(XP + 58, 466, gegeben('R', 'K', CFG.RK, 'Ω'), { class: 'lbl' }, gLbl);
 const lRL = txt(XR - 62, YL - 36, '', { class: 'lbl' }, gLbl);
 const lRP = txt(XR - 62, YP - 36, '', { class: 'lbl' }, gLbl);
+const lRPE = txt(XR - 62, YPE - 36, '', { class: 'lbl' }, gLbl);                                              // nur TN-S
+const lSystem = txt(760, 160, '', { class: 'lbl-s sans', 'text-anchor': 'middle' }, gLbl);                    // Netzsystem, über der Leitung
 const lErderName = txt(XH + 42, YG + 42, '', { class: 'lbl-xs sans muted halo-e' }, gLbl);
 const lRA = txt(XH + 42, YG + 90, '', { class: 'lbl halo-e' }, gLbl);
 const lStandort = txt(XF + 16, YG + 34, '', { class: 'lbl-xs sans muted halo-e' }, gLbl);          // Standort der Person, neben der Fußlinie
@@ -724,6 +760,7 @@ const lUPEN = txt(XR, YP + 76, '', { class: 'lbl c-u halo', 'text-anchor': 'midd
 const lUBs = txt(XF - 12, YG + 38, '', { class: 'lbl c-u halo-e', 'text-anchor': 'end' }, gLbl);
 const lIL = txt(XI, YL + 76, '', { class: 'lbl c-i halo', 'text-anchor': 'middle' }, gLbl);
 const lIPEN = txt(XI, YP + 76, '', { class: 'lbl c-i halo', 'text-anchor': 'middle' }, gLbl);
+const lIPE = txt(XI - 40, YPE + 40, '', { class: 'lbl c-i halo', 'text-anchor': 'middle' }, gLbl);            // nur TN-S: immer 0 A, deshalb ohne Pfeil
 const lIB = txt(XQ + 55, 556, '', { class: 'lbl c-i halo' }, gLbl);
 const lIA = txt(XH + 60, 566, '', { class: 'lbl c-i halo' }, gLbl);
 const lIK = txt(XP + 70, 542, '', { class: 'lbl c-i halo' }, gLbl);
@@ -799,7 +836,7 @@ function klickflaeche(x, y, w, h, name, aktion) {
   return r;
 }
 klickflaeche(AUTO.x0 - 6, 193, 232, 173, 'Laden starten oder stoppen', 'laden');
-klickflaeche(XBR - 46, YP - 34, 92, 68, 'PEN unterbrechen oder schließen', 'pen');
+const hitPen = klickflaeche(XBR - 46, YP - 34, 92, 68, 'PEN unterbrechen oder schließen', 'pen');
 klickflaeche(XH - 30, YP + 16, 60, YG + 124 - YP - 16, 'Anlagenerder entfernen oder anschließen', 'erder');
 klickflaeche(XP - 50, 402, 96, YG - 402 + 8, 'Person berührt den Schutzleiter oder lässt los', 'person');
 
@@ -864,14 +901,21 @@ function render() {
   blade.setAttribute('transform', `rotate(${st.laden ? 0 : -27} ${AUTO.xs} ${YWZ})`);
   zeige(penGanz, st.pen); zeige(penBruch, !st.pen); zeige(lPenBruch, !st.pen);
   zeige(gErder, st.erder);
+  const tns = st.tns, nR = tns ? 'N' : 'PEN';                                 // Rückleiter: im TN-S-System der N, sonst der PEN
+  zeige(gTNS, tns); zeige(kAuft, !tns); zeige(wAuft, !tns || st.erder);       // TN-S: N und PE im Haus nicht verbunden; der Erdungsleiter kreuzt den N ohne Punkt
+  zeige(lNamePE, tns); zeige(lRPE, tns); zeige(lIPE, tns && S.werte);
+  lNameRueck.textContent = nR; lPenBruch.textContent = nR + '-Bruch';
+  lRPE.innerHTML = gegeben('R', 'PE', st.RL, 'Ω'); lIPE.innerHTML = beschr('I', 'PE', 0, 'A');
+  lSystem.textContent = tns ? 'Netzsystem: TN-S' : 'Netzsystem: TN-C-S';
+  hitPen.setAttribute('aria-label', nR + ' unterbrechen oder schließen');
   lErderName.textContent = st.erder ? 'Anlagenerder' : 'Anlagenerder fehlt';
   lRA.innerHTML = st.erder ? gegeben('R', 'A', st.RA, 'Ω') : '';
   const nah = nahAmErder(), r0 = r0von(st.RA);
   zeige(fussNah, nah); zeige(fussWeit, !nah);
   lStandort.innerHTML = !isFinite(st.DS) ? 'Standort: weit weg, auf Bezugserde' : `Standort: ${I('d')} = ${fmtGeg(st.DS, 'm')} neben dem ${st.erder ? 'Erder' : 'Haus'}`;
   lOrtHaus.innerHTML = !st.erder ? 'Haus' : nah ? `Anlagenerder: Halbkugel mit ${I('r')}${SUB('0', 22, ' = ' + fmtLauf(r0, 'm'))}` : 'Anlagenerder';
-  lOrtPerson.textContent = nah ? 'Person steht im Trichter des Erders' : st.erder ? 'Person steht weit weg auf Bezugserde' : 'Ohne Erder kein Trichter: Standort auf Erdpotential';
-  lRL.innerHTML = gegeben('R', 'L', st.RL, 'Ω'); lRP.innerHTML = gegeben('R', 'PEN', st.RL, 'Ω');
+  lOrtPerson.textContent = tns ? 'Kein Strom im Erdreich: kein Trichter' : nah ? 'Person steht im Trichter des Erders' : st.erder ? 'Person steht weit weg auf Bezugserde' : 'Ohne Erder kein Trichter: Standort auf Erdpotential';
+  lRL.innerHTML = gegeben('R', 'L', st.RL, 'Ω'); lRP.innerHTML = gegeben('R', nR, st.RL, 'Ω');
   hinwRL.textContent = st.RL > 0.3 ? 'Leiterwiderstand überhöht, real etwa 0,02 bis 0,3 Ω' : 'Leiterwiderstand in realer Größe (etwa 0,02 bis 0,3 Ω)';
   const pNenn = CFG.U0 * CFG.U0 / CFG.RV, anteil = m.P_V / pNenn;
   autoWarm.setAttribute('opacity', (0.4 * Math.min(1, anteil)).toFixed(3));
@@ -887,11 +931,11 @@ function render() {
   const iDa = (i) => i > CFG.marken.imin, uDa = (u) => Math.abs(u) > 0.05;
   const upaar = (g, lbl, wert, html) => { const an = uDa(wert) || S.werte; zeige(g, an); zeige(lbl, an); lbl.innerHTML = html; };
   upaar(gUV, lUV, m.U_V, beschr('U', 'Auto', m.U_V, 'V'));
-  upaar(gUPEN, lUPEN, m.U_PEN, beschr('U', 'PEN', m.U_PEN, 'V'));
+  upaar(gUPEN, lUPEN, m.U_PEN, beschr('U', nR, m.U_PEN, 'V'));
   const ubAn = m.bezug && (uDa(m.U_B) || S.werte);                            // auch ohne Berührung: die Spannung liegt an der Berührstelle
   zeige(gUBs, ubAn); zeige(lUBs, ubAn); lUBs.innerHTML = beschr('U', 'B', m.U_B, 'V');
   paar(pIL, lIL, m.I_L * CFG.skalaI, beschr('I', 'L', m.I_L, 'A'), true, iDa(m.I_L));
-  paar(pIPEN, lIPEN, m.I_PEN * CFG.skalaI, beschr('I', 'PEN', m.I_PEN, 'A'), true, iDa(m.I_PEN));
+  paar(pIPEN, lIPEN, m.I_PEN * CFG.skalaI, beschr('I', nR, m.I_PEN, 'A'), true, iDa(m.I_PEN));
   paar(pIB, lIB, m.I_B * CFG.skalaI, beschr('I', 'B', m.I_B, 'A'), true, iDa(m.I_B));
   paar(pIA, lIA, m.I_A * CFG.skalaI, beschr('I', 'A', m.I_A, 'A'), st.erder, iDa(m.I_A));
   paar(pIK, lIK, m.I_K * CFG.skalaI * CFG.ikFaktor, beschr('I', 'K', m.I_K, 'A'), st.person, iDa(m.I_K));
@@ -961,7 +1005,7 @@ function render() {
     zeige(lUB, false);
   }
   const clip = S.lupe && (ab(m.phi_S) || (m.bezug && ab(m.phi_PE)));
-  lLupe.textContent = S.lupe ? `Lupe ×${CFG.diag.lupe}` + (clip ? `: Werte über ${fmtGeg(bereich, 'V')} sind abgeschnitten` : '') : mass ? 'Trichter am Haus maßstäblich (Halbkugelerder), links der Unterbrechung nicht' : 'Höhe der Trichter maßstäblich, Form qualitativ';
+  lLupe.textContent = S.lupe ? `Lupe ×${CFG.diag.lupe}` + (clip ? `: Werte über ${fmtGeg(bereich, 'V')} sind abgeschnitten` : '') : tns ? 'TN-S: kein Strom im Erdreich, keine Trichter' : mass ? 'Trichter am Haus maßstäblich (Halbkugelerder), links der Unterbrechung nicht' : 'Höhe der Trichter maßstäblich, Form qualitativ';
   zeige(gGrenze, grenzeAn);
   grenzLinie.setAttribute('y1', yG); grenzLinie.setAttribute('y2', yG); lGrenze.setAttribute('y', yG - 12);
 
@@ -984,7 +1028,7 @@ function bewegt() {
   gBlitz.setAttribute('opacity', st.person && m.I_K >= 50e-3 && !S.paused && !weniger ? (Math.sin(lauf.t * 19) > -0.3 ? 1 : 0.35) : 1);
 }
 
-/* ----- Texte unter der Bühne: Erklärung, Formeln, Berechnung, Werte – einzeln zuschaltbar, beim Öffnen aus ----- */
+/* ----- Texte unter der Bühne: Erklärung, Formeln, Berechnung, Werte – einzeln zuschaltbar; beim Öffnen ist nur die Wertetabelle an (mit „Zahlenwerte“) ----- */
 const fz = (z, idx) => `<i>${z}</i>` + (idx ? `<sub>${idx}</sub>` : '');
 const bruch = (z, n) => `<span class="fr"><span>${z}</span><span>${n}</span></span>`;
 const hw = (s) => s.replace(' ', '&#8239;');                                   // schmales Leerzeichen zwischen Zahl und Einheit
@@ -998,6 +1042,19 @@ function rechenweg(m) {
   if (!st.laden) {
     Z.push({ satz: `Laden aus: ${il} = 0&#8239;A. Ohne Strom gibt es keinen Spannungsfall, also ${fpe} = ${fs} = 0&#8239;V.` });
     if (st.person) Z.push([fz('I', 'K'), bruch(fz('U', 'B'), fz('R', 'K')), bruch('0&#8239;V', Gg(RK, 'Ω')), '0&#8239;A']);
+    return Z;
+  }
+  if (st.tns) {                                                                // TN-S: Rückstrom nur über den N, der PE ist stromlos
+    const rN = fz('R', 'N'), ub = fz('U', 'B');
+    if (!st.pen) Z.push({ satz: `N unterbrochen: Der Stromkreis ist offen, ${il} = 0&#8239;A. Das Auto lädt nicht.` });
+    else {
+      Z.push([il, bruch(U, `${rl} + ${rh} + ${rN}`), bruch(Gg(U0, 'V'), `${Gg(RL, 'Ω')} + ${Gg(RV, 'Ω')} + ${Gg(RP, 'Ω')}`), E(m.I_L, 'A'), 'der Rückstrom fließt nur über den N']);
+      Z.push([fz('U', 'N'), `${il} · ${rN}`, `${E(m.I_L, 'A')} · ${Gg(RP, 'Ω')}`, E(m.U_PEN, 'V'), 'Spannung an ' + rN + ' – sie liegt nicht am Schutzleiter']);
+      Z.push([fz('U', 'Auto'), `${il} · ${rh}`, `${E(m.I_L, 'A')} · ${Gg(RV, 'Ω')}`, E(m.U_V, 'V')]);
+    }
+    Z.push([fpe, `${fs} + ${fz('I', 'PE')} · ${fz('R', 'PE')}`, `0&#8239;V + 0&#8239;A · ${Gg(RL, 'Ω')}`, '0&#8239;V', 'der PE führt keinen Betriebsstrom; ohne Strom in der Erde ist ' + fs + ' = 0&#8239;V']);
+    Z.push([ub, `${fpe} − ${fz('φ', 'St')}`, '0&#8239;V − 0&#8239;V', '0&#8239;V', 'kein Strom im Erdreich, also kein Trichter']);
+    if (st.person) Z.push([fz('I', 'K'), bruch(ub, fz('R', 'K')), bruch('0&#8239;V', Gg(RK, 'Ω')), '0&#8239;A']);
     return Z;
   }
   const erdweg = st.erder || st.person;
@@ -1054,6 +1111,12 @@ function rechenweg(m) {
 function erklaerung(m) {
   if (!m.bezug) return ['Schutzleiter ohne Bezug', 'Der PEN ist unterbrochen, einen Anlagenerder gibt es nicht und kein Verbraucher ist eingeschaltet. Der Schutzleiter hat keine Verbindung mehr zur Erde. Sein Potential ist unbestimmt – und niemand merkt es.'];
   let t, s;
+  if (st.tns) {                                                                // TN-S-System (24.11.2026)
+    const getrennt = 'N und PE sind ab dem Sternpunkt getrennte Leiter. ', nichts = st.person ? ' Die Person spürt nichts.' : '';
+    if (!st.laden) return ['TN-S-System: kein Laststrom', getrennt + 'Ohne Laststrom liegt der Schutzleiter auf Erdpotential.' + (st.pen ? '' : ' Der unterbrochene N fällt erst auf, wenn ein Verbraucher eingeschaltet wird.')];
+    if (st.pen) return ['TN-S-System: Schutzleiter stromlos', getrennt + `Der Rückstrom fließt nur über den N. An ${fz('R', 'N')} fällt weiter eine Spannung ab (${fz('U', 'N')} = ${E(m.U_PEN, 'V')}), sie liegt aber nicht mehr am Schutzleiter: Der PE führt keinen Betriebsstrom und bleibt auf dem Potential des Sternpunkts, also auf Erdpotential. Die Berührungsspannung ist 0&#8239;V – mit oder ohne Anlagenerder und an jedem Standort.` + nichts];
+    return ['TN-S-System: N-Bruch ohne Folgen für den Schutzleiter', 'Der Stromkreis ist unterbrochen, das Auto lädt nicht. Der Schutzleiter ist davon nicht betroffen und bleibt auf Erdpotential. Der N im Haus liegt jetzt über das Ladegerät am Außenleiter; er ist isoliert und nicht berührbar. Im Drehstromnetz mit ungleich belasteten Außenleitern verschiebt ein N-Bruch den Sternpunkt: Geräte können Überspannung bekommen, eine Berührungsspannung am Schutzleiter entsteht dadurch nicht.' + nichts];
+  }
   if (!st.laden) {
     t = 'Kein Laststrom: Schutzleiter auf Erdpotential';
     s = 'Ohne Laststrom gibt es keinen Spannungsfall. Der Schutzleiter liegt auf dem Potential der Bezugserde.' + (st.pen ? '' : ' Der unterbrochene PEN bleibt unbemerkt, bis ein Verbraucher eingeschaltet wird.');
@@ -1096,11 +1159,11 @@ function texte() {
   }) : [];
   if (S.rech && zeilen.length > 1) zeilen.push('<div class="anm">Zwischenergebnisse sind gerundet angeschrieben, gerechnet wird mit den genauen Werten.</div>');
   $('pForm').innerHTML = zeilen.join(''); $('pForm').hidden = !zeilen.length;
-  const w = (v, e) => (v === null ? 'unbestimmt' : hw(mitMinusHtml(fmtWert(v, e))));
+  const w = (v, e) => (v === null ? 'unbestimmt' : hw(mitMinusHtml(fmtWert(v, e)))), nR = st.tns ? 'N' : 'PEN';
   $('vals').innerHTML = [
-    [fz('φ', 'PE'), w(m.phi_PE, 'V')], [fz('φ', 'S'), w(m.phi_S, 'V')], [fz('φ', 'St'), w(m.bezug ? m.phi_St : null, 'V')], [fz('I', 'L'), w(m.I_L, 'A')], [fz('I', 'PEN'), w(m.I_PEN, 'A')],
+    [fz('φ', 'PE'), w(m.phi_PE, 'V')], [fz('φ', 'S'), w(m.phi_S, 'V')], [fz('φ', 'St'), w(m.bezug ? m.phi_St : null, 'V')], [fz('I', 'L'), w(m.I_L, 'A')], [fz('I', nR), w(m.I_PEN, 'A')], ...(st.tns ? [[fz('I', 'PE'), w(0, 'A')]] : []),
     [fz('I', 'A'), w(m.I_A, 'A')], [fz('I', 'B'), w(m.I_B, 'A')], [fz('I', 'K'), st.person ? w(m.I_K, 'A') : '–'],
-    [fz('U', 'B'), w(m.U_B, 'V')], [fz('U', 'PEN'), w(m.U_PEN, 'V')], [fz('U', 'Auto'), w(m.U_V, 'V')], [fz('P', 'Auto'), w(m.P_V, 'W')],
+    [fz('U', 'B'), w(m.U_B, 'V')], [fz('U', nR), w(m.U_PEN, 'V')], [fz('U', 'Auto'), w(m.U_V, 'V')], [fz('P', 'Auto'), w(m.P_V, 'W')],
   ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
   $('valsCard').hidden = !S.werte;
   const links = S.erkl || zeilen.length > 0;
@@ -1114,6 +1177,8 @@ function bedienung() {
   $('bAct').textContent = st.laden ? 'Laden stoppen' : 'Laden starten';
   $('bPause').textContent = S.paused ? 'Weiter' : 'Pause';
   $('ein-penbruch').setAttribute('aria-pressed', String(!st.pen));
+  $('ein-penbruch').textContent = st.tns ? 'N unterbrechen' : 'PEN unterbrechen';
+  document.querySelectorAll('[data-sys]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.sys === 'tns') === st.tns)));
   $('ein-ohneerder').setAttribute('aria-pressed', String(!st.erder));
   $('ein-person').setAttribute('aria-pressed', String(st.person));
   document.querySelectorAll('[data-rl]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.rl) === st.RL)));
@@ -1143,6 +1208,7 @@ $('bReset').addEventListener('click', () => act('reset'));
 document.querySelectorAll('[data-rl]').forEach((b) => b.addEventListener('click', () => { st.RL = Number(b.dataset.rl); render(); }));
 document.querySelectorAll('[data-ra]').forEach((b) => b.addEventListener('click', () => { st.RA = Number(b.dataset.ra); render(); }));
 document.querySelectorAll('[data-ds]').forEach((b) => b.addEventListener('click', () => { st.DS = b.dataset.ds === 'weit' ? Infinity : CFG.DS; render(); }));
+document.querySelectorAll('[data-sys]').forEach((b) => b.addEventListener('click', () => { st.tns = b.dataset.sys === 'tns'; render(); }));
 for (const key of ['werte', 'fluss', 'diag', 'lupe', 'grenze', 'erkl', 'form', 'rech']) $('chk-' + key).addEventListener('change', (e) => { S[key] = e.target.checked; render(); });
 /* Vollbild nach Normblock 10: die ganze Seite; sichtbar ist nur die Bühne (das Potentialdiagramm steht in der Bühne).
    Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
@@ -1169,13 +1235,14 @@ document.addEventListener('keydown', (e) => {
   else if (t === 'a' && !feld) act('erder');
   else if (t === 'b' && !feld) act('person');
   else if (t === 's' && !feld) act('standort');
+  else if (t === 't' && !feld) act('system');
   else if (t === 'd' && !feld) { S.diag = !S.diag; render(); }
   else if (t === 'f' && !feld) toggleFullscreen();
   else if (e.key === 'Escape' && document.documentElement.classList.contains('vollbild')) setVollbild(false);
 });
 /* Adresse: vier Ziffern wie die vier Knöpfe (1 = gedrückt): Laden ein · PEN unterbrochen · Anlagenerder entfernt ·
    Person berührt. #z1101 = Laden ein, PEN unterbrochen, Anlagenerder vorhanden, Person berührt; dazu rl0.1, ra2 und weit
-   (Standort weit weg auf Bezugserde).
+   (Standort weit weg auf Bezugserde) und tns (Netzsystem TN-S; die zweite Ziffer meint dann den N).
    So lässt sich jeder Zustand verlinken. In Vorschauen ohne eigene Adresse geschieht nichts. */
 function liesAdresse() {
   const h = decodeURIComponent(location.hash || '');
@@ -1183,12 +1250,14 @@ function liesAdresse() {
   if (z) Object.assign(st, { laden: z[1] === '1', pen: z[2] !== '1', erder: z[3] !== '1', person: z[4] === '1' });
   if (rl && Number(rl[1]) > 0) st.RL = Number(rl[1]);
   if (ra && Number(ra[1]) > 0) st.RA = Number(ra[1]);
-  if (/weit/.test(h)) st.DS = Infinity;
+  if (z) st.DS = /weit/.test(h) ? Infinity : CFG.DS;                        // mit Ziffern gilt: ohne „weit“ steht die Person nah am Erder (wie in älteren Links)
+  else if (/weit/.test(h)) st.DS = Infinity;
+  if (/tns/.test(h)) st.tns = true;
 }
 let adresseAn = false;
 function schreibeAdresse() {
   if (!adresseAn) return;
-  const z = `#z${+st.laden}${+!st.pen}${+!st.erder}${+st.person}` + (st.RL !== CFG.RL ? `rl${st.RL}` : '') + (st.RA !== CFG.RA ? `ra${st.RA}` : '') + (isFinite(st.DS) ? '' : 'weit');
+  const z = `#z${+st.laden}${+!st.pen}${+!st.erder}${+st.person}` + (st.RL !== CFG.RL ? `rl${st.RL}` : '') + (st.RA !== CFG.RA ? `ra${st.RA}` : '') + (isFinite(st.DS) ? '' : 'weit') + (st.tns ? 'tns' : '');
   try { if (location.hash !== z && /^https?:$/.test(location.protocol)) history.replaceState(null, '', z); } catch (e) { /* Vorschau ohne Adresse */ }
 }
 const AUSL = { U0: CFG.U0, RL: CFG.RL, RP: CFG.RL, RV: CFG.RV, RB: CFG.RB, RA: CFG.RA, RK: CFG.RK, laden: true, pen: true, erder: true, person: false, f: 0 };
@@ -1198,7 +1267,7 @@ $('notes').innerHTML = [
   `Gezeigt sind Effektivwerte in Zählpfeilrichtung. In Wirklichkeit ist es Wechselstrom, die Laufmarken zeigen nur die Zählrichtung. Ein negatives Potential ${fz('φ', 'S')} bedeutet Gegenphase zur Netzspannung.`,
   `Der Leiterwiderstand ist je Ader zu einem Widerstand gebündelt: ${fz('R', 'L')} = ${fz('R', 'PEN')} = ${fz('R', 'Ltg')}. Der Standardwert ${fz('R', 'Ltg')} = ${Gg(CFG.RL, 'Ω')} ist etwa zehnfach überhöht, damit die Spannung an ${fz('R', 'PEN')} deutlich zu sehen ist. Für einen Ladestromkreis ist das unrealistisch: Am Auto kommen dann nur ${hw(fmtLauf(mAusl.U_V, 'V'))} an. Real sind es etwa 0,02&#8239;Ω bis 0,3&#8239;Ω, zum Beispiel ${fz('R')} = ${bruch(fz('l'), `${fz('γ')} · ${fz('A')}`)} = ${bruch('300&#8239;m', '35&#8239;m/(Ω·mm²) · 50&#8239;mm²')} = 0,17&#8239;Ω (eigene Abschätzung).`,
   `Nur ohmsche Widerstände. Vernachlässigt sind die Induktivität der Leitung, der Innenwiderstand des Transformators sowie die Widerstände von N und PE im Haus.`,
-  `Nur ein Außenleiter und eine Last: ein Auto, das einphasig an der Wallbox lädt. Sein Ladegerät ist durch einen ohmschen Widerstand ersetzt. Er ist so gewählt, dass nach „Laden starten“ mit den Werten beim Öffnen (${fz('R', 'Ltg')} = ${Gg(CFG.RL, 'Ω')}, PEN intakt, ${fz('R', 'A')} = ${Gg(CFG.RA, 'Ω')}) der Ladestrom ${fz('I', 'L')} = ${CFG.Iziel}&#8239;A fließt: ${fz('R', 'Auto')} = ${bruch(fz('U', '0'), fz('I', 'L'))} − ${fz('R', 'L')} − ${bruch(`${fz('R', 'PEN')} · (${fz('R', 'B')} + ${fz('R', 'A')})`, `${fz('R', 'PEN')} + ${fz('R', 'B')} + ${fz('R', 'A')}`)} = ${bruch(`${CFG.U0}&#8239;V`, `${CFG.Iziel}&#8239;A`)} − ${Gg(CFG.RL, 'Ω')} − ${rPar.toFixed(3).replace('.', ',')}&#8239;Ω = ${Gg(CFG.RV, 'Ω')}. Andere Verbraucher und Nachbarhäuser am selben PEN fehlen.`,
+  `Nur ein Außenleiter und eine Last: ein Auto, das einphasig an der Wallbox lädt. Sein Ladegerät ist durch einen ohmschen Widerstand ersetzt. Er ist so gewählt, dass ohne Berührung mit den Werten beim Öffnen (${fz('R', 'Ltg')} = ${Gg(CFG.RL, 'Ω')}, PEN intakt, ${fz('R', 'A')} = ${Gg(CFG.RA, 'Ω')}) der Ladestrom ${fz('I', 'L')} = ${CFG.Iziel}&#8239;A fließt: ${fz('R', 'Auto')} = ${bruch(fz('U', '0'), fz('I', 'L'))} − ${fz('R', 'L')} − ${bruch(`${fz('R', 'PEN')} · (${fz('R', 'B')} + ${fz('R', 'A')})`, `${fz('R', 'PEN')} + ${fz('R', 'B')} + ${fz('R', 'A')}`)} = ${bruch(`${CFG.U0}&#8239;V`, `${CFG.Iziel}&#8239;A`)} − ${Gg(CFG.RL, 'Ω')} − ${rPar.toFixed(3).replace('.', ',')}&#8239;Ω = ${Gg(CFG.RV, 'Ω')}. Andere Verbraucher und Nachbarhäuser am selben PEN fehlen.`,
   `Grenze des Ersatzwiderstands: Ein echtes Ladegerät regelt den Ladestrom und schaltet bei zu kleiner Spannung ab. Die Werte bei PEN-Bruch („lädt kaum“) gelten deshalb für einen ohmschen Verbraucher gleicher Leistung, zum Beispiel ein Heizgerät. Auch der Strom hängt im Modell vom Leiterwiderstand ab: Mit ${fz('R', 'Ltg')} = 0,1&#8239;Ω steigt er auf ${hw(fmtLauf(mReal.I_L, 'A'))}, direkt an ${CFG.U0}&#8239;V wären es ${hw(fmtLauf(CFG.U0 / CFG.RV, 'A'))}. Ein echtes Ladegerät hielte den eingestellten Ladestrom fest.`,
   `Einphasig mit ${CFG.Iziel}&#8239;A lädt man am öffentlichen Netz in Deutschland nicht: Geräte über 4,6&#8239;kVA sind dreiphasig anzuschließen (VDE-AR-N 4100, Abschnitt Symmetrie; FNN-Hinweis 12/2019). Einphasig ist bei 20&#8239;A Schluss. Die Animation rechnet trotzdem einphasig, weil nur dann der ganze Rückstrom über den PEN fließt – bei symmetrischer dreiphasiger Last wäre der PEN stromlos.`,
   `Jeder Erder ist ein gebündelter Widerstand zur Bezugserde: Betriebserder ${fz('R', 'B')} = ${Gg(CFG.RB, 'Ω')}, Anlagenerder ${fz('R', 'A')} = ${Gg(CFG.RA, 'Ω')} (Annahmen). Der Abstand der Erder voneinander spielt keine Rolle. Der Erdungswiderstand sitzt im Erdreich direkt um den Erder – dort liegt der Potentialtrichter.`,
@@ -1210,6 +1279,8 @@ $('notes').innerHTML = [
   `Maßstäbe: Die Spannungspfeile im Schaltbild haben eine feste Länge und zeigen nur die Zählrichtung; wie groß die Potentiale sind, zeigt das Diagramm. Strompfeile mit Länge ∝ ${fz('I')}; nur der Pfeil ${fz('I', 'K')} ist ${CFG.ikFaktor}-fach vergrößert. Das Tempo der Laufmarken wächst mit dem Strom, ist aber nicht maßstäblich.`,
   `Haupterdungsschiene (Begriff nach DIN VDE 0100-540, früher Potentialausgleichsschiene): Am Knoten darunter wird der PEN in N und PE aufgeteilt (TN-C-S). Knoten, Haupterdungsschiene und Anlagenerder sind leitend verbunden und haben dasselbe Potential ${fz('φ', 'PE')}. Schutzeinrichtungen (Sicherung, RCD) sind nicht dargestellt.`,
   `Steckverbindungen: Die Buchse ist ein offener Bogen, der Stecker ein dicker Strich. Beide Steckdosen sitzen außen an der Hauswand und liegen parallel, Kontakte jeweils L1, PE, N. Oben steckt das Ladekabel des Autos in der Wallbox; die Karosserie hängt am Schutzleiter, der Schalter „Laden“ sitzt im Auto. An der Außensteckdose darunter ist nichts eingesteckt. Leitungen, die sich ohne Punkt kreuzen, sind nicht verbunden.`,
+  `TN-S-System (umschaltbar): N und PE sind ab dem Sternpunkt getrennte Leiter mit ${fz('R', 'N')} = ${fz('R', 'PE')} = ${fz('R', 'Ltg')}; im Haus sind N und PE nicht verbunden, der Erdungsleiter kreuzt den N ohne Punkt. Im ungestörten Betrieb führt der Schutzleiter keinen Strom, deshalb sind ${fz('φ', 'PE')}, ${fz('φ', 'S')} und ${fz('U', 'B')} gleich 0&#8239;V. „PEN unterbrechen“ heißt dann „N unterbrechen“. Vernachlässigt sind Ableitströme der Geräte über den PE. Nicht gezeigt ist der Fehlerfall: Bei einem Körperschluss führt auch im TN-S-System der PE Strom und sein Potential steigt, bis die Schutzeinrichtung abschaltet.`,
+  `Wo es TN-S ab der Stromquelle gibt: Das öffentliche Netz versorgt Gebäude in der Regel als TN-C-System mit PEN; die Aufteilung im Haus (TN-C-S wie in der Ausgangsschaltung) ist dann der Normalfall, umschalten kann der Anschlussnehmer nicht. TN-S ab der Stromquelle braucht getrennt verlegte N- und PE-Leiter, zum Beispiel bei eigener Trafostation. Für die Endstromkreise der Stellplätze auf Campingplätzen (DIN VDE 0100-708) und für Ladeeinrichtungen ab ihrem Speisepunkt (DIN VDE 0100-722) ist im TN-System nur TN-S zugelassen, also kein PEN-Leiter. Hinter der Aufteilung erfüllt das auch die Ausgangsschaltung; die Spannung am Schutzleiter kommt dort aus dem PEN davor.`,
 ].map((s) => `<li>${s}</li>`).join('');
 
 /* ================= 9 Schnittstelle für Prüfung und Export (Pflicht) =================
@@ -1224,20 +1295,20 @@ try {
 window.anim = {
   bauart: 'ablauf',
   cfg: CFG,
-  model,                                                     // reine Physik: anim.model({U0, RL, RP, RV, RB, RA, RK, laden, pen, erder, person})
-  act,                                                       // Eingriff: 'laden', 'pen', 'erder', 'person', 'standort' (jeweils umschalten), 'reset'
+  model,                                                     // reine Physik: anim.model({U0, RL, RP, RV, RB, RA, RK, laden, pen, erder, person, tns})
+  act,                                                       // Eingriff: 'laden', 'pen', 'erder', 'person', 'standort', 'system' (jeweils umschalten), 'reset'
   advance(sek) { const n = Math.max(1, Math.ceil(sek * 120)); for (let k = 0; k < n; k++) step(sek / n); bewegt(); return lauf.t; },
   pause(on = true) { S.paused = on; render(); },
   /* Schalter und Werte gezielt setzen: Ansicht (werte, fluss, diag, lupe, grenze, erkl, form, rech) und Zustand
-     (laden, pen = intakt, erder = vorhanden, person = berührt, RL, RA in Ω, DS = Abstand in m oder Infinity) */
+     (laden, pen = intakt, erder = vorhanden, person = berührt, tns = Netzsystem TN-S, RL, RA in Ω, DS = Abstand in m oder Infinity) */
   opt(key, val) { if (key in st) st[key] = val; else S[key] = val; render(); },
   vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },   // Normblock 10
   get state() { return { ...S, ...st, ...M, wirkung: st.person && M.bezug ? CFG.stufen[stufe(M.I_K)].text : '' }; },
 };
 
 /* ================= 10 Start =================
-   Steht beim Öffnen: Das Laden ist aus, es fließt kein Strom (Festlegung der Lehrkraft, 22.11.2026). Die Laufmarken
-   laufen von selbst, sobald Strom fließt. */
+   Läuft beim Öffnen (Festlegung der Lehrkraft, 24.11.2026; vorher stand sie): Das Laden ist an, die Person berührt den
+   Schutzkontakt und steht weit weg. Die Laufmarken laufen von selbst, sobald Strom fließt. */
 reset();
 liesAdresse();
 render();
