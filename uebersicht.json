@@ -23,6 +23,7 @@
       "text": "Generatormodell: Ein Stabmagnet dreht sich als Polrad vor einer Spule. Drehzeiger und Liniendiagramm zeigen, wie die Sinusspannung u = û · sin α entsteht; der Winkel lässt sich auch direkt einstellen." },
     "wechselspannung/effektivwert/": { "reihenfolge": 2 },
     "wechselspannung/wirk-blind-scheingroessen/": { "reihenfolge": 3 },
+    "wechselspannung/rlc-parallel/": { "reihenfolge": 4 },
 
     "dreiphasenwechselspannung/erzeugung/": { "reihenfolge": 1 },
     "dreiphasenwechselspannung/verkettung-netzsystem/": { "reihenfolge": 2 },

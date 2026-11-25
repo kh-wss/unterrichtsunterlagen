@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RLC-Parallelschaltung: Einfluss der Frequenz</title>
+<meta name="description" content="Widerstand, Spule und Kondensator parallel an 24 V Wechselspannung: Bei 50 Hz sind alle drei Zweigströme gleich. Mit dem Regler die Frequenz ändern und sehen, wie sich die Ströme ändern; zuschaltbar sind Gesamtstrom, Zeigerbild, Diagramm der Ströme über der Frequenz, Linienbild und die Rechnung der Blindwiderstände.">
+<style>
+/* LAYOUT-NORM:begin v5 – Quelle: assets/layout-norm.css, Regeln: references/layout.md. In ALLEN Animationen gleich.
+   Nicht von Hand ändern: mit scripts/layout_einsetzen.py einsetzen. Festlegung der Lehrkraft, 12.11.2026:
+   gleiches Layout, gleich große Animationsfläche, darunter die Bedienelemente; Bühne weiß ohne Karo; 16:9 überall,
+   nur bei Handy quer die Bedienleiste rechts neben der Bühne; Vollbild nimmt ein eingeschaltetes Diagramm mit.
+   v4 (20.11.2026): Die Vorschau ?buehne=1 passt die Bühne in jeden Rahmen ganz ein (Moodle-Rahmen mit fester Höhe).
+   v5 (20.11.2026): Bedienleiste in Kästen mit Überschrift – oben Steuerung links, Parameter rechts, darunter Ansicht. */
+:root{
+  /* Rahmen: Seite und Bedienung (folgen Hell/Dunkel) */
+  --page:#e8ebee; --panel:#ffffff; --fg:#1b2127; --muted:#58636e; --rule:#c6ccd2;
+  --btn:#f5f6f7; --btn-hover:#e9ecef; --primary:#24303a; --primary-ink:#ffffff; --focus:#2b6cb0;
+  /* Bühne: immer weiß, ohne Karoraster – die Größenfarben der Fachkonventionen gelten für weißen Grund */
+  --stage:#ffffff; --ink:#1b2127;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-math:var(--font-ui);   /* Formeln in der Textschrift (Festlegung der Lehrkraft, 12.11.2026; fachkonventionen 3a) */
+  /* Bühnengröße = (Fensterhöhe − --reserve) · 16/9, höchstens 1920 px und höchstens die Seitenbreite.
+     --reserve: Ränder, Abstand und Bedienleiste. Derselbe Wert steht in scripts/pruefen.py (NORM). */
+  --reserve:250px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+    --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#111518; --panel:#181d21; --fg:#e7ebee; --muted:#9aa5ae; --rule:#2b333a;
+  --btn:#1d2328; --btn-hover:#262d33; --primary:#e7ebee; --primary-ink:#111518; --focus:#8cc4ea;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--page);color:var(--fg)}
+body{margin:0;font-family:var(--font-ui);font-size:15px;line-height:1.45;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+sub,sup{font-size:.72em;line-height:0}
+
+/* 1 Seitenaufbau, immer in dieser Reihenfolge, alles gleich breit: Bühne (#stage) → Bedienleiste (#controls) →
+   Zusatzbereiche (.card, .info, optional) → Modellhinweise (.notes). Über der Bühne steht nichts. */
+.wrap{width:100%;max-width:min(1920px,max(min(100%,720px),calc((100dvh - var(--reserve)) * 16 / 9)));
+  margin:0 auto;display:grid;gap:12px}
+
+/* 2 Bühne: immer 16:9, logisch 1920 × 1080 (SVG-viewBox; Canvas darunter, SVG mit Titel und QR-Code darüber) */
+.stage{position:relative;background:var(--stage);border:1px solid var(--rule);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.stage svg,.stage canvas{display:block;width:100%;height:100%}
+.stage canvas + svg{position:absolute;inset:0}
+.stage:fullscreen{border:0;border-radius:0;aspect-ratio:auto;width:100vw;height:100vh;max-width:none}   /* nur noch für Animationen vor v3 */
+
+/* 3 Schrift in der Bühne (Bühnenpixel bei 1920 Breite): Formelzeichen kursiv (.i), Einheiten, Zahlen, Indizes aufrecht */
+#stage-svg text{font-family:var(--font-math);fill:var(--ink)}
+#stage-svg .t-main{font-size:60px;font-weight:700}     /* Titel, oben rechts neben dem QR-Code */
+#stage-svg .t-panel{font-size:34px;font-weight:700}    /* Bereichsüberschrift */
+#stage-svg .ro{font-size:38px}                         /* Momentanwerte */
+#stage-svg .lbl{font-size:30px}                        /* Formelzeichen an Pfeilen und Bauteilen */
+#stage-svg .lbl-s{font-size:25px}
+#stage-svg .lbl-xs{font-size:22px}                     /* kleinste erlaubte Beschriftung */
+#stage-svg .sans{font-family:var(--font-ui)}
+#stage-svg .i{font-style:italic}
+#stage-svg .muted{fill:#58636e}
+#stage-svg .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+#stage-svg .qr-cap{font-family:var(--font-ui);font-size:22px}
+#stage-svg .qr-knopf{cursor:pointer}
+#stage-svg .qr-knopf:focus{outline:none}
+#stage-svg .qr-knopf:focus-visible>rect:first-of-type{stroke:#1565c0;stroke-width:4}
+
+/* 4 Bedienleiste in Kästen mit Überschrift auf dem Rahmen (v5, Festlegung der Lehrkraft 20.11.2026, layout.md 4):
+   .row 1: .kasten.steuerung links (Raster: Hauptknopf/Eingriff · Pause/Zurücksetzen · Tempo/Anzeige) | .kasten.parameter rechts
+   .row 2: Ansicht – Kästen nach Thema (Ebenen in der Bühne, Text darunter) mit Kästchen · Vollbild (#btn-fs) rechts außen
+   dann „Tastatur“. Bedienelemente bewusst klein (13,5 px; Festlegung der Lehrkraft, 12.11.2026): Die Bühne ist das Wichtige. */
+.card,.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.controls{display:grid;gap:12px;font-size:13.5px;line-height:1.35;padding-top:14px;container:leiste / inline-size}
+.controls>details.keys{margin-top:-5px}
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px 8px}
+.row .sp{flex:1 1 auto}
+.kasten{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 auto;min-width:0;
+  border:1px solid var(--rule);border-radius:6px;padding:7px 8px 5px}
+.kasten>.lg{position:absolute;top:-7px;left:6px;padding:0 4px;background:var(--panel);font-size:10.5px;line-height:13px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kasten .chk+.chk{margin-left:4px}
+.kasten .paar{display:flex;flex-wrap:wrap;gap:6px}
+.kasten.steuerung{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;align-content:center;justify-items:start;
+  gap:6px 10px;flex:0 1 auto}
+.kasten.steuerung:last-child{flex-grow:1}   /* ohne Parameter füllt die Steuerung die Zeile */
+.kasten.steuerung .zeile,.kasten.steuerung .zeile>.group{display:contents}   /* je .zeile: Knopf · Knopf · Überschrift · Auswahl */
+.kasten.steuerung .zeile>.group>.cap{margin-left:6px}
+.kasten.parameter{display:grid;grid-template-columns:auto auto;justify-content:start;align-content:center;gap:6px 10px;
+  flex:1 1 0;min-width:auto}   /* nimmt den Rest der Zeile neben der Steuerung; lange Auswahlreihen (.paar) brechen im Kasten um */
+#btn-fs{margin-left:auto;align-self:center}
+button.ein[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}  /* Ein/Aus-Knopf */
+/* Leiste 600–850 px breit (1280 × 720): Parameter-Überschrift über der Auswahl, damit Steuerung und Parameter nebeneinander bleiben */
+@container leiste (min-width:600px) and (max-width:850px){
+  .kasten.parameter{grid-template-columns:auto;gap:2px 10px} .kasten.parameter>:not(.cap):not(.lg){margin-bottom:4px}}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.group.wert{flex:1 1 220px;flex-wrap:nowrap;gap:12px}   /* Regler und Zahlenfeld: brechen nur gemeinsam um */
+.group.wert .group{flex-wrap:nowrap}
+.group.wert input[type=range]{min-width:100px}
+.cap{font-size:12px;font-weight:600;color:var(--muted)}
+button,select,input[type=number]{font:inherit;color:var(--fg);border:1px solid var(--rule);border-radius:5px;background:var(--btn)}
+button{padding:3px 9px;cursor:pointer;font-variant-numeric:tabular-nums}
+button:hover{background:var(--btn-hover)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);min-width:9em;font-weight:600}
+button.primary:hover{opacity:.92}
+select{padding:2px 5px}
+input[type=number]{width:5.4em;padding:2px 5px;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1 1 120px;min-width:0;accent-color:var(--primary)}
+.seg{display:inline-flex}
+.seg button,.kasten button{white-space:nowrap}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:5px 0 0 5px;margin-left:0}
+.seg button:last-child{border-radius:0 5px 5px 0}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--primary);width:14px;height:14px;margin:0}
+:is(button,select,input,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+details.keys summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.keys .hint{margin-top:6px}
+kbd{font-family:var(--font-ui);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--btn)}
+.sep{width:1px;align-self:stretch;background:var(--rule)}
+@media (max-width:640px){.sep{display:none} .kasten{flex:1 1 100%}}
+@media (max-width:640px),(orientation:landscape) and (max-height:520px){   /* schmal: Steuerung als Zeilen statt Raster */
+  .kasten.steuerung{display:flex;flex-direction:column;align-items:stretch}
+  .kasten.steuerung .zeile{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+  .kasten.steuerung .zeile>.group{display:flex}
+  .kasten.steuerung .zeile>:empty{display:none}}
+
+/* 5 Zusatzbereiche unter der Bedienleiste: Diagramm (optional, einblendbar, logisch 1920 × 400), Phasentext und Momentanwerte */
+.diag{display:block;width:100%;height:auto;aspect-ratio:1920/400}
+.diag text{font-family:var(--font-math);fill:var(--ink)}           /* Schriftstufen wie in der Bühne (Bühnenpixel bei 1920) */
+.diag .lbl{font-size:30px} .diag .lbl-s{font-size:25px} .diag .lbl-xs{font-size:22px}
+.diag .sans{font-family:var(--font-ui)} .diag .i{font-style:italic} .diag .muted{fill:#58636e}
+.diag .halo{paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+.info{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.info{grid-template-columns:1fr}}
+.info h2{margin:0;font-size:19px}
+.info h3,.card h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#pText{margin:8px 0 0;max-width:68ch}
+.formulas{margin-top:10px;padding:10px 12px;border-left:3px solid var(--rule);background:var(--btn);border-radius:0 6px 6px 0;display:grid;gap:8px;font-family:var(--font-math);font-size:17px}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px;line-height:1.15}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 3px}
+.vals table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.vals td{padding:4px 0;border-bottom:1px solid var(--rule)}
+.vals td:last-child{text-align:right;font-weight:600}
+.vals tr:last-child td{border-bottom:0}
+
+/* 6 Modellhinweise: immer zuletzt, aufklappbar */
+.notes summary{cursor:pointer;font-weight:600}
+.notes ul{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;max-width:90ch;font-size:14px}
+
+/* 7 Export (?export=1): nur die Bühne, exakt 1920 × 1080 px – für Standbild und Video */
+html.export,html.export body{background:#fff;padding:0}
+html.export .wrap{width:1920px;max-width:none;gap:0}
+html.export .stage{width:1920px;height:1080px;border:0;border-radius:0}
+html.export .wrap>:not(.stage){display:none}
+
+/* 8 Vorschau ?buehne=1 (Moodle-Einbettung, scripts/moodle_einbettung.py): nur die Bühne, randlos – füllt einen
+   16:9-Rahmen genau aus und passt in jeden anders geformten Rahmen ganz hinein, mittig (v4: Moodle-Rahmen haben eine
+   feste Höhe, am Handy ist der Rahmen schmaler). Ziehen, Klicken und Tasten in der Bühne bleiben; Bedienleiste und
+   Texte entfallen. */
+html.buehne,html.buehne body{background:#fff;padding:0;margin:0;overflow:hidden;height:100%}
+html.buehne body{display:grid;place-items:center}
+html.buehne .wrap{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));max-width:none;margin:0;gap:0}
+html.buehne .stage{border:0;border-radius:0}
+html.buehne .wrap>:not(.stage){display:none}
+
+/* 9 Handy quer (Fenster flach und höchstens 520 px hoch): Bühne links, so groß wie es die Höhe erlaubt; Bedienleiste
+   rechts daneben, bei Bedarf mit eigenem Rollbalken; alles Weitere darunter. Nicht in Vorschau und Export. */
+@media (orientation:landscape) and (max-height:520px){
+  html:not(.buehne):not(.export):not(.vollbild) .wrap{max-width:none;
+    grid-template-columns:min(calc((100dvh - 32px) * 16 / 9),calc(100% - 272px)) minmax(260px,1fr);align-items:start}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>*{grid-column:1 / -1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.stage{grid-column:1;grid-row:1}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{grid-column:2;grid-row:1;min-width:0;max-height:calc(100dvh - 32px);
+    overflow-x:hidden;overflow-y:auto;padding:8px 10px}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert{flex-wrap:wrap}
+  html:not(.buehne):not(.export):not(.vollbild) .controls .group.wert input[type=range]{flex-basis:100%}
+  html:not(.buehne):not(.export):not(.vollbild) .wrap>.controls{padding-top:14px}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten.parameter{grid-template-columns:auto}
+  html:not(.buehne):not(.export):not(.vollbild) .kasten .sep{display:none}
+}
+
+/* 10 Vollbild (Knopf „Vollbild“, Taste F, anim.vollbild): Klasse html.vollbild. Die ganze Seite geht in den Vollbildmodus,
+   sichtbar sind nur die Bühne und – wenn eingeschaltet – das Diagramm (#diagCard) darunter. Die Bühne bleibt 16:9 und wird
+   so groß, dass beides auf den Bildschirm passt (mit Diagramm: 1920 × 1480 Bühnenpixel zusammen). Ohne Vollbild-Schnittstelle
+   (iPhone, eingebettete Ansicht) füllt dieselbe Ansicht das Fenster; dann führt .vb-ende zurück.
+   Festlegung der Lehrkraft, 12.11.2026: „Vollbild nimmt ein eingeschaltetes Diagramm mit.“ */
+html.vollbild,html.vollbild body{background:#fff;padding:0;margin:0;overflow:hidden}
+html.vollbild .wrap{position:fixed;inset:0;z-index:20;max-width:none;width:auto;margin:0;gap:0;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;--vb-h:1080}
+html.vollbild .wrap:has(>#diagCard:not([hidden])){--vb-h:1480}
+html.vollbild .wrap>*{display:none}
+html.vollbild .wrap>.stage{display:block;flex:none;border:0;border-radius:0;width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild .wrap>#diagCard:not([hidden]){display:block;flex:none;border:0;border-radius:0;padding:0;background:#fff;
+  width:min(100vw,calc(100dvh * 1920 / var(--vb-h)))}
+html.vollbild #diagCard h3{display:none}
+html.vollbild #diagCard .diag{border:0;border-radius:0}
+.vb-ende{display:none}
+html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:21;opacity:.8}
+/* LAYOUT-NORM:end */
+
+/* Nur diese Animation: Größenfarben nach fachkonventionen, Abschnitt 6, und ihre Farbklassen in der Bühne.
+   Seitenaufbau, Bühnengröße, Schrift in der Bühne, Bedienleiste und Export stehen im Normblock oben und werden
+   nicht geändert (references/layout.md). Farbe von SVG-Text immer über eine Klasse, nie über das Attribut fill –
+   die Regel „#stage-svg text“ aus dem Normblock schlägt jedes Attribut. */
+:root{ --u:#0070C0; --i:#FF0000; }
+#stage-svg .c-u{fill:var(--u);font-weight:600}
+#stage-svg .c-i{fill:var(--i);font-weight:600}
+#stage-svg .gq{font-size:36px}                 /* G im Generator-Quadrat, aufrecht */
+#stage-svg .rw{font-weight:600}                /* Ergebnis in der Rechnung */
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 1 Bühne: 16:9, logisch 1920 × 1080. Über ihr steht nichts. -->
+  <div class="stage" id="stage">
+    <svg id="stage-svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">RLC-Parallelschaltung: Einfluss der Frequenz</title>
+      <desc id="svg-desc">Parallelschaltung aus Widerstand, Spule und Kondensator an 24 V Wechselspannung. Bei 50 Hz fließt in allen drei Zweigen derselbe Strom. Mit der Frequenz ändern sich die Ströme durch Spule und Kondensator; zuschaltbar sind Zeigerbild, Diagramm der Ströme über der Frequenz und Linienbild.</desc>
+    </svg>
+  </div>
+
+  <!-- 2 Bedienleiste in Kästen (Layout-Norm v5, layout.md 4). Zeile 1: Steuerung links, Parameter rechts. -->
+  <div class="controls" id="controls">
+    <div class="row">
+      <div class="kasten steuerung" role="group" aria-labelledby="lg-steuerung"><span class="lg" id="lg-steuerung">Steuerung</span>
+        <div class="zeile">                             <!-- Hauptknopf · Zurücksetzen · Tempo -->
+          <button id="btn-play" class="primary" type="button" aria-pressed="false">▶ Abspielen</button>
+          <button id="btn-reset" type="button">Zurücksetzen</button>
+          <label class="group" for="sel-speed"><span class="cap">Tempo</span>
+            <select id="sel-speed">
+              <option value="6">Durchlauf in 6 s</option>
+              <option value="12" selected>Durchlauf in 12 s</option>
+              <option value="24">Durchlauf in 24 s</option>
+            </select>
+          </label>
+        </div>
+        <div class="zeile">                             <!-- Schritt zurück · Schritt vor (in Hz) · Anzeige der Zusatzbilder (Ein/Aus-Knöpfe) -->
+          <div class="paar" id="steps-minus" role="group" aria-label="Frequenz schrittweise verringern"></div>
+          <div class="paar" id="steps-plus" role="group" aria-label="Frequenz schrittweise erhöhen"></div>
+          <div class="group" role="group" aria-label="Zusatzbilder ein- und ausblenden"><span class="cap">Anzeige</span>
+            <div class="paar">
+              <button type="button" class="ein" id="btn-zeiger" aria-pressed="false">Zeigerbild</button>
+              <button type="button" class="ein" id="btn-diag" aria-pressed="false" title="Diagramm: Ströme über der Frequenz"><i>I</i>(<i>f</i>)</button>
+              <button type="button" class="ein" id="btn-linien" aria-pressed="false" title="Linienbild: Augenblickswerte über der Zeit">Linienbild</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="kasten parameter" role="group" aria-labelledby="lg-param"><span class="lg" id="lg-param">Parameter</span>
+        <label class="cap" id="cap-x" for="num-x"></label>
+        <div class="group wert">
+          <input id="rng-x" type="range" aria-label="Frequenz">
+          <input id="num-x" type="number">
+        </div>
+        <span class="cap">Direkt</span>
+        <div class="paar" role="group" aria-label="Frequenz direkt wählen" id="presets"></div>
+      </div>
+    </div>
+    <div class="row">                                   <!-- Zeile 2 · Ansicht: Kästen nach Thema (Kästchen), rechts außen Vollbild -->
+      <div class="kasten" role="group" aria-labelledby="lg-stroeme"><span class="lg" id="lg-stroeme">Ströme</span>
+        <label class="chk" for="chk-strom"><input id="chk-strom" type="checkbox" checked>Stromwerte</label>
+        <label class="chk" for="chk-ges"><input id="chk-ges" type="checkbox"><span>Gesamtstrom <i>I</i></span></label>
+      </div>
+      <div class="kasten" role="group" aria-labelledby="lg-wid"><span class="lg" id="lg-wid">Widerstände</span>
+        <label class="chk" for="chk-rech"><input id="chk-rech" type="checkbox">Rechnung</label>
+        <label class="chk" for="chk-rwert"><input id="chk-rwert" type="checkbox">Wert</label>
+      </div>
+      <button type="button" id="btn-fs">Vollbild</button>
+    </div>
+    <details class="keys">
+      <summary>Tastatur und Verlinken</summary>
+      <div class="hint">
+        <kbd>Leertaste</kbd> Start/Pause · <kbd>←</kbd> <kbd>→</kbd> 1&#8239;Hz · <kbd>Umschalt</kbd>+<kbd>←</kbd> <kbd>→</kbd> 10&#8239;Hz · <kbd>Pos1</kbd> Startwert · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
+        Eine Frequenz lässt sich verlinken, z.&nbsp;B. <code>#f100</code> oder <code>#f37-5</code> für 37,5&#8239;Hz.
+      </div>
+    </details>
+  </div>
+
+  <!-- 3 Zusatzbereiche (hier keine) und zuletzt die Modellhinweise -->
+  <details class="card notes">
+    <summary>Modell und Vereinfachungen</summary>
+    <ul>
+      <li><b>Schaltung:</b> Wirkwiderstand <i>R</i>&nbsp;=&nbsp;24&#8239;Ω, Spule <i>L</i>&nbsp;=&nbsp;76,39&#8239;mH und Kondensator <i>C</i>&nbsp;=&nbsp;132,63&#8239;µF parallel an <i>U</i>&nbsp;=&nbsp;24&#8239;V. Der Generator hält <i>U</i> bei jeder Frequenz konstant.</li>
+      <li><b>Alle Werte sind Effektivwerte.</b> Nur das Linienbild zeigt Augenblickswerte; dort ist der Scheitelwert das √2-Fache, z.&nbsp;B. <i>î</i><sub>R</sub>&nbsp;=&nbsp;√2&nbsp;·&nbsp;1,00&#8239;A&nbsp;=&nbsp;1,41&#8239;A.</li>
+      <li><b>Ideale Bauteile:</b> Die Spule hat keinen Drahtwiderstand, der Kondensator keine Verluste, <i>R</i> hängt nicht von der Frequenz ab. Eine echte Spule hätte zusätzlich einen Wirkanteil.</li>
+      <li><b>Ausgangszustand:</b> <i>L</i> und <i>C</i> sind so gewählt, dass bei <i>f</i>&nbsp;=&nbsp;50&#8239;Hz gilt <i>X</i><sub>L</sub>&nbsp;=&nbsp;<i>X</i><sub>C</sub>&nbsp;=&nbsp;<i>R</i>&nbsp;=&nbsp;24&#8239;Ω. Dann sind alle drei Zweigströme gleich groß (Resonanz).</li>
+      <li><b>Gesamtstrom:</b> <i>I</i><sub>L</sub> und <i>I</i><sub>C</sub> sind gegeneinander um 180° verschoben und heben sich ganz oder teilweise auf: <i>I</i>&nbsp;=&nbsp;√(<i>I</i><sub>R</sub>²&nbsp;+&nbsp;(<i>I</i><sub>C</sub>&nbsp;−&nbsp;<i>I</i><sub>L</sub>)²). Bei 50&#8239;Hz ist deshalb <i>I</i>&nbsp;=&nbsp;<i>I</i><sub>R</sub>&nbsp;=&nbsp;1,00&#8239;A und nicht 3&#8239;A.</li>
+      <li><b>Maßstäbe:</b> Die Länge der Strompfeile und der Stromzeiger ist proportional zum Strom (ein Maßstab im Schaltplan, einer im Zeigerbild). Im Linienbild hat die Spannung <i>u</i> einen eigenen Maßstab (<i>û</i>&nbsp;=&nbsp;√2&nbsp;·&nbsp;24&#8239;V&nbsp;=&nbsp;33,9&#8239;V); die Zeitachse ist fest, bei höherer Frequenz rücken die Kurven deshalb zusammen.</li>
+      <li><b>Frequenzbereich:</b> <i>f</i>&nbsp;=&nbsp;20&#8239;Hz bis 150&#8239;Hz. Für sehr kleine Frequenzen geht <i>X</i><sub>L</sub> gegen null und <i>I</i><sub>L</sub> wird sehr groß, für sehr große Frequenzen gilt das für <i>X</i><sub>C</sub> und <i>I</i><sub>C</sub>.</li>
+      <li><b>Zeigerbild:</b> ruhende Zeiger mit der Länge des Effektivwerts, <i>U</i> ist der Bezug. <i>I</i><sub>R</sub> liegt in Phase mit <i>U</i>, <i>I</i><sub>C</sub> eilt um 90° vor, <i>I</i><sub>L</sub> um 90° nach.</li>
+      <li><b>Linienarten:</b> Alle Ströme sind rot. <i>I</i><sub>R</sub> durchgezogen, <i>I</i><sub>L</sub> gestrichelt, <i>I</i><sub>C</sub> strichpunktiert, der Gesamtstrom <i>I</i> dick.</li>
+    </ul>
+  </details>
+</div>
+
+<button type="button" class="vb-ende" id="vb-ende">Vollbild beenden</button>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const D = Math.PI / 180;
+const NB = '\u00A0';                                   // festes Leerzeichen: SVG schluckt Leerzeichen am Rand eines tspan
+
+/* ================= 1 Parameterblock =================
+   Alles, was die Lehrkraft später selbst ändern können soll, steht hier: Werte, Bereiche, Geometrie, Farben.
+   Festlegungen der Lehrkraft, 25.11.2026 (Auswahlrunden):
+   – U = 24 V; im Ausgangszustand R = X_L = X_C = 24 Ω bei f = 50 Hz, also je 1 A (dafür L und C krumm)
+   – Gesamtstrom I zuschaltbar, beim Öffnen aus
+   – Zeigerbild, Diagramm I über f und Liniendiagramm i(t) zuschaltbar
+   – steht beim Öffnen im Ausgangszustand (kein Autostart)
+   – Strompfeile, Länge ∝ I, mit Wert; Stromwerte beim Öffnen an, ausblendbar
+   – alle Ströme rot, unterschieden durch Linienarten (und immer das Formelzeichen)
+   – Rechnung der Widerstandswerte in der Bühne, zwei Kästchen „Rechnung“ und „Wert“, beide beim Öffnen aus
+   – Liniendiagramm mit fester Zeitachse 0 … 40 ms */
+const CFG = {
+  // Stellgröße: Frequenz f in Hz. Bereich so gewählt, dass kein Strom über 3 A steigt (I_L bei 20 Hz: 2,5 A,
+  // I_C bei 150 Hz: 3 A). Wer den Bereich ändert, muss iMax und die Maßstäbe kI anpassen.
+  x: { zeichen: 'f', einheit: 'Hz', min: 20, max: 150, step: 1, big: 10, start: 50, hash: 'f', presets: [25, 50, 100] },   // Direktwahl: halbe, Ausgangs- und doppelte Frequenz
+  U: 24,                    // Spannung U in V (Effektivwert), bei jeder Frequenz gleich
+  R: 24,                    // Wirkwiderstand R in Ω
+  L: 76.39e-3,              // Induktivität L in H   → X_L = 24,0 Ω bei 50 Hz
+  C: 132.63e-6,             // Kapazität C in F      → X_C = 24,0 Ω bei 50 Hz
+  iMax: 3,                  // größter Strom im Bereich in A (Achse im Diagramm I über f)
+  // Schaltplan (eigene Koordinaten der Gruppe #schaltung, wird als Ganzes verschoben und skaliert)
+  sp: { xQ: 250, xR: 480, xL: 720, xC: 980, yO: 70, yU: 450, yB: 330, kI: 70, dI: 36 },   // kI: px je A (Strompfeile), dI: Abstand Strompfeil – Leitung
+  // Lage von Schaltplan und Rechnung: „frei“ = kein Zusatzbild an (Schaltung groß), „mittel“ = nur das Zeigerbild an
+  // (Schaltung links daneben), „raster“ = Diagramm I über f oder Linienbild an (Schaltung oben links, Rechnung rechts daneben)
+  lage: {
+    frei:   { sp: 'translate(200 255) scale(1.25)', xl: 'translate(330 885) scale(1.1)', xc: 'translate(1010 862) scale(1.1)' },
+    mittel: { sp: 'translate(40 215) scale(1.15)',  xl: 'translate(200 810) scale(1.1)', xc: 'translate(800 788) scale(1.1)' },
+    raster: { sp: 'translate(30 150) scale(0.94)',  xl: 'translate(1182 190)',           xc: 'translate(1182 325)' },
+  },
+  zg: { x0: 1565, y0: 775, kI: 100, lU: 280 },                      // Zeigerbild: Ursprung, px je A, Länge des Zeigers U
+  fd: { x0: 115, y0: 1010, kx: 3.8, ky: 120 },                       // Diagramm I über f: Ursprung, px je Hz, px je A
+  ld: { x0: 880, y0: 860, kt: 13.5, tMax: 40, ki: 40, uAmp: 130 },     // Liniendiagramm: Ursprung, px je ms, Zeit bis 40 ms, px je A, Höhe von û in px
+  col: { u: '#0070C0', i: '#FF0000', ink: '#1b2127', hilf: '#8a949e', gitter: '#d5dade' },
+  // Linienarten der Ströme (Festlegung 25.11.2026: alle rot): Strichmuster und Strichstärke
+  stil: { IR: { dash: '', sw: 4 }, IL: { dash: '16 9', sw: 4 }, IC: { dash: '20 7 4 7', sw: 4 }, I: { dash: '', sw: 8 } },
+};
+
+/* ================= 2 Physikalisches Modell (rein, ohne Darstellung) =================
+   Parallelschaltung aus R, L und C an der Spannung U (Effektivwerte, ideale Bauteile, Verbraucherzählpfeile).
+     X_L = 2π · f · L            X_C = 1 / (2π · f · C)
+     I_R = U / R                 I_L = U / X_L               I_C = U / X_C
+     I   = √(I_R² + (I_C − I_L)²)
+   Bezug ist die Spannung (Nullphasenwinkel 0°): I_R in Phase, I_C eilt 90° vor, I_L eilt 90° nach.
+   IB = I_C − I_L ist der Blindanteil des Gesamtstroms (positiv: kapazitiv).
+   phi = φ_u − φ_i in Grad (positiv: induktiv, der Gesamtstrom eilt nach).
+   Augenblickswerte (Liniendiagramm): u = û · sin(ωt), i_R = î_R · sin(ωt), i_C = î_C · sin(ωt + 90°),
+   i_L = î_L · sin(ωt − 90°), jeweils Scheitelwert = √2 · Effektivwert. */
+function model(f) {
+  const w = 2 * Math.PI * f;
+  const XL = w * CFG.L, XC = 1 / (w * CFG.C);
+  const IR = CFG.U / CFG.R, IL = CFG.U / XL, IC = CFG.U / XC;
+  const IB = IC - IL, I = Math.hypot(IR, IB);
+  return { XL, XC, IR, IL, IC, IB, I, phi: Math.atan2(-IB, IR) / D, T: 1 / f };
+}
+
+/* ================= 3 Zustand ================= */
+const S = { x: CFG.x.start, playing: false, dauer: 12, p: 0,
+  zeiger: false, diag: false, linien: false,           // Zusatzbilder: beim Öffnen aus (Festlegung 25.11.2026)
+  strom: true, ges: false,                             // Stromwerte an, Gesamtstrom aus
+  rech: false, rwert: false,                           // Rechnung und Wert der Widerstände aus
+  qr: false };                                         // QR-Code beim Öffnen aus, Platzhalter an
+
+/* ================= 4 Hilfen ================= */
+const $ = (s) => document.querySelector(s);
+const svg = $('#stage-svg');
+function el(tag, attrs = {}, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function txt(x, y, html, attrs = {}, parent = svg) { const t = el('text', { x, y, ...attrs }, parent); t.innerHTML = html; return t; }
+const I = (s) => `<tspan class="i">${s}</tspan>`;                                  // Formelzeichen kursiv
+/* Formelzeile für SVG-Text aus Teilen: 'Text' oder [Zeichen, Index]. Nach jedem Index wird die Grundlinie
+   zurückgesetzt – sonst bleibt der folgende Text tiefgestellt. */
+function fz(parts, size = 30) {
+  let s = '', tief = false;
+  for (const p of parts) {
+    const dy = tief ? ` dy="${-size * 0.3}"` : '';
+    if (Array.isArray(p)) {
+      s += `<tspan class="i"${dy}>${p[0]}</tspan>` + (p[1] ? `<tspan dy="${size * 0.3}" font-size="${size * 0.7}">${p[1]}</tspan>` : '');
+      tief = !!p[1];
+    } else { s += tief ? `<tspan${dy}>${p}</tspan>` : p; tief = false; }
+  }
+  return s;
+}
+const GL = NB + '=' + NB, MAL = NB + '·' + NB;       // „ = “ und „ · “ mit festen Leerzeichen
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const show = (e, on) => { e.style.display = on ? '' : 'none'; };
+
+/* Zahlen nach fachkonventionen, Abschnitt 4: Dezimalkomma, Einheitenvorsatz, höchstens 2 Nachkommastellen,
+   echtes Minuszeichen. */
+function dez(v, nk) {
+  let s = Math.abs(v).toFixed(nk).replace('.', ',');
+  if (v < 0 && Number(s.replace(',', '.')) !== 0) s = '−' + s;
+  return s;
+}
+function fmtWert(v, einheit) {
+  if (!isFinite(v)) return '–';
+  const a = Math.abs(v);
+  if (a < 5e-13) return '0' + NB + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let f = 1e-12, p = 'p';
+  for (const [fac, pf] of vors) if (a >= fac * 0.999995) { f = fac; p = pf; break; }
+  return dez(v / f, 2) + NB + p + einheit;
+}
+/* Laufende Werte (ändern sich mit der Frequenz) mit drei geltenden Ziffern: „1,00 A“, „24,0 Ω“
+   (Festlegung der Lehrkraft, 12.11.2026, W). Gegebene Werte mit fmtGegeben. */
+function fmtLauf(v, einheit) {
+  if (!isFinite(v)) return '–';
+  if (Math.abs(v) < 5e-13) return '0' + NB + einheit;
+  const vors = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+  let i = vors.findIndex(([f]) => Math.abs(v) >= f * 0.9995); if (i < 0) i = vors.length - 1;
+  for (;;) {
+    const [f, p] = vors[i], m = v / f, a = Math.abs(m), nk = a >= 99.95 ? 0 : a >= 9.995 ? 1 : 2;
+    if (Math.abs(Number(m.toFixed(nk))) >= 1000 && i > 0) { i--; continue; }   // 999,96 mA → 1,00 A
+    return dez(m, nk) + NB + p + einheit;
+  }
+}
+/* Gegebene Werte erscheinen so, wie sie gegeben sind: „24 V“, „76,39 mH“, „50 Hz“ – ohne angehängte Nullen. */
+function fmtGegeben(v, einheit) {
+  return fmtWert(v, einheit).replace(/,(\d*?)0+\u00A0/, (m, z) => (z ? ',' + z : '') + NB);
+}
+
+function arrowHead(x2, y2, ux, uy, L, W) {
+  const bx = x2 - ux * L, by = y2 - uy * L;
+  return `${x2},${y2} ${bx - uy * W},${by + ux * W} ${bx + uy * W},${by - ux * W}`;
+}
+/* Pfeil, dessen Länge einem Wert folgt; bei sehr kurzen Pfeilen schrumpft die Spitze mit. dash: Strichmuster des Schafts. */
+function makeArrow(parent, color, sw, L, W, dash = '') {
+  const g = el('g', {}, parent);
+  const line = el('line', { stroke: color, 'stroke-width': sw }, g);
+  if (dash) line.setAttribute('stroke-dasharray', dash);
+  const head = el('polygon', { fill: color }, g);
+  return {
+    g,
+    set(x1, y1, x2, y2) {
+      const dx = x2 - x1, dy = y2 - y1, raw = Math.hypot(dx, dy), len = raw || 1, ux = dx / len, uy = dy / len;
+      const Lc = Math.min(L, raw * 0.6), Wc = W * Lc / L;
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2 - ux * Math.max(Lc - 1, 0)); line.setAttribute('y2', y2 - uy * Math.max(Lc - 1, 0));
+      head.setAttribute('points', arrowHead(x2, y2, ux, uy, Lc, Wc));
+      g.style.visibility = raw < 1.5 ? 'hidden' : '';
+    },
+  };
+}
+const linie = (parent, x1, y1, x2, y2, stroke, sw, extra = {}) => el('line', { x1, y1, x2, y2, stroke, 'stroke-width': sw, ...extra }, parent);
+
+/* ================= 5 Statische Zeichnung (einmal) =================
+   Reihenfolge der Gruppen = Reihenfolge der Ebenen: hinten → vorn. */
+const { sp: SP, zg: Z, fd: F, ld: LD, col: C, stil: ST } = CFG;
+const IDX = { IR: 'R', IL: 'L', IC: 'C' };                 // Index des Formelzeichens je Zweigstrom
+const gBack = el('g', { id: 'back' });
+const titel = txt(1872, 120, 'RLC-Parallelschaltung: Einfluss der Frequenz', { class: 't-main', 'text-anchor': 'end' }, gBack);   // rückt neben den QR-Code (syncUI)
+
+/* ---------- 5a Schaltplan (Gruppe #schaltung, eigene Koordinaten) ----------
+   Prinzipschaltbild im Hausstil (schaltzeichen): Generator-Quadrat G ~ (Funktionsgenerator), Widerstand als Rechteck 3 : 1,
+   Spule mit Bögen, Kondensator mit engem Plattenabstand; Spannungspfeil parallel neben der Quelle, Strompfeile neben
+   der Leitung; Verbraucherzählpfeile. Abweichung vom Druck-Hausstil: kräftigere Linien (Beamer). */
+const gSP = el('g', { id: 'schaltung' });
+const yQ = (SP.yO + SP.yU) / 2;
+const draht = (d) => el('path', { d, fill: 'none', stroke: C.ink, 'stroke-width': 3.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, gSP);
+draht(`M${SP.xQ} ${yQ - 42} V${SP.yO} H${SP.xC} V${SP.yB - 6}`);
+draht(`M${SP.xQ} ${yQ + 42} V${SP.yU} H${SP.xC} V${SP.yB + 6}`);
+for (const x of [SP.xR, SP.xL]) draht(`M${x} ${SP.yO} V${SP.yB - 60} M${x} ${SP.yB + 60} V${SP.yU}`);
+// Generator-Quadrat mit G und Wechselzeichen darunter
+el('rect', { x: SP.xQ - 42, y: yQ - 42, width: 84, height: 84, fill: '#fff', stroke: C.ink, 'stroke-width': 3.5 }, gSP);
+txt(SP.xQ, yQ + 4, 'G', { class: 'gq', 'text-anchor': 'middle' }, gSP);
+el('path', { d: `M${SP.xQ - 15} ${yQ + 24} q7.5 -13 15 0 t15 0`, fill: 'none', stroke: C.ink, 'stroke-width': 3, 'stroke-linecap': 'round' }, gSP);
+// Widerstand (Rechteck 40 × 120), Spule (vier Bögen), Kondensator (zwei Platten)
+el('rect', { x: SP.xR - 20, y: SP.yB - 60, width: 40, height: 120, fill: '#fff', stroke: C.ink, 'stroke-width': 3.5 }, gSP);
+draht(`M${SP.xL} ${SP.yB - 60}` + ' a15 15 0 0 1 0 30'.repeat(4));
+for (const dy of [-6, 6]) linie(gSP, SP.xC - 30, SP.yB + dy, SP.xC + 30, SP.yB + dy, C.ink, 4.5);
+// Knotenpunkte an den Abzweigen
+for (const x of [SP.xR, SP.xL]) for (const y of [SP.yO, SP.yU]) el('circle', { cx: x, cy: y, r: 6.5, fill: C.ink }, gSP);
+// Spannungspfeil links neben der Quelle, ragt je Seite über den Körper hinaus; darunter die Frequenz
+const pfU = makeArrow(gSP, C.u, 4, 22, 8.5); pfU.set(SP.xQ - 66, yQ - 60, SP.xQ - 66, yQ + 60);
+const lblU = txt(SP.xQ - 82, yQ - 8, '', { class: 'lbl c-u', 'text-anchor': 'end' }, gSP);
+const lblF = txt(SP.xQ - 82, yQ + 36, '', { class: 'lbl', 'text-anchor': 'end' }, gSP);
+// Bauteilbeschriftung links vom Bauteil (rechts laufen die Strompfeile)
+const lblR = txt(SP.xR - 34, SP.yB + 11, '', { class: 'lbl', 'text-anchor': 'end' }, gSP);
+/* Festlegung der Lehrkraft, 25.11.2026: „L und C am Bauteil als Konstante“ – der feste Bauteilwert steht immer am
+   Bauteil (obere Zeile), darunter der Blindwiderstand, der sich mit der Frequenz ändert (untere Zeile, Wert nur mit
+   dem Kästchen „Wert“). Die obere Zeile eine Schriftstufe kleiner: „C = 132,63 µF“ reicht sonst bis in die Spule. */
+txt(SP.xL - 18, SP.yB - 10, I('L') + GL + fmtGegeben(CFG.L, 'H'), { class: 'lbl-s', 'text-anchor': 'end' }, gSP);
+txt(SP.xC - 44, SP.yB - 10, I('C') + GL + fmtGegeben(CFG.C, 'F'), { class: 'lbl-s', 'text-anchor': 'end' }, gSP);
+const lblXL = txt(SP.xL - 18, SP.yB + 30, '', { class: 'lbl', 'text-anchor': 'end' }, gSP);
+const lblXC = txt(SP.xC - 44, SP.yB + 30, '', { class: 'lbl', 'text-anchor': 'end' }, gSP);
+
+/* ---------- 5b Rechnung der Blindwiderstände (zwei Gruppen, Lage je nach Ansicht) ----------
+   Form nach fachkonventionen 2: Formel → eingesetzte Werte → Ergebnis, Division als Bruch.
+   Festlegung 25.11.2026: in der Bühne; „Rechnung“ zeigt Formel und eingesetzte Werte, „Wert“ das Ergebnis. */
+const RS = 25, xG = 50;                                // Schriftgröße (lbl-s) und x-Lage des Gleichheitszeichens
+const gXL = el('g', { id: 'rech-xl' }), gXC = el('g', { id: 'rech-xc' });
+txt(xG - 8, 28, fz([['X', 'L']], RS), { class: 'lbl-s', 'text-anchor': 'end' }, gXL);
+txt(xG, 28, '=' + NB + '2π' + MAL + I('f') + MAL + I('L'), { class: 'lbl-s' }, gXL);
+const rXL2 = txt(xG, 66, '', { class: 'lbl-s' }, gXL);
+const rXL3 = txt(xG, 104, '', { class: 'lbl-s rw' }, gXL);
+/* Bruch: Zähler mittig über dem Nenner, Bruchstrich so breit wie der Nenner + 12 px. Breite wird gemessen
+   (getComputedTextLength) – deshalb nur aufrufen, solange die Gruppe sichtbar ist. */
+function bruch(parent, yStrich) {
+  const gl = txt(xG, yStrich + 9, '=', { class: 'lbl-s' }, parent);
+  const za = txt(0, yStrich - 10, '1', { class: 'lbl-s', 'text-anchor': 'middle' }, parent);
+  const ne = txt(xG + 30, yStrich + 28, '', { class: 'lbl-s' }, parent);
+  const st = linie(parent, 0, yStrich, 0, yStrich, C.ink, 2);
+  return { gl, set(html) {
+    ne.innerHTML = html;
+    const w = ne.getComputedTextLength();
+    st.setAttribute('x1', xG + 24); st.setAttribute('x2', xG + 36 + w);
+    za.setAttribute('x', xG + 30 + w / 2);
+  } };
+}
+txt(xG - 8, 39, fz([['X', 'C']], RS), { class: 'lbl-s', 'text-anchor': 'end' }, gXC);
+const rXC1 = bruch(gXC, 30), rXC2 = bruch(gXC, 104);
+const rXC3 = txt(xG, 178, '', { class: 'lbl-s rw' }, gXC);
+
+/* ---------- 5c Zeigerbild der Ströme ----------
+   Ruhende Zeiger (Effektivwerte), U ist der Bezug (waagerecht nach rechts). Alle Stromzeiger beginnen im selben Punkt:
+   I_R in Phase mit U, I_C um 90° voreilend (nach oben), I_L um 90° nacheilend (nach unten). Mit Gesamtstrom: I als
+   Diagonale mit Hilfslinien. Formelzeichen bleiben immer auf derselben Seite ihres Zeigers (Festlegung 24.11.2026):
+   I_C und I_L links neben der Spitze, I rechts neben der Spitze, I_R rechts daneben. */
+const gZ = el('g', { id: 'zeigerbild' });
+txt(Z.x0 + 145, 425, 'Zeigerbild', { class: 't-panel', 'text-anchor': 'middle' }, gZ);
+const zH1 = linie(gZ, 0, 0, 0, 0, C.hilf, 2, { 'stroke-dasharray': '7 7' });
+const zH2 = linie(gZ, 0, 0, 0, 0, C.hilf, 2, { 'stroke-dasharray': '7 7' });
+// Rechte Winkel zwischen I_R und I_C bzw. I_L: Viertelkreis mit Punkt (Festlegung der Lehrkraft, 18.11.2026)
+for (const s of [-1, 1]) {
+  el('path', { d: `M${Z.x0 + 32} ${Z.y0} A32 32 0 0 ${s < 0 ? 0 : 1} ${Z.x0} ${Z.y0 + s * 32}`, fill: 'none', stroke: C.ink, 'stroke-width': 2 }, gZ);
+  el('circle', { cx: Z.x0 + 13, cy: Z.y0 + s * 13, r: 3, fill: C.ink }, gZ);
+}
+const zU = makeArrow(gZ, C.u, 3.5, 24, 8); zU.set(Z.x0, Z.y0, Z.x0 + Z.lU, Z.y0);
+txt(Z.x0 + Z.lU + 8, Z.y0 + 10, I('U'), { class: 'lbl c-u' }, gZ);
+const zI = makeArrow(gZ, C.i, ST.I.sw + 1, 30, 12, ST.I.dash);
+const zIR = makeArrow(gZ, C.i, ST.IR.sw + 1, 24, 9, ST.IR.dash);
+const zIC = makeArrow(gZ, C.i, ST.IC.sw + 1, 24, 9, ST.IC.dash);
+const zIL = makeArrow(gZ, C.i, ST.IL.sw + 1, 24, 9, ST.IL.dash);
+el('circle', { cx: Z.x0, cy: Z.y0, r: 5, fill: C.ink }, gZ);
+const zlIR = txt(Z.x0 + Z.kI * CFG.U / CFG.R + 38, Z.y0 - 19, fz([['I', 'R']]), { class: 'lbl c-i halo' }, gZ);
+const zlIC = txt(Z.x0 - 14, 0, fz([['I', 'C']]), { class: 'lbl c-i halo', 'text-anchor': 'end' }, gZ);
+const zlIL = txt(Z.x0 - 14, 0, fz([['I', 'L']]), { class: 'lbl c-i halo', 'text-anchor': 'end' }, gZ);
+const zlI = txt(Z.x0 + Z.kI * CFG.U / CFG.R + 12, 0, I('I'), { class: 'lbl c-i halo' }, gZ);
+
+/* ---------- 5d Diagramm: Ströme über der Frequenz ---------- */
+const gF = el('g', { id: 'diagramm-if' });
+const xF = (f) => F.x0 + F.kx * f, yI = (i) => F.y0 - F.ky * i;
+txt(F.x0 + F.kx * CFG.x.max / 2, 625, 'Ströme über der Frequenz', { class: 't-panel', 'text-anchor': 'middle' }, gF);
+makeArrow(gF, C.ink, 2.2, 20, 6.5).set(F.x0 - 4, F.y0, xF(CFG.x.max) + 38, F.y0);
+makeArrow(gF, C.ink, 2.2, 20, 6.5).set(F.x0, F.y0 + 4, F.x0, yI(CFG.iMax) - 36);
+txt(xF(CFG.x.max) + 44, F.y0 + 10, I('f'), { class: 'lbl' }, gF);
+txt(F.x0 - 14, yI(CFG.iMax) - 24, I('I'), { class: 'lbl', 'text-anchor': 'end' }, gF);
+for (let f = 25; f <= CFG.x.max; f += 25) {
+  const gross = f % 50 === 0;
+  linie(gF, xF(f), F.y0 - (gross ? 10 : 6), xF(f), F.y0 + (gross ? 10 : 6), C.ink, 2);
+  if (gross) txt(xF(f), F.y0 + 38, fmtGegeben(f, 'Hz'), { class: 'lbl-xs', 'text-anchor': 'middle' }, gF);
+}
+for (let i = 1; i <= CFG.iMax; i++) {
+  linie(gF, F.x0 - 10, yI(i), F.x0 + 10, yI(i), C.ink, 2);
+  txt(F.x0 - 16, yI(i) + 8, fmtGegeben(i, 'A'), { class: 'lbl-xs', 'text-anchor': 'end' }, gF);
+}
+function kurveF(key) {
+  let d = '';
+  for (let f = CFG.x.min; f <= CFG.x.max + 1e-9; f += 0.5) d += (d ? ' L ' : 'M ') + xF(f).toFixed(2) + ' ' + yI(model(f)[key]).toFixed(2);
+  const p = el('path', { d, fill: 'none', stroke: C.i, 'stroke-width': ST[key].sw, 'stroke-linejoin': 'round' }, gF);
+  if (ST[key].dash) p.setAttribute('stroke-dasharray', ST[key].dash);
+  return p;
+}
+const fKurveI = kurveF('I');                           // Gesamtstrom zuerst: liegt unter den Zweigströmen
+kurveF('IR'); kurveF('IL'); kurveF('IC');
+// Formelzeichen an den Kurven (feste Plätze, an denen keine andere Kurve läuft)
+// Zweigströme am rechten Ende ihrer Kurve, der Gesamtstrom unter seiner Kurve
+for (const key of ['IR', 'IL', 'IC']) txt(xF(CFG.x.max) + 10, yI(model(CFG.x.max)[key]) + 10, fz([['I', IDX[key]]]), { class: 'lbl c-i halo' }, gF);
+const flI = txt(xF(112) + 12, yI(model(112).I) + 36, I('I'), { class: 'lbl c-i halo' }, gF);
+// Marke bei der eingestellten Frequenz: Linie und je ein Punkt auf jeder Kurve
+const fMarke = linie(gF, 0, F.y0, 0, yI(CFG.iMax) - 10, C.ink, 2, { 'stroke-dasharray': '10 7' });
+const fPkt = {};
+for (const key of ['I', 'IR', 'IL', 'IC']) fPkt[key] = el('circle', { r: key === 'I' ? 10 : 7.5, fill: C.i, stroke: '#fff', 'stroke-width': 2 }, gF);
+
+/* ---------- 5e Liniendiagramm i(t) mit fester Zeitachse ----------
+   Festlegung 25.11.2026: feste Zeitachse 0 … 40 ms – bei höherer Frequenz rücken die Kurven zusammen.
+   Die Spannung u hat einen eigenen Maßstab (blaue Marken an der Achse). */
+const gL = el('g', { id: 'liniendiagramm' });
+const xT = (ms) => LD.x0 + LD.kt * ms, yi = (a) => LD.y0 - LD.ki * a;
+const iSp = Math.SQRT2 * CFG.iMax, hL = LD.ki * iSp + 12;         // größter Scheitelwert, halbe Höhe der Zeichenfläche
+const uSp = Math.SQRT2 * CFG.U;                                    // û in V
+txt(xT(LD.tMax / 2), 625, 'Linienbild', { class: 't-panel', 'text-anchor': 'middle' }, gL);
+for (let t = 10; t <= LD.tMax; t += 10) {
+  linie(gL, xT(t), LD.y0 - hL, xT(t), LD.y0 + hL, C.gitter, 2);
+  txt(xT(t), LD.y0 + hL + 28, fmtGegeben(t / 1000, 's'), { class: 'lbl-xs', 'text-anchor': 'middle' }, gL);
+}
+makeArrow(gL, C.ink, 2.2, 20, 6.5).set(LD.x0 - 4, LD.y0, xT(LD.tMax) + 38, LD.y0);
+makeArrow(gL, C.ink, 2.2, 20, 6.5).set(LD.x0, LD.y0 + hL, LD.x0, LD.y0 - hL - 8);
+txt(xT(LD.tMax) + 44, LD.y0 + 10, I('t'), { class: 'lbl' }, gL);
+txt(LD.x0 - 14, LD.y0 - hL - 2, I('u') + ',' + NB + I('i'), { class: 'lbl', 'text-anchor': 'end' }, gL);
+for (const a of [-4, -2, 2, 4]) {
+  linie(gL, LD.x0 - 10, yi(a), LD.x0 + 10, yi(a), C.ink, 2);
+  txt(LD.x0 - 16, yi(a) + 8, fmtGegeben(a, 'A'), { class: 'lbl-xs', 'text-anchor': 'end' }, gL);
+}
+for (const s of [-1, 1]) {                               // Marken für den Scheitelwert der Spannung (eigener Maßstab)
+  linie(gL, LD.x0 - 10, LD.y0 - s * LD.uAmp, LD.x0 + 10, LD.y0 - s * LD.uAmp, C.u, 3);
+  txt(LD.x0 - 16, LD.y0 - s * LD.uAmp + 8, fmtLauf(s * uSp, 'V'), { class: 'lbl-xs c-u', 'text-anchor': 'end' }, gL);
+}
+const lKurve = {
+  u: el('path', { fill: 'none', stroke: C.u, 'stroke-width': 3, 'stroke-linejoin': 'round' }, gL),
+};
+for (const key of ['I', 'IR', 'IL', 'IC']) {
+  lKurve[key] = el('path', { fill: 'none', stroke: C.i, 'stroke-width': key === 'I' ? ST.I.sw - 2 : ST[key].sw, 'stroke-linejoin': 'round' }, gL);
+  if (ST[key].dash) lKurve[key].setAttribute('stroke-dasharray', ST[key].dash);
+}
+// Legende: Linienart und Formelzeichen (die Kurven wandern mit der Frequenz, feste Plätze an den Kurven gibt es nicht)
+const lLeg = {};
+[['u', I('u'), 'c-u'], ['IR', fz([['i', 'R']], 25), 'c-i'], ['IL', fz([['i', 'L']], 25), 'c-i'], ['IC', fz([['i', 'C']], 25), 'c-i'], ['I', I('i'), 'c-i']].forEach(([key, html, cls], n) => {
+  const g = el('g', {}, gL), x = LD.x0 + 46 + n * 104, y = 664;
+  const l = linie(g, x, y - 8, x + 46, y - 8, key === 'u' ? C.u : C.i, key === 'u' ? 3 : ST[key].sw);
+  if (key !== 'u' && ST[key].dash) l.setAttribute('stroke-dasharray', ST[key].dash);
+  txt(x + 54, y, html, { class: 'lbl-s ' + cls }, g);
+  lLeg[key] = g;
+});
+
+/* ================= 6 Dynamische Elemente (einmal anlegen, in render() nur Attribute setzen) =================
+   Strompfeile im Schaltplan: rechts neben der Leitung, beginnen unter der oberen Leitung, Länge = kI · I.
+   Das Formelzeichen steht fest am Pfeilanfang (wandert und springt nicht). */
+const yP = SP.yO + 12;
+const pf = {}, lblI = {};
+for (const [key, x] of [['IR', SP.xR], ['IL', SP.xL], ['IC', SP.xC]]) {
+  pf[key] = makeArrow(gSP, C.i, 5, 22, 8.5);
+  lblI[key] = txt(x + SP.dI + 18, yP + 34, '', { class: 'lbl c-i' }, gSP);
+}
+pf.I = makeArrow(gSP, C.i, 5, 22, 8.5);                 // Gesamtstrom: über der oberen Leitung, vor dem ersten Abzweig
+lblI.I = txt(SP.xQ + 12, SP.yO - 42, '', { class: 'lbl c-i' }, gSP);
+const X_ZW = { IR: SP.xR, IL: SP.xL, IC: SP.xC };
+
+/* ================= 7 Darstellung: Zustand → Bild ================= */
+function render() {
+  const f = S.x, m = model(f);
+  const lage = CFG.lage[(S.diag || S.linien) ? 'raster' : S.zeiger ? 'mittel' : 'frei'];
+  gSP.setAttribute('transform', lage.sp); gXL.setAttribute('transform', lage.xl); gXC.setAttribute('transform', lage.xc);
+
+  // Schaltplan: Beschriftung als Gleichung (Formelzeichen = Wert), ohne Werte nur das Formelzeichen
+  lblU.innerHTML = I('U') + GL + fmtGegeben(CFG.U, 'V');
+  lblF.innerHTML = I('f') + GL + fmtGegeben(f, 'Hz');
+  lblR.innerHTML = I('R') + (S.rwert ? GL + fmtGegeben(CFG.R, 'Ω') : '');
+  lblXL.innerHTML = fz([['X', 'L'], S.rwert ? GL + fmtLauf(m.XL, 'Ω') : '']);
+  lblXC.innerHTML = fz([['X', 'C'], S.rwert ? GL + fmtLauf(m.XC, 'Ω') : '']);
+  for (const key of ['IR', 'IL', 'IC']) {
+    const x = X_ZW[key] + SP.dI;
+    pf[key].set(x, yP, x, yP + SP.kI * m[key]);
+    lblI[key].innerHTML = fz([['I', IDX[key]], S.strom ? GL + fmtLauf(m[key], 'A') : '']);
+  }
+  pf.I.set(SP.xQ + 12, SP.yO - 24, SP.xQ + 12 + SP.kI * m.I, SP.yO - 24);
+  lblI.I.innerHTML = I('I') + (S.strom ? GL + fmtLauf(m.I, 'A') : '');
+  show(pf.I.g, S.ges); show(lblI.I, S.ges);
+
+  // Rechnung: Formel → eingesetzte Werte → Ergebnis; das Ergebnis nur mit „Wert“
+  show(gXL, S.rech); show(gXC, S.rech);
+  if (S.rech) {
+    rXL2.innerHTML = '=' + NB + '2π' + MAL + fmtGegeben(f, 'Hz') + MAL + fmtGegeben(CFG.L, 'H');
+    rXL3.innerHTML = '=' + NB + fmtLauf(m.XL, 'Ω');
+    rXC1.set('2π' + MAL + I('f') + MAL + I('C'));
+    rXC2.set('2π' + MAL + fmtGegeben(f, 'Hz') + MAL + fmtGegeben(CFG.C, 'F'));
+    rXC3.innerHTML = '=' + NB + fmtLauf(m.XC, 'Ω');
+    show(rXL3, S.rwert); show(rXC3, S.rwert);
+  }
+
+  // Zeigerbild
+  show(gZ, S.zeiger);
+  if (S.zeiger) {
+    const k = Z.kI, xR = Z.x0 + k * m.IR, yC = Z.y0 - k * m.IC, yL = Z.y0 + k * m.IL, yB = Z.y0 - k * m.IB;
+    zIR.set(Z.x0, Z.y0, xR, Z.y0);
+    zIC.set(Z.x0, Z.y0, Z.x0, yC);
+    zIL.set(Z.x0, Z.y0, Z.x0, yL);
+    zlIC.setAttribute('y', yC + 30);                    // links vom Zeiger, unter der Spitze
+    zlIL.setAttribute('y', yL - 8);                     // links vom Zeiger, über der Spitze
+    zI.set(Z.x0, Z.y0, xR, yB);
+    zlI.setAttribute('y', yB - 6);                      // rechts neben der Spitze, wandert mit ihr (springt nicht)
+    zH1.setAttribute('x1', Z.x0); zH1.setAttribute('y1', yB); zH1.setAttribute('x2', xR); zH1.setAttribute('y2', yB);
+    zH2.setAttribute('x1', xR); zH2.setAttribute('y1', Z.y0); zH2.setAttribute('x2', xR); zH2.setAttribute('y2', yB);
+    for (const e of [zI.g, zlI, zH1, zH2]) show(e, S.ges);
+  }
+
+  // Diagramm I über f: Marke bei der eingestellten Frequenz
+  show(gF, S.diag);
+  if (S.diag) {
+    fMarke.setAttribute('x1', xF(f)); fMarke.setAttribute('x2', xF(f));
+    for (const key of ['I', 'IR', 'IL', 'IC']) { fPkt[key].setAttribute('cx', xF(f)); fPkt[key].setAttribute('cy', yI(m[key])); }
+    for (const e of [fKurveI, flI, fPkt.I]) show(e, S.ges);
+  }
+
+  // Liniendiagramm: Augenblickswerte über der festen Zeitachse
+  show(gL, S.linien);
+  if (S.linien) {
+    const w = 2 * Math.PI * f / 1000, q = Math.SQRT2;            // ω in 1/ms
+    const d = { u: '', IR: '', IL: '', IC: '', I: '' }, n = Math.round(LD.kt * LD.tMax);
+    for (let j = 0; j <= n; j++) {
+      const t = LD.tMax * j / n, x = xT(t).toFixed(1), s = Math.sin(w * t), c = Math.cos(w * t), cmd = j ? ' L ' : 'M ';
+      const iR = q * m.IR * s, iC = q * m.IC * c, iL = -q * m.IL * c;
+      d.u += cmd + x + ' ' + (LD.y0 - LD.uAmp * s).toFixed(1);
+      d.IR += cmd + x + ' ' + yi(iR).toFixed(1);
+      d.IC += cmd + x + ' ' + yi(iC).toFixed(1);
+      d.IL += cmd + x + ' ' + yi(iL).toFixed(1);
+      d.I += cmd + x + ' ' + yi(iR + iC + iL).toFixed(1);
+    }
+    for (const key in d) lKurve[key].setAttribute('d', d[key]);
+    show(lKurve.I, S.ges); show(lLeg.I, S.ges);
+  }
+  syncUI();
+}
+
+/* ===== QR-Code rechts oben in der Bühne (Festlegungen der Lehrkraft, 12.11.2026, Animation W) =====
+   Führt zur Adresse der Animation auf GitHub Pages (veroeffentlichen.md 3). Die Zeile `const QR = …;` erzeugt
+   python3 scripts/qr_buehne.py <Adresse> quelle.html  – null heißt: noch keine Adresse, die Ecke bleibt frei.
+   Beim Öffnen steht dort nur ein Platzhalter (QR-Symbol, „QR-Code“). Klick oder Enter darauf zeigt den QR-Code,
+   Klick auf den QR-Code blendet ihn wieder aus. ?qr=1 in der Adresse zeigt ihn gleich (Link für den Beamer).
+   Unter 800 px Fensterbreite fehlen beide (am Handy ist die Animation schon offen); im Export nur mit ?qr=1.
+   6 px je Modul (rund 270 px), ganzzahlig und auf ganze Pixel gesetzt: vom Beamer aus lesbar, auch verkleinert.
+   pruefen.py prüft Platzhalter und Umschalten und liest den Code in 1920 und 1280 px Breite. */
+const QR = {"url": "https://kh-wss.github.io/unterrichtsunterlagen/wechselspannung/rlc-parallel/", "n": 37, "d": "M0 0h7v1h-7zM8 0h2v1h-2zM13 0h2v1h-2zM16 0h1v1h-1zM18 0h3v1h-3zM25 0h2v1h-2zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h2v1h-2zM11 1h1v1h-1zM15 1h2v1h-2zM18 1h2v1h-2zM21 1h2v1h-2zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h3v1h-3zM15 2h2v1h-2zM18 2h1v1h-1zM20 2h2v1h-2zM25 2h2v1h-2zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM10 3h3v1h-3zM16 3h2v1h-2zM19 3h3v1h-3zM23 3h3v1h-3zM27 3h2v1h-2zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM15 4h2v1h-2zM19 4h1v1h-1zM21 4h2v1h-2zM24 4h3v1h-3zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM16 5h1v1h-1zM20 5h1v1h-1zM22 5h2v1h-2zM25 5h2v1h-2zM28 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM14 7h1v1h-1zM16 7h3v1h-3zM20 7h1v1h-1zM23 7h1v1h-1zM25 7h4v1h-4zM0 8h1v1h-1zM3 8h6v1h-6zM10 8h2v1h-2zM14 8h2v1h-2zM19 8h1v1h-1zM23 8h2v1h-2zM26 8h1v1h-1zM28 8h2v1h-2zM32 8h1v1h-1zM34 8h3v1h-3zM0 9h1v1h-1zM2 9h1v1h-1zM4 9h2v1h-2zM7 9h1v1h-1zM9 9h3v1h-3zM14 9h1v1h-1zM16 9h1v1h-1zM18 9h3v1h-3zM22 9h4v1h-4zM27 9h1v1h-1zM29 9h1v1h-1zM31 9h5v1h-5zM1 10h1v1h-1zM3 10h1v1h-1zM6 10h1v1h-1zM9 10h2v1h-2zM12 10h6v1h-6zM20 10h4v1h-4zM26 10h4v1h-4zM32 10h1v1h-1zM36 10h1v1h-1zM4 11h2v1h-2zM8 11h1v1h-1zM10 11h1v1h-1zM12 11h1v1h-1zM16 11h3v1h-3zM20 11h1v1h-1zM24 11h1v1h-1zM26 11h1v1h-1zM28 11h1v1h-1zM32 11h5v1h-5zM1 12h2v1h-2zM4 12h3v1h-3zM8 12h1v1h-1zM10 12h1v1h-1zM15 12h2v1h-2zM20 12h1v1h-1zM23 12h2v1h-2zM27 12h2v1h-2zM30 12h2v1h-2zM33 12h1v1h-1zM36 12h1v1h-1zM5 13h1v1h-1zM7 13h2v1h-2zM10 13h1v1h-1zM13 13h1v1h-1zM15 13h2v1h-2zM23 13h1v1h-1zM25 13h1v1h-1zM27 13h1v1h-1zM32 13h2v1h-2zM0 14h1v1h-1zM2 14h1v1h-1zM6 14h1v1h-1zM8 14h3v1h-3zM15 14h2v1h-2zM18 14h5v1h-5zM25 14h3v1h-3zM30 14h1v1h-1zM32 14h5v1h-5zM1 15h4v1h-4zM7 15h6v1h-6zM15 15h2v1h-2zM20 15h1v1h-1zM24 15h1v1h-1zM27 15h3v1h-3zM31 15h1v1h-1zM33 15h3v1h-3zM1 16h1v1h-1zM5 16h3v1h-3zM10 16h1v1h-1zM12 16h2v1h-2zM15 16h1v1h-1zM17 16h4v1h-4zM22 16h1v1h-1zM24 16h2v1h-2zM27 16h1v1h-1zM30 16h1v1h-1zM34 16h1v1h-1zM36 16h1v1h-1zM0 17h4v1h-4zM8 17h1v1h-1zM12 17h3v1h-3zM17 17h1v1h-1zM19 17h3v1h-3zM27 17h1v1h-1zM29 17h1v1h-1zM31 17h1v1h-1zM33 17h1v1h-1zM3 18h2v1h-2zM6 18h1v1h-1zM8 18h3v1h-3zM12 18h2v1h-2zM16 18h1v1h-1zM18 18h2v1h-2zM23 18h3v1h-3zM27 18h3v1h-3zM33 18h1v1h-1zM36 18h1v1h-1zM0 19h2v1h-2zM4 19h2v1h-2zM7 19h1v1h-1zM10 19h1v1h-1zM14 19h3v1h-3zM19 19h1v1h-1zM25 19h2v1h-2zM30 19h3v1h-3zM36 19h1v1h-1zM0 20h2v1h-2zM3 20h4v1h-4zM8 20h2v1h-2zM12 20h1v1h-1zM17 20h1v1h-1zM19 20h1v1h-1zM23 20h2v1h-2zM26 20h2v1h-2zM30 20h4v1h-4zM0 21h2v1h-2zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h1v1h-1zM15 21h1v1h-1zM17 21h1v1h-1zM19 21h1v1h-1zM23 21h1v1h-1zM25 21h3v1h-3zM32 21h1v1h-1zM34 21h1v1h-1zM2 22h1v1h-1zM6 22h3v1h-3zM11 22h6v1h-6zM20 22h1v1h-1zM23 22h3v1h-3zM27 22h2v1h-2zM30 22h2v1h-2zM33 22h1v1h-1zM36 22h1v1h-1zM2 23h1v1h-1zM5 23h1v1h-1zM7 23h6v1h-6zM14 23h1v1h-1zM18 23h2v1h-2zM22 23h1v1h-1zM27 23h2v1h-2zM30 23h5v1h-5zM36 23h1v1h-1zM3 24h1v1h-1zM5 24h4v1h-4zM11 24h1v1h-1zM14 24h2v1h-2zM17 24h1v1h-1zM19 24h2v1h-2zM24 24h1v1h-1zM27 24h1v1h-1zM30 24h2v1h-2zM35 24h2v1h-2zM0 25h3v1h-3zM5 25h1v1h-1zM9 25h4v1h-4zM14 25h1v1h-1zM18 25h1v1h-1zM23 25h1v1h-1zM26 25h3v1h-3zM32 25h3v1h-3zM0 26h2v1h-2zM3 26h1v1h-1zM6 26h3v1h-3zM10 26h3v1h-3zM15 26h1v1h-1zM19 26h1v1h-1zM21 26h1v1h-1zM24 26h2v1h-2zM27 26h1v1h-1zM29 26h1v1h-1zM35 26h2v1h-2zM0 27h1v1h-1zM4 27h2v1h-2zM7 27h1v1h-1zM9 27h1v1h-1zM11 27h1v1h-1zM14 27h1v1h-1zM16 27h1v1h-1zM22 27h3v1h-3zM26 27h9v1h-9zM36 27h1v1h-1zM0 28h1v1h-1zM2 28h1v1h-1zM4 28h3v1h-3zM9 28h2v1h-2zM12 28h2v1h-2zM15 28h1v1h-1zM19 28h1v1h-1zM22 28h4v1h-4zM27 28h6v1h-6zM34 28h1v1h-1zM8 29h8v1h-8zM17 29h4v1h-4zM22 29h1v1h-1zM24 29h1v1h-1zM26 29h3v1h-3zM32 29h1v1h-1zM34 29h2v1h-2zM0 30h7v1h-7zM8 30h1v1h-1zM11 30h1v1h-1zM15 30h10v1h-10zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM36 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM8 31h1v1h-1zM13 31h2v1h-2zM16 31h1v1h-1zM20 31h1v1h-1zM22 31h4v1h-4zM27 31h2v1h-2zM32 31h1v1h-1zM36 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM8 32h1v1h-1zM10 32h3v1h-3zM14 32h3v1h-3zM18 32h2v1h-2zM27 32h6v1h-6zM35 32h1v1h-1zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM8 33h1v1h-1zM11 33h1v1h-1zM17 33h1v1h-1zM19 33h1v1h-1zM22 33h2v1h-2zM26 33h2v1h-2zM29 33h2v1h-2zM33 33h2v1h-2zM36 33h1v1h-1zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM9 34h1v1h-1zM14 34h1v1h-1zM20 34h4v1h-4zM32 34h1v1h-1zM34 34h1v1h-1zM36 34h1v1h-1zM0 35h1v1h-1zM6 35h1v1h-1zM9 35h3v1h-3zM14 35h2v1h-2zM17 35h2v1h-2zM20 35h1v1h-1zM26 35h2v1h-2zM32 35h5v1h-5zM0 36h7v1h-7zM8 36h6v1h-6zM24 36h1v1h-1zM28 36h4v1h-4zM33 36h1v1h-1zM36 36h1v1h-1z"};
+const gQR = el('g', { id: 'qr', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code ausblenden' });        // zuletzt angelegt:
+const gQRPlatz = el('g', { id: 'qr-platz', class: 'qr-knopf', role: 'button', tabindex: 0, 'aria-label': 'QR-Code anzeigen' }); // liegen über allem
+const QR_BOX = QR && (() => {
+  const m = 6, q = 4 * m, w = QR.n * m + 2 * q, x0 = 1900 - w, y0 = 20;
+  gQR.dataset.url = QR.url;
+  el('title', {}, gQR).textContent = 'Klicken: QR-Code ausblenden';
+  el('rect', { x: x0, y: y0, width: w, height: w, fill: '#fff', stroke: '#c6ccd2', 'stroke-width': 1 }, gQR);
+  el('path', { d: QR.d, fill: '#000', transform: `translate(${x0 + q} ${y0 + q}) scale(${m})`, 'shape-rendering': 'crispEdges' }, gQR);
+  txt(x0 + w / 2, y0 + w + 26, 'Am eigenen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  txt(x0 + w / 2, y0 + w + 52, 'Gerät öffnen', { class: 'qr-cap', 'text-anchor': 'middle' }, gQR);
+  // Platzhalter, rechts oben bündig mit dem QR-Code: gestrichelter Rahmen, Symbol (drei Suchmuster und einige
+  // Module – kein lesbarer Code), darunter „QR-Code“
+  const p = 96, px = 1900 - p, s = 3, o = Math.round((p - 21 * s) / 2);
+  el('title', {}, gQRPlatz).textContent = 'Klicken: QR-Code anzeigen';
+  el('rect', { x: px, y: y0, width: p, height: p, rx: 8, fill: '#fff', stroke: '#9aa3ad', 'stroke-width': 2, 'stroke-dasharray': '8 6' }, gQRPlatz);
+  let d = '';
+  for (const [cx, cy] of [[0, 0], [14, 0], [0, 14]]) d += `M${cx} ${cy}h7v7h-7zM${cx + 1} ${cy + 1}v5h5v-5zM${cx + 2} ${cy + 2}h3v3h-3z`;
+  for (const [x, y] of [[9, 1], [11, 2], [9, 4], [12, 4], [10, 6], [12, 8], [8, 9], [10, 10], [14, 9], [16, 10], [18, 9], [20, 11], [1, 9], [3, 10], [5, 9],
+    [2, 12], [9, 12], [11, 13], [15, 14], [17, 15], [19, 16], [14, 17], [16, 19], [18, 18], [20, 20], [9, 15], [11, 17], [9, 19], [12, 20]]) d += `M${x} ${y}h1v1h-1z`;
+  el('path', { d, fill: '#5b6570', 'fill-rule': 'evenodd', transform: `translate(${px + o} ${y0 + o}) scale(${s})`, 'shape-rendering': 'crispEdges' }, gQRPlatz);
+  txt(px + p / 2, y0 + p + 28, 'QR-Code', { class: 'qr-cap', 'text-anchor': 'middle' }, gQRPlatz);
+  return { x0, y0, w };
+})();
+const qrGross = () => window.innerWidth >= 800, qrExport = () => document.documentElement.classList.contains('export');
+function qrSichtbar() { return !!QR && S.qr && (qrGross() || qrExport()); }
+function qrPlatzSichtbar() { return !!QR && !S.qr && qrGross() && !qrExport(); }
+function qrUmschalten() {
+  S.qr = !S.qr; render();
+  const z = S.qr ? gQR : gQRPlatz; if (z.style.display !== 'none') z.focus({ preventScroll: true });
+}
+for (const g of [gQR, gQRPlatz]) {
+  g.addEventListener('click', qrUmschalten);
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
+}
+
+/* ================= 8 Bedienung ================= */
+const X = CFG.x, SPANNE = X.max - X.min;
+const btnPlay = $('#btn-play'), rng = $('#rng-x'), num = $('#num-x');
+for (const e of [rng, num]) { e.min = X.min; e.max = X.max; e.step = X.step; e.value = X.start; }
+$('#cap-x').innerHTML = `<i>${X.zeichen}</i> in ${X.einheit}`;
+let tippt = false;                                      // im Zahlenfeld wird gerade getippt
+const KNOEPFE = ['zeiger', 'diag', 'linien'];           // Ein/Aus-Knöpfe „Anzeige“ in der Steuerung: <button id="btn-…">
+const SCHALTER = ['strom', 'ges', 'rech', 'rwert'];     // Kästchen in der Ansicht: <input id="chk-…">
+function syncUI() {
+  const v = Math.round(S.x * 100) / 100;
+  rng.value = v;
+  if (!tippt) num.value = v;                            // nur während des Tippens nicht überschreiben
+  btnPlay.textContent = S.playing ? '❚❚ Pause' : '▶ Abspielen';
+  btnPlay.setAttribute('aria-pressed', String(S.playing));
+  for (const k of KNOEPFE) $('#btn-' + k).setAttribute('aria-pressed', String(!!S[k]));
+  for (const k of SCHALTER) $('#chk-' + k).checked = !!S[k];
+  show(gQR, qrSichtbar()); show(gQRPlatz, qrPlatzSichtbar());
+  titel.setAttribute('x', (qrSichtbar() || qrPlatzSichtbar()) ? QR_BOX.x0 - 60 : 1872);   // springt beim Umschalten nicht
+}
+function setX(v, fromUser = true) {
+  if (!Number.isFinite(v)) return;
+  if (fromUser) S.playing = false;
+  S.x = clamp(v, X.min, X.max);
+  S.p = (S.x - X.min) / SPANNE;                         // Abspielen setzt an dieser Stelle aufwärts fort
+  render();
+  if (fromUser) writeHash();
+}
+function writeHash() {
+  try { history.replaceState(null, '', '#' + X.hash + String(Math.round(S.x * 100) / 100).replace('.', '-')); } catch (e) { /* Rahmen erlaubt es nicht */ }
+}
+function readStart() {
+  try {
+    const h = new RegExp('^#' + X.hash + '(\\d+)(?:-(\\d+))?$').exec(location.hash || '');
+    if (h) return parseFloat(h[1] + (h[2] ? '.' + h[2] : ''));
+  } catch (e) { /* ignorieren */ }
+  return X.start;
+}
+/* Abspielen: Die Frequenz fährt in ganzen Schritten (1 Hz) von der eingestellten Stelle aus hinauf bis f_max, wieder
+   hinunter bis f_min und so weiter (Endlosschleife ohne Sprung). S.p läuft dabei von 0 bis 2: 0 … 1 aufwärts, 1 … 2 abwärts.
+   „Durchlauf“ (Tempo) = einmal durch den ganzen Bereich in einer Richtung. */
+function fAusP(p) { const u = p < 1 ? p : 2 - p; return X.min + Math.round(u * SPANNE / X.step) * X.step; }
+let last = null;
+function tick(ts) {
+  if (!S.playing) { last = null; return; }
+  if (last !== null) {
+    S.p = (S.p + Math.min((ts - last) / 1000, 0.1) / S.dauer) % 2;
+    const f = fAusP(S.p);
+    if (f !== S.x) { S.x = f; render(); }
+  }
+  last = ts;
+  requestAnimationFrame(tick);
+}
+function togglePlay() {
+  S.playing = !S.playing;
+  syncUI();
+  if (S.playing) requestAnimationFrame(tick); else writeHash();
+}
+btnPlay.addEventListener('click', togglePlay);
+$('#sel-speed').addEventListener('change', (e) => { S.dauer = Number(e.target.value); });
+rng.addEventListener('input', () => setX(parseFloat(rng.value)));
+num.addEventListener('input', () => { tippt = true; });
+num.addEventListener('change', () => { tippt = false; const v = parseFloat(String(num.value).replace(',', '.')); if (Number.isFinite(v)) setX(v); else syncUI(); });
+num.addEventListener('blur', () => { tippt = false; syncUI(); });
+for (const d of [-X.big, -X.step, X.step, X.big]) {
+  const b = document.createElement('button');
+  // ohne Einheit: mit „Hz“ wird die Steuerung so breit, dass der Parameter-Kasten bei 1366 × 768 darunter rutscht
+  b.type = 'button'; b.textContent = (d > 0 ? '+' : '−') + String(Math.abs(d)).replace('.', ',');
+  b.title = `Frequenz um ${String(Math.abs(d)).replace('.', ',')} Hz ${d > 0 ? 'erhöhen' : 'verringern'}`; b.setAttribute('aria-label', b.title);
+  b.addEventListener('click', () => setX(S.x + d));
+  $(d < 0 ? '#steps-minus' : '#steps-plus').appendChild(b);
+}
+for (const p of X.presets) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = String(p).replace('.', ',') + '\u202F' + X.einheit;
+  b.addEventListener('click', () => setX(p));
+  $('#presets').appendChild(b);
+}
+for (const key of SCHALTER) $('#chk-' + key).addEventListener('change', (e) => { S[key] = e.target.checked; render(); });
+for (const key of KNOEPFE) $('#btn-' + key).addEventListener('click', () => { S[key] = !S[key]; render(); });
+/* Vollbild nach Normblock 10: die ganze Seite; sichtbar ist nur die Bühne.
+   Ohne Vollbild-Schnittstelle (iPhone) bleibt die Klasse – die Ansicht füllt dann das Fenster, „Vollbild beenden“ führt zurück. */
+function setVollbild(an) {
+  const html = document.documentElement;
+  html.classList.toggle('vollbild', an);
+  try {
+    if (an && !document.fullscreenElement) html.requestFullscreen?.().catch(() => {});
+    if (!an && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* nicht verfügbar: Ersatz über die Klasse */ }
+  render();
+}
+const toggleFullscreen = () => setVollbild(!document.documentElement.classList.contains('vollbild'));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.documentElement.classList.contains('vollbild')) setVollbild(false); });
+$('#btn-fs').addEventListener('click', toggleFullscreen);
+$('#vb-ende').addEventListener('click', () => setVollbild(false));
+$('#btn-reset').addEventListener('click', () => setX(X.start));   // Ausgangszustand: 50 Hz, Abspielen aus; Ansicht bleibt
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  const inField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if (e.key === ' ' && !inField && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); return; }
+  if (inField && t.type !== 'checkbox') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setX(S.x + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? X.big : X.step)); }
+  else if (e.key === 'Home') { e.preventDefault(); setX(X.start); }
+  else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  else if (e.key === 'Escape' && document.documentElement.classList.contains('vollbild')) setVollbild(false);
+});
+window.addEventListener('hashchange', () => { const v = readStart(); if (v !== S.x) setX(v, false); });
+window.addEventListener('resize', syncUI);
+
+/* ================= 9 Schnittstelle für Prüfung und Export (Pflicht) =================
+   scripts/pruefen.py und scripts/video.py steuern die Seite nur hierüber. */
+const params = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
+if (params.has('export')) document.documentElement.classList.add('export');
+if (params.get('buehne') === '1') document.documentElement.classList.add('buehne');   // Vorschau für Moodle: nur die Bühne
+for (const k of [...KNOEPFE, ...SCHALTER]) if (params.has(k)) S[k] = params.get(k) !== '0';
+if (params.has('qr')) S.qr = params.get('qr') !== '0';      // ?qr=1: QR-Code gleich sichtbar (Beamer-Link)
+window.anim = {
+  bauart: 'stellgroesse',
+  cfg: CFG,
+  model,                                                       // reine Physik, zum Nachrechnen
+  set(x) { S.playing = false; S.x = clamp(x, X.min, X.max); S.p = (S.x - X.min) / SPANNE; render(); return S.x; },
+  opt(key, val) { S[key] = val; render(); },                   // zeiger, diag, linien, strom, ges, rech, rwert, qr
+  pause(an = true) { if (!!an === S.playing) togglePlay(); return !S.playing; },
+  vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },   // Normblock 10
+  get state() { return { ...S, f: S.x, ...model(S.x) }; },
+};
+
+/* ================= 10 Start =================
+   Festlegung der Lehrkraft, 25.11.2026: steht beim Öffnen im Ausgangszustand (f = 50 Hz, alle Zweigströme gleich). */
+S.x = clamp(readStart(), X.min, X.max);
+S.p = (S.x - X.min) / SPANNE;
+render();
+})();
+</script>
+</body>
+</html>
