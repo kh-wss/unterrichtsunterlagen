@@ -11,6 +11,7 @@
     { "name": "Antriebstechnik",          "ordner": ["drehfeld"] },
     { "name": "Schutzmaßnahmen",          "ordner": ["schutzmassnahmen"] },
     { "name": "Schutzorgane",             "ordner": ["lf2-schutzorgane"] },
+    { "name": "Installationstechnik",     "ordner": ["installationstechnik"] },
     { "name": "Digitaltechnik",           "ordner": ["digitaltechnik"] },
     { "name": "Werkzeuge",                "ordner": ["tools"], "art": "Werkzeug" }
   ],
@@ -36,6 +37,8 @@
     "digitaltechnik/abstraktionsebenen/": { "reihenfolge": 1 },
 
     "schutzmassnahmen/pen-anlagenerder/": { "reihenfolge": 1 },
+
+    "installationstechnik/speisekammer-ausschaltung/": { "reihenfolge": 1 },
 
     "leistung/wirk-blind-schein/": { "reihenfolge": 1 },
     "leistung/blindleistung-pendeln/": { "reihenfolge": 2 },
