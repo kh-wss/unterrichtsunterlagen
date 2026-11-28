@@ -856,6 +856,9 @@ function entlang(k0, u0, k1, u1) {
   return out;
 }
 const dosenU = (d) => Array.from({ length: d.z }, (_, i) => d.u + (i - (d.z - 1) / 2) * 0.071);
+/* Rohinstallation: Adern nur in der ersten Dose (Zuleitung) und in der letzten, wenn von dort eine Leitung weitergeht;
+   die Brücken zwischen den Dosen setzt man erst bei der Gerätemontage (Hinweis der Lehrkraft 28.11.2026) */
+const anschlussU = (d) => { const us = dosenU(d), i = SD.indexOf(d); return i < SD.length - 1 && us.length > 1 ? [us[0], us[us.length - 1]] : [us[0]]; };
 (function uebersichtModern() {
   const e = 'uesM', vQ = CFG.symLage.Q1;
   symbol(e, 'W', 'schalter', abbildung([GM.Q1.u, vQ], [0, 1]));
@@ -1007,7 +1010,7 @@ const KABEL_M = [
   });
   adern('C', EM.u, EM.v, ['L', 'PE', 'N'], -90);
   adern('W', GM.Q1.u, GM.Q1.v, ['N', 'L', 'PE'], 90); adern('W', GM.Q1.u, GM.Q1.v, ['N', 'L', 'PE'], -90);   // je drei Adern von oben (zur Leuchte, braun = geschaltet) und von unten (Zuleitung) – Hinweis der Lehrkraft 27.11.2026
-  for (const d of SD) for (const u of dosenU(d)) adern(d.k, u, 0.30, ['L', 'PE', 'N'], 90);   // je Dose drei Adern (Hinweis der Lehrkraft 27.11.2026)
+  for (const d of SD) for (const u of anschlussU(d)) adern(d.k, u, 0.30, ['L', 'PE', 'N'], 90);   // drei Adern je angeschlossener Dose (Hinweise der Lehrkraft 27. und 28.11.2026)
   const lab = (k, u, v, html, dx, dy, anchor = 'middle') => TX(e, k, u, v, html, { cls: 'lbl-xs', dx, dy, anchor, halo: true });
   lab('W', 1.05, 1.70, 'NYM-J 3×1,5 Licht', 14, 6, 'start'); lab('C', 0.62, EM.v, 'Leerrohr', 0, -14);
   lab('N', 1.25, 0.30, 'NYM-J 3×2,5 Steckdosen', 0, -18);
@@ -1159,7 +1162,7 @@ function apWerkzeug(e) {
   ds.filter((x) => x.k !== 'C').forEach((x) => w.gehaeuse(x, true));
   w.wago('W', GM.Q1.u, GM.Q1.v - 0.022, [['N', 2], ['PE', 2]]);
   w.adern('W', GM.Q1.u, GM.Q1.v + 0.01, ['N', 'L', 'PE'], 90); w.adern('C', EM.u, EM.v, ['L', 'PE', 'N'], -90);
-  for (const d of SD) for (const u of dosenU(d)) w.adern(d.k, u, 0.30, ['L', 'PE', 'N'], 90);
+  for (const d of SD) for (const u of anschlussU(d)) w.adern(d.k, u, 0.30, ['L', 'PE', 'N'], 90);
   w.lab('W', 1.05, 1.70, 'NYM-J 3×1,5 · senkrecht ≤ 40 cm', 14, 6, 'start'); w.lab('C', 0.62, EM.v, 'auf der Decke ≤ 25 cm', 0, -16);
   w.lab('N', 1.25, 0.30, 'NYM-J 3×2,5 · Schellen ≤ 30 cm', 0, -22);
   w.lab('W', GM.Q1.u, GM.Q1.v, 'Q1 Unterteil AP', -16, 6, 'end'); w.lab('W', 1.25, 0.0, 'aus dem Fußboden', 0, 36);
