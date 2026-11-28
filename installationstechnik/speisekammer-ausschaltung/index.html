@@ -264,14 +264,15 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
         <label class="chk" for="chk-masse"><input id="chk-masse" type="checkbox">Maße</label>
         <label class="chk" for="chk-zonen"><input id="chk-zonen" type="checkbox">Zonen</label>
         <label class="chk" for="chk-roentgen"><input id="chk-roentgen" type="checkbox">Leitungen im Putz</label>
+        <label class="chk" for="chk-iad"><input id="chk-iad" type="checkbox">SLP iaD</label>
       </div>
       <button type="button" id="btn-fs">Vollbild</button>
     </div>
     <details class="keys">
       <summary>Tastatur, Maus und Verlinken</summary>
       <div class="hint">
-        <kbd>→</kbd> / <kbd>←</kbd> nächste / vorige Station · <kbd>Pos1</kbd> Station 1 · <kbd>A</kbd> auffalten / zusammenfalten · <kbd>M</kbd> klassisch / modern · <kbd>P</kbd> unter / auf Putz · <kbd>Leertaste</kbd> Schalter Q1 (Stationen 6–9 und 11) · <kbd>+</kbd> / <kbd>−</kbd> zoomen · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
-        Raum mit der Maus oder dem Finger drehen, mit zwei Fingern oder dem Mausrad zoomen. Eine Station lässt sich verlinken, z.&nbsp;B. <code>#s7</code>; <code>?falt=1</code> öffnet aufgefaltet, <code>?modern=1</code> mit moderner Installation, <code>?aufputz=1</code> auf Putz.
+        <kbd>→</kbd> / <kbd>←</kbd> nächste / vorige Station · <kbd>Pos1</kbd> Station 1 · <kbd>A</kbd> auffalten / zusammenfalten · <kbd>M</kbd> klassisch / modern · <kbd>P</kbd> unter / auf Putz · <kbd>S</kbd> SLP iaD ein / aus · <kbd>Leertaste</kbd> Schalter Q1 (Stationen 6–9 und 11) · <kbd>+</kbd> / <kbd>−</kbd> zoomen · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
+        Raum mit der Maus oder dem Finger drehen, mit zwei Fingern oder dem Mausrad zoomen. Eine Station lässt sich verlinken, z.&nbsp;B. <code>#s7</code>; <code>?falt=1</code> öffnet aufgefaltet, <code>?modern=1</code> mit moderner Installation, <code>?aufputz=1</code> auf Putz, <code>?iad=1</code> mit dem SLP iaD.
       </div>
     </details>
   </div>
@@ -288,6 +289,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       <li>Ist Q1 geschlossen, läuft im Stromlaufplan eine rot gestrichelte Linie von L1 über Q1 und den Lampendraht nach N. Sie zeigt den Weg durch den geschlossenen Stromkreis; die Stromrichtung selbst kehrt sich bei Wechselstrom 100-mal je Sekunde um.</li>
       <li>Moderne Installation (Knopf „Modern“): Licht- und Steckdosenstromkreis getrennt, beide Zuleitungen kommen aus dem Fußboden. Abzweigdosen entfallen: Die tiefe Gerätedose von Q1 dient als Geräte-Verbindungsdose (Baunetz Wissen, „Gerätedosen“), N und PE werden dort mit Klemmen durchverbunden. Die Leitung läuft von Q1 senkrecht in die Decke und im Leerrohr gerade zur Leuchte; deshalb ist die Decke hier an der Türwand angeklappt. Steckdosen nach RAL-RG 678, Ausstattungswert 3 (***): Abstellraum mindestens 2 Steckdosen. Auf Wunsch der Lehrkraft sind es mehr: X1 und X2 zweifach an der Fensterwand, X3 vierfach an der rechten Wand, X4 zweifach an der vorderen Wand, von X1 bis X4 durchgeschleift (10 Steckdosen). Nach RAL-RG 678 dürfen kleine Räume auch an Stromkreise der übrigen Wohnbereiche angeschlossen werden. Querschnitte nach üblicher Praxis: Licht NYM-J 3×1,5, Steckdosen NYM-J 3×2,5 an B16 mit RCD 30&#8239;mA. Mehrfachsteckdose im Plan: schräger Strich im Halbkreis mit der Anzahl (Festlegung der Lehrkraft).</li>
       <li>Auf Putz (Knopf „Auf Putz“, Wunsch der Lehrkraft): Das Zeichen der Verlegeart steht unter der Leitung: Der Querstrich (Wandoberfläche) liegt direkt unter ihr, die Schrägstriche gehen nach unten weg. NYM mit Schellen auf der fertigen Wand. Befestigungsabstände für Leitungen nach DIN VDE 0100-520 (Tabelle, nach Sekundärquellen zitiert): Außendurchmesser <i>D</i> ≤ 9&#8239;mm waagerecht ≤ 250&#8239;mm, senkrecht ≤ 400&#8239;mm; 9&#8239;mm &lt; <i>D</i> ≤ 15&#8239;mm waagerecht ≤ 300&#8239;mm, senkrecht ≤ 400&#8239;mm. Kleinster Biegeradius bei fester Verlegung nach DIN VDE 0298-3: <i>r</i> = 4 · <i>D</i>. Außendurchmesser nach Herstellerangaben (ca.): NYM-J 3×1,5 ≈ 8,5&#8239;mm (<i>r</i> ≥ 34&#8239;mm), NYM-J 5×1,5 ≈ 9,5&#8239;mm, NYM-J 3×2,5 ≈ 9,4&#8239;mm (<i>r</i> ≥ 38&#8239;mm). Angenommen: erste Schelle 5&#8239;cm vor Dose und Bogen; Ecken zwischen zwei Flächen ohne gezeichneten Bogen. Die Installationszonen nach DIN 18015-3 gelten nur für unsichtbar verlegte Leitungen; die Leitungen bleiben hier trotzdem auf denselben Linien. Leitungen 1,6-fach breiter gezeichnet.</li>
+      <li>Stromlaufplan in aufgelöster Darstellung, SLP iaD (Zusatz, nicht in der Abfolge): Strompfade senkrecht zwischen L1 oben und N, PE unten, oben nummeriert, ohne Lage im Raum. Q1 als Schließer mit Hand und Raste, L1 am festen Kontakt; Betätigung von links (im aufgelösten Plan nur von links oder oben). Steckdosen mit nach rechts offenen Halbkreisen, Adern von links. Der Schutzleiter endet an der Leuchte mit einem T (Anschluss am Gehäuse). Steckdosen: L von oben und N von unten genau übereinander, PE etwas weiter links; modern jede Steckdose ein eigener Strompfad, Mehrfachsteckdosen strichpunktiert umrahmt.</li>
       <li>Darstellung: eigene Zentralprojektion ohne Bibliothek; vordere Wände werden ausgeblendet, damit man in den Raum sieht. Die Decke mit Leitung und Leuchte bleibt durchsichtig sichtbar.</li>
     </ul>
   </details>
@@ -399,7 +401,7 @@ const FACE_KEYS = ['W', 'N', 'E', 'S', 'C', 'F'];
 
 /* ================= 3 Zustand ================= */
 const SCHALTBAR = [6, 7, 8, 9, 11];   // Stationen, in denen Q1 schaltet (Festlegung der Lehrkraft 27.11.2026: Schaltung anklickbar)
-const S = { station: 1, falt: false, licht: false, aufputz: false, zonen: false, legende: true, modern: false, masse: false, roentgen: false, qr: false, dpsi: 0, dphi: 0, zoom: 1, pan: [0, 0] };
+const S = { station: 1, falt: false, licht: false, aufputz: false, iad: false, zonen: false, legende: true, modern: false, masse: false, roentgen: false, qr: false, dpsi: 0, dphi: 0, zoom: 1, pan: [0, 0] };
 // Ansicht V läuft weich dem Ziel nach (Kamera, Faltung, Deckkraft der Ebenen, Material)
 const EBENEN = ['masse', 'ring', 'plan', 'plan4', 'planLtg', 'zonen', 'ues', 'slp', 'roh', 'fertig', 'roentgen',
   'planM', 'planLtgM', 'uesM', 'slpM', 'rohM', 'fertigM', 'roentgenM',   // …M: moderne Installation
@@ -1214,7 +1216,10 @@ function knopf(x, y, w, h, html, onClick, o = {}) {
 }
 txt(24, 44, 'Stationen', { class: 't-panel' }, gUI);
 const stKn = STATIONEN.map((st, i) => knopf(20, 62 + i * 49, 372, 43, `${i + 1}  ${st.kurz}`, () => gehe(i + 1), { links: true, cls: 'lbl-s' }));
-const yB = 62 + 11 * 49 + 14;
+// Zusatzansicht: Stromlaufplan aufgelöst – nicht in der Abfolge, nur zum Anklicken (Wunsch der Lehrkraft 28.11.2026)
+const knIaD = knopf(20, 62 + 11 * 49, 372, 43, '＋ SLP iaD (Zusatz)', () => iadUm(!S.iad), { links: true, cls: 'lbl-s' });
+knIaD.g.querySelector('rect').setAttribute('stroke-dasharray', '8 5');
+const yB = 62 + 12 * 49 + 14;
 const knZurueck = knopf(20, yB, 120, 52, '◀', () => gehe(S.station - 1), { aria: 'Zurück' });
 const knWeiter = knopf(148, yB, 244, 52, 'Weiter ▶', () => gehe(S.station + 1));
 const knRaum = knopf(20, yB + 62, 182, 52, 'Raum (3D)', () => falten(false));
@@ -1361,6 +1366,7 @@ function zeichnen() {
   ctx.restore();
   beschriften(aktiv);
   schalterMarke();
+  iadZeichnen();
 }
 /* Leuchte E1 (Station 11) – sitzt 6 cm unter der Decke; leuchtet, wenn Q1 geschlossen ist */
 function leuchte() {
@@ -1397,7 +1403,7 @@ function schalterMarke() {
     : ebn.ues ? [0.96, CFG.symLage.Q1 - 0.07, 1.22, CFG.symLage.Q1 + 0.19]
     : ebn.slp ? (S.modern ? [0.93, 1.06, 1.10, 1.28] : [1.14, 1.04, 1.34, 1.30]) : null;
   const an = SCHALTBAR.includes(S.station) && feld && flaechenSichtbar.W && Math.max(V.eb.fertig, V.eb.ues, V.eb.slp, V.eb.fertigM, V.eb.uesM, V.eb.slpM, V.eb.fertigA, V.eb.fertigMA) > 0.5;
-  show(schalterRahmen, false); show(schalterHinweis, an);   // ohne gestrichelten Rahmen – der Hinweis steht daneben (Wunsch der Lehrkraft 27.11.2026)
+  show(schalterRahmen, false); show(schalterHinweis, an && !S.iad);   // ohne gestrichelten Rahmen – der Hinweis steht daneben (Wunsch der Lehrkraft 27.11.2026)
   schalterBox = null;
   if (!an) return;
   const ps = [[feld[0], feld[1]], [feld[2], feld[1]], [feld[2], feld[3]], [feld[0], feld[3]]].map(([u, v]) => P2('W', u, v));
@@ -1455,24 +1461,27 @@ function syncUI() {
   knRaum.g.classList.toggle('an', !S.falt); knFalt.g.classList.toggle('an', S.falt);
   knKlassisch.g.classList.toggle('an', !S.modern); knModern.g.classList.toggle('an', S.modern);
   document.querySelectorAll('#seg-inst button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.v === '1') === S.modern)));
-  const schaltbar = SCHALTBAR.includes(S.station);
+  const schaltbar = SCHALTBAR.includes(S.station) || S.iad;
   knLicht.g.classList.toggle('aus', !schaltbar); knLicht.g.classList.toggle('an', S.licht && schaltbar);
   knLicht.t.textContent = S.licht ? 'Q1 aus' : 'Q1 ein';
-  untertitel.textContent = `${S.station} · ${kurzName(S.station)}`;
+  untertitel.textContent = S.iad ? 'Stromlaufplan iaD (Zusatz)' : `${S.station} · ${kurzName(S.station)}`;
+  knIaD.g.classList.toggle('an', S.iad); $('#chk-iad').checked = S.iad;
   stKn[9].t.textContent = `10  ${kurzName(10)}`; $('#sel-station').options[9].textContent = `10 ${kurzName(10)}`;
   knUP.g.classList.toggle('an', !S.aufputz); knAP.g.classList.toggle('an', S.aufputz);
   document.querySelectorAll('#seg-verl button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.v === '1') === S.aufputz)));
   const chR = $('#chk-roentgen'); chR.disabled = S.aufputz; chR.parentElement.style.opacity = S.aufputz ? 0.45 : '';
   const zonenDa = (STATIONEN[S.station - 1].ebenen.zonen || 0) > 0.5 || S.zonen;
-  show(gLeg, zonenDa && S.legende); show(knLegende.g, zonenDa);
+  show(gLeg, zonenDa && S.legende && !S.iad); show(knLegende.g, zonenDa && !S.iad);
   knLegende.t.textContent = S.legende ? '✕ Erklärung ausblenden' : 'ⓘ Zonen erklären';
   knLegende.g.setAttribute('transform', S.legende ? 'translate(1010 0)' : '');
-  hinweis.textContent = (obenSicht && !S.falt ? 'Ansicht von oben' : 'Ziehen: drehen') + ' · Mausrad oder zwei Finger: zoomen · Umschalt + Ziehen: verschieben';
+  hinweis.textContent = S.iad ? '' : (obenSicht && !S.falt ? 'Ansicht von oben' : 'Ziehen: drehen') + ' · Mausrad oder zwei Finger: zoomen · Umschalt + Ziehen: verschieben';
   // Stationstext unter den Knöpfen
   gText.innerHTML = '';
   const y0 = yB + 214;
   const tAP = S.aufputz ? (S.modern ? st.textMA || st.textA : st.textA) : null;
-  umbrechen((tAP || (S.modern && st.textM ? st.textM : st.text)).replace('{n}', String(AP_N[S.modern ? 'modern' : 'klassisch'])), 22, 368).forEach((z, i) => txt(22, y0 + i * 29, z, { class: 'lbl-xs sans' }, gText));
+  const tIaD = S.iad ? (S.modern ? 'SLP iaD modern: Licht- und Steckdosenstromkreis getrennt, jede Steckdose ein eigener Strompfad. Die Lage im Raum spielt keine Rolle. Klicke auf Q1!'
+    : 'Stromlaufplan in aufgelöster Darstellung (SLP iaD): jeder Strompfad senkrecht zwischen L1 oben und N, PE unten, oben nummeriert. Die Lage im Raum spielt keine Rolle. Klicke auf Q1!') : null;
+  umbrechen((tIaD || tAP || (S.modern && st.textM ? st.textM : st.text)).replace('{n}', String(AP_N[S.modern ? 'modern' : 'klassisch'])), 22, 368).forEach((z, i) => txt(22, y0 + i * 29, z, { class: 'lbl-xs sans' }, gText));
   // Leiste
   $('#sel-station').value = String(S.station);
   $('#btn-zurueck').disabled = S.station === 1; $('#btn-weiter').disabled = S.station === STATIONEN.length;
@@ -1522,7 +1531,7 @@ function neuZeichnen() {   // höchstens ein Bild je Bildschirmaktualisierung (Z
   if (angehalten || laeuft || rafWartet) return;
   rafWartet = true; requestAnimationFrame(() => { rafWartet = false; schritt(0, true); zeichnen(); });
 }
-const pulsAktiv = () => S.licht && (V.eb.slp > 0.01 || V.eb.slpM > 0.01);
+const pulsAktiv = () => S.licht && (S.iad || V.eb.slp > 0.01 || V.eb.slpM > 0.01);
 function tick(ts) {
   const dt = letzte === null ? 0.016 : Math.min((ts - letzte) / 1000, 0.05); letzte = ts;
   zeit += dt;
@@ -1567,10 +1576,96 @@ for (const g of [gQR, gQRPlatz]) {
   g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); qrUmschalten(); } });
 }
 
+/* ===== Stromlaufplan in aufgelöster Darstellung – Zusatzansicht (Wunsch der Lehrkraft 28.11.2026: „nicht in die Abfolge,
+   sondern nur zum Anklicken“). Strompfade senkrecht zwischen L1 (oben) und N, PE (unten), oben nummeriert; Kennzeichen links
+   am Zeichen bzw. unter der Steckdose; Kontakt von der Wurzel (unten) zum festen Kontakt (oben), L1 am festen Kontakt.
+   PE an der Leuchte: die Leitung endet mit einem T am Gehäuse (Festlegung der Lehrkraft 28.11.2026; im zusammenhängenden
+   Plan steht dort das Erdungszeichen im Kreis). Bühnenpixel, y nach unten. */
+const gIaD = el('g', { id: 'iad' }); svg.insertBefore(gIaD, gTop);
+gIaD.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+// Klick über die Lage prüfen: die Ansicht wird während des Überblendens jedes Bild neu aufgebaut, das Klickziel wechselt dabei
+gIaD.addEventListener('click', (ev) => { const q = buehne(ev), b = IAD.q1; if (b && q[0] >= b[0] && q[0] <= b[2] && q[1] >= b[1] && q[1] <= b[3]) { ev.stopPropagation(); S.licht = !S.licht; starte(); } });
+const IAD = { yL: 290, yN: 915, yPE: 965, yo: 430, yu: 510, yE: 690, ys: 650 };
+function iadZeichnen() {
+  if (!S.iad) { if (gIaD.firstChild) gIaD.innerHTML = ''; return; }
+  const A = CFG.ader, an = S.licht, h = [], { yL, yN, yPE, yo, yu, yE, ys } = IAD;
+  const d = (pts) => pts.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('');
+  const ln = (pts, col = '#111', w = 2.4, extra = '') => h.push(`<path d="${d(pts)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round" ${extra}/>`);
+  const ader = (pts, a) => { if (a === 'PE') { ln(pts, A.PE, 2.8, 'stroke-dasharray="9 9"'); ln(pts, A.PEg, 2.8, 'stroke-dasharray="9 9" stroke-dashoffset="9"'); } else ln(pts, A[a], 2.8); };
+  const punkt = (x, y) => h.push(`<circle cx="${x}" cy="${y}" r="5.5" fill="#111"/>`);
+  const tx = (x, y, s, cls = 'lbl', anchor = 'middle') => h.push(`<text x="${x}" y="${y}" class="${cls} sans" text-anchor="${anchor}">${s}</text>`);
+  h.push('<rect x="400" y="140" width="1520" height="940" fill="#fff"/>');
+  const schiene = (x0, x1) => {
+    ader([[x0, yL], [x1, yL]], 'L'); ader([[x0, yN], [x1, yN]], 'N'); ader([[x0, yPE], [x1, yPE]], 'PE');
+    tx(x0 - 10, yL + 9, 'L1', 'lbl-s', 'end'); tx(x0 - 10, yN + 9, 'N', 'lbl-s', 'end'); tx(x0 - 10, yPE + 9, 'PE', 'lbl-s', 'end');
+  };
+  const pfadNr = (x, n) => tx(x, yL - 20, String(n), 'lbl-xs');
+  // Lichtpfad: L1 → Q1 (Schließer mit Hand und Raste) → E1 → N; PE mit T an die Leuchte
+  const licht = (x, n) => {
+    pfadNr(x, n); punkt(x, yL); ader([[x, yL], [x, yo]], 'L');
+    /* Betätigung im aufgelösten Plan immer von links oder oben, nie von unten oder rechts (Festlegung der Lehrkraft 28.11.2026) */
+    const s = -1, ende = an ? [x + s * 4, yo - 3] : [x + s * 24, yo - 6], m = [(x + ende[0]) / 2, (yu + ende[1]) / 2];
+    ln([[x, yu], ende], '#111', 2.6);
+    const x1 = x + s * 48, x2 = x + s * 62, xb = x + s * 79;
+    ln([m, [x1, m[1]]], '#111', 1.6, 'stroke-dasharray="6 5"'); ln([[x1, m[1]], [(x1 + x2) / 2, m[1] + 10], [x2, m[1]], [xb, m[1]]], '#111', 1.6);
+    ln([[xb, m[1] - 17], [xb, m[1] + 17]], '#111', 1.6);
+    tx(x + 16, (yo + yu) / 2 + 10, 'Q1', 'lbl', 'start');
+    tx(x + 66, (yo + yu) / 2 + 8, an ? 'Q1 anklicken: aus' : 'Q1 anklicken: ein', 'lbl-xs', 'start');
+    IAD.q1 = [xb - 20, yo - 25, x + 270, yu + 25];
+    h.push(`<rect x="${xb - 20}" y="${yo - 25}" width="${x + 290 - xb}" height="${yu - yo + 50}" fill="transparent" style="cursor:pointer"/>`);
+    const r = 32;
+    ader([[x, yu], [x, yE - r]], 'S'); ader([[x, yE + r], [x, yN]], 'N'); punkt(x, yN);
+    h.push(`<circle cx="${x}" cy="${yE}" r="${r}" fill="${an ? '#FFE36B' : '#fff'}" stroke="#111" stroke-width="2.4"/>`);
+    const q = r * Math.SQRT1_2; ln([[x - q, yE - q], [x + q, yE + q]]); ln([[x - q, yE + q], [x + q, yE - q]]);
+    tx(x - r - 12, yE + 10, 'E1', 'lbl', 'end');
+    const xp = x + 75; punkt(xp, yPE); ader([[xp, yPE], [xp, yE], [x + r + 10, yE]], 'PE');
+    ln([[x + r + 10, yE - 16], [x + r + 10, yE + 16]], A.PE, 3.2);   // T: Schutzleiteranschluss am Gehäuse
+    return { x, r };
+  };
+  // Steckdose mit Schutzkontakt: drei Halbkreise übereinander, nach rechts offen (Wunsch der Lehrkraft 28.11.2026),
+  // Adern waagerecht von links: L oben, PE Mitte (mit Querstrich), N unten. L von oben und N von unten genau übereinander,
+  // PE etwas weiter links (Wunsch der Lehrkraft 28.11.2026) – keine Kreuzung außer PE über die N-Schiene.
+  // Bezug xa = Scheitel der Halbkreise.
+  const steckdose = (xa, n) => {
+    const r = 12, dy = 30, yA = { L: ys - dy, PE: ys, N: ys + dy }, lane = { L: xa - 24, PE: xa - 42, N: xa - 24 };
+    pfadNr(lane.L, n);
+    punkt(lane.L, yL); ader([[lane.L, yL], [lane.L, yA.L], [xa, yA.L]], 'L');
+    punkt(lane.PE, yPE); ader([[lane.PE, yPE], [lane.PE, yA.PE], [xa, yA.PE]], 'PE');
+    punkt(lane.N, yN); ader([[lane.N, yN], [lane.N, yA.N], [xa, yA.N]], 'N');
+    for (const y of [yA.L, yA.PE, yA.N]) h.push(`<path d="M${xa + r} ${y - r}A${r} ${r} 0 0 0 ${xa + r} ${y + r}" fill="none" stroke="#111" stroke-width="2.2"/>`);
+    ln([[xa, ys - r], [xa, ys + r]], '#111', 2.2);   // Querstrich am Schutzkontakt
+    ln([[xa - 9, yA.L], [xa - 9, yA.N]], '#111', 1.2, 'stroke-dasharray="5 4"');
+  };
+  let weg = null;
+  if (!S.modern) {
+    schiene(480, 1870);
+    const L1 = licht(760, 1); steckdose(1220, 2); tx(1220 + 26, ys + 10, 'X1', 'lbl', 'start'); steckdose(1600, 3); tx(1600 + 26, ys + 10, 'X2', 'lbl', 'start');
+    weg = [[480, yL], [L1.x, yL], [L1.x, yu], [L1.x, yN], [480, yN]];
+    tx(480, 220, 'Ein Stromkreis für Licht und Steckdosen', 'lbl-xs', 'start');
+  } else {
+    schiene(520, 800); tx(520, 220, 'Lichtstromkreis', 'lbl-xs', 'start');
+    const L1 = licht(640, 1);
+    weg = [[520, yL], [L1.x, yL], [L1.x, yu], [L1.x, yN], [520, yN]];
+    schiene(890, 1895); tx(890, 220, 'Steckdosenstromkreis', 'lbl-xs', 'start');
+    let x = 960, n = 2;
+    SD.forEach((g) => {
+      const x0 = x;
+      for (let i = 0; i < g.z; i++) { steckdose(x, n++); x += 88; }
+      const xl = x - 88;
+      h.push(`<rect x="${x0 - 56}" y="${ys - 52}" width="${xl - x0 + 82}" height="${104}" fill="none" stroke="#111" stroke-width="1.3" stroke-dasharray="14 5 2 5"/>`);
+      tx(x0 - 56, ys - 64, `${g.n}${g.z > 1 ? ` (${g.z}-fach)` : ''}`, 'lbl-s halo', 'start');   // Hof: die L-Leitungen laufen durch die Schrift
+      x += 16;
+    });
+  }
+  if (an && weg) h.push(`<path d="${d(weg)}" fill="none" stroke="#FF0000" stroke-width="3.5" stroke-dasharray="16 12" stroke-dashoffset="${(-zeit * 45).toFixed(1)}"/>`);
+  gIaD.innerHTML = h.join('');
+}
+function iadUm(an) { S.iad = !!an; if (!S.iad && !SCHALTBAR.includes(S.station)) S.licht = false; starte(); }
+
 /* ================= 8 Bedienung ================= */
 function gehe(n, schreiben = true) {
   n = clamp(Math.round(n), 1, STATIONEN.length);
-  S.station = n; S.falt = !!STATIONEN[n - 1].falt; S.masse = !!STATIONEN[n - 1].ebenen.masse; S.dpsi = 0; S.dphi = 0; ansichtStation();
+  S.iad = false; S.station = n; S.falt = !!STATIONEN[n - 1].falt; S.masse = !!STATIONEN[n - 1].ebenen.masse; S.dpsi = 0; S.dphi = 0; ansichtStation();
   if (!SCHALTBAR.includes(n)) S.licht = false;
   if (schreiben) { try { history.replaceState(null, '', '#s' + n); } catch (e) { /* Rahmen erlaubt es nicht */ } }
   starte();
@@ -1582,13 +1677,13 @@ function ansichtStation() {
 }
 function variante(modern) { S.modern = !!modern; ansichtStation(); starte(); }
 function verlegung(auf) { S.aufputz = !!auf; starte(); }
-function falten(an) { S.falt = !!an; S.dpsi = 0; S.dphi = 0; ansichtStation(); starte(); }
+function falten(an) { S.iad = false; S.falt = !!an; S.dpsi = 0; S.dphi = 0; ansichtStation(); starte(); }
 function zoomen(f, m = [CFG.mitte[0], CFG.mitte[1]]) {   // um den Punkt m (Bühnenpixel) zoomen
   const z0 = S.zoom, z1 = clamp(z0 * f, 0.5, 4), c = CFG.mitte;
   S.pan = [m[0] - c[0] - (m[0] - c[0] - S.pan[0]) * z1 / z0, m[1] - c[1] - (m[1] - c[1] - S.pan[1]) * z1 / z0]; S.zoom = z1;
   neuZeichnen();
 }
-function lichtUm() { if (!SCHALTBAR.includes(S.station)) return; S.licht = !S.licht; starte(); }
+function lichtUm() { if (!SCHALTBAR.includes(S.station) && !S.iad) return; S.licht = !S.licht; starte(); }
 const sel = $('#sel-station');
 STATIONEN.forEach((st, i) => { const o = document.createElement('option'); o.value = String(i + 1); o.textContent = `${i + 1} ${st.kurz}`; sel.appendChild(o); });
 sel.addEventListener('change', () => gehe(Number(sel.value)));
@@ -1609,6 +1704,7 @@ svg.addEventListener('contextmenu', (ev) => ev.preventDefault());
 $('#chk-masse').addEventListener('change', (e) => { S.masse = e.target.checked; starte(); });
 $('#chk-zonen').addEventListener('change', (e) => { S.zonen = e.target.checked; starte(); });
 $('#chk-roentgen').addEventListener('change', (e) => { S.roentgen = e.target.checked; starte(); });
+$('#chk-iad').addEventListener('change', (e) => iadUm(e.target.checked));
 // Ziehen dreht den Raum; ein Klick ohne Ziehen auf den Schalter schaltet das Licht
 const buehne = (ev) => { const r = svg.getBoundingClientRect(); return [(ev.clientX - r.left) / r.width * 1920, (ev.clientY - r.top) / r.height * 1080]; };
 let zug = null;
@@ -1665,6 +1761,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'a' || e.key === 'A') falten(!S.falt);
   else if (e.key === 'm' || e.key === 'M') variante(!S.modern);
   else if (e.key === 'p' || e.key === 'P') verlegung(!S.aufputz);
+  else if (e.key === 's' || e.key === 'S') iadUm(!S.iad);
   else if (e.key === '+') zoomen(1.25);
   else if (e.key === '-') zoomen(0.8);
   else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
@@ -1687,12 +1784,12 @@ window.anim = {
   model,
   set(x) { gehe(x, false); schritt(0, true); render(); return S.station; },
   opt(key, val) {
-    if (key === 'falt') S.falt = !!val; else if (key === 'licht') S.licht = !!val && SCHALTBAR.includes(S.station); else S[key] = val;
+    if (key === 'falt') S.falt = !!val; else if (key === 'licht') S.licht = !!val && (SCHALTBAR.includes(S.station) || S.iad); else S[key] = val;
     schritt(0, true); render();
   },
   pause(an = true) { angehalten = !!an; if (!an) starte(); },
   vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },
-  get state() { const { station, falt, licht, masse, roentgen, qr } = S; return { station, falt, modern: S.modern, aufputz: S.aufputz, licht: licht && SCHALTBAR.includes(station), masse, roentgen, qr, name: STATIONEN[station - 1].kurz }; },
+  get state() { const { station, falt, licht, masse, roentgen, qr } = S; return { station, falt, modern: S.modern, aufputz: S.aufputz, iad: S.iad, licht: licht && (SCHALTBAR.includes(station) || S.iad), masse, roentgen, qr, name: STATIONEN[station - 1].kurz }; },
 };
 
 /* ================= 10 Start =================
@@ -1701,8 +1798,8 @@ S.station = clamp(readStart(), 1, STATIONEN.length);
 S.falt = params.has('falt') ? params.get('falt') !== '0' : !!STATIONEN[S.station - 1].falt;
 S.masse = !!STATIONEN[S.station - 1].ebenen.masse;
 ansichtStation();
-for (const key of ['masse', 'roentgen', 'zonen', 'modern', 'aufputz']) if (params.has(key)) S[key] = params.get(key) !== '0';
-if (params.has('licht')) S.licht = params.get('licht') !== '0' && SCHALTBAR.includes(S.station);
+for (const key of ['masse', 'roentgen', 'zonen', 'modern', 'aufputz', 'iad']) if (params.has(key)) S[key] = params.get(key) !== '0';
+if (params.has('licht')) S.licht = params.get('licht') !== '0' && (SCHALTBAR.includes(S.station) || S.iad);
 if (params.has('dreh')) S.dpsi = Number(params.get('dreh')) || 0;
 if (params.has('kipp')) S.dphi = Number(params.get('kipp')) || 0;
 schritt(0, true);
