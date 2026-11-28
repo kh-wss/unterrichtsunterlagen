@@ -781,12 +781,12 @@ const KABEL = [   // Leitungszüge je Wand (Vorzugsmaße), mit Leitungstyp
     for (let j = 0; j < n; j++) {
       const x = cu - w / 2 + (j + 0.5) * w / n;
       EB[e].push({ t: 'L', k, pts: [[x - 0.003, cv + h / 2 - 0.006], [x + 0.003, cv + h / 2 - 0.006], [x + 0.003, cv + h / 2], [x - 0.003, cv + h / 2]], zu: true, fill: '#f08a24', w: 0 });
-      EB[e].push({ t: 'L', k, pts: [[x, cv - h / 2], [x, cv - h / 2 - 0.009]], w: 1.6, col: a === 'PE' ? CFG.ader.PE : CFG.ader[a] });
+      EB[e].push({ t: 'L', k, pts: [[x, cv - h / 2], [x, cv - h / 2 - 0.009]], w: 1.6, col: CFG.ader[Array.isArray(a) ? a[j] : a] });
     }
   });
   dose('W', G.X3.u, G.X3.v, 0.05); dose('N', G.X4.u, G.X4.v, 0.05);
   wago('W', G.X3.u, G.X3.v, [['N', 3], ['PE', 3], ['L', 3], ['S', 2]]);
-  wago('N', G.X4.u, G.X4.v, [['N', 3], ['PE', 3], ['L', 2], ['S', 2]]);
+  wago('N', G.X4.u, G.X4.v, [['N', 3], ['PE', 3], ['L', 2], [['S', 'L'], 2]]);   // geschalteter Leiter: schwarz von Q1 + braun zur Leuchte (NYM-J 3×1,5 ohne Schwarz) – Hinweis der Lehrkraft 28.11.2026: drei braune Adern in X4
   dose('W', G.Q1.u, G.Q1.v, 0.036); dose('W', G.X1.u, G.X1.v, 0.036); dose('E', G.X2.u, G.X2.v, 0.036);
   EB[e].push({ t: 'L', k: 'C', pts: kreisPts(G.E1.u, G.E1.v, 0.035), zu: true, fill: '#6d6d68', col: '#4a4a46', w: 1 });
   // Adern, die aus den Gerätedosen schauen (abgemantelt)
@@ -994,7 +994,7 @@ const KABEL_M = [
     for (let j = 0; j < n; j++) {
       const x = cu - w / 2 + (j + 0.5) * w / n;
       EB[e].push({ t: 'L', k, pts: [[x - 0.003, cv + h / 2 - 0.006], [x + 0.003, cv + h / 2 - 0.006], [x + 0.003, cv + h / 2], [x - 0.003, cv + h / 2]], zu: true, fill: '#f08a24', w: 0 });
-      EB[e].push({ t: 'L', k, pts: [[x, cv - h / 2], [x, cv - h / 2 - 0.009]], w: 1.6, col: a === 'PE' ? CFG.ader.PE : CFG.ader[a] });
+      EB[e].push({ t: 'L', k, pts: [[x, cv - h / 2], [x, cv - h / 2 - 0.009]], w: 1.6, col: CFG.ader[Array.isArray(a) ? a[j] : a] });
     }
   });
   dose('W', GM.Q1.u, GM.Q1.v, 0.04);
@@ -1117,7 +1117,7 @@ function apWerkzeug(e) {
     for (let j = 0; j < n; j++) {
       const x = cu - w / 2 + (j + 0.5) * w / n;
       rr(k, x - 0.003, cv + h / 2 - 0.006, x + 0.003, cv + h / 2, '#f08a24', '#f08a24', 0);
-      EB[e].push({ t: 'L', k, pts: [[x, cv - h / 2], [x, cv - h / 2 - 0.009]], w: 1.6, col: CFG.ader[a] });
+      EB[e].push({ t: 'L', k, pts: [[x, cv - h / 2], [x, cv - h / 2 - 0.009]], w: 1.6, col: CFG.ader[Array.isArray(a) ? a[j] : a] });
     }
   });
   const adern = (k, u, v, farben, richt) => farben.forEach((c, i) => {
@@ -1135,7 +1135,7 @@ function apWerkzeug(e) {
   const w = apWerkzeug('rohA'), ds = apDosen(false);
   ds.filter((x) => x.k !== 'C').forEach((x) => w.gehaeuse(x, true));
   w.wago('W', G.X3.u, G.X3.v, [['N', 3], ['PE', 3], ['L', 3], ['S', 2]]);
-  w.wago('N', G.X4.u, G.X4.v, [['N', 3], ['PE', 3], ['L', 2], ['S', 2]]);
+  w.wago('N', G.X4.u, G.X4.v, [['N', 3], ['PE', 3], ['L', 2], [['S', 'L'], 2]]);   // geschalteter Leiter: schwarz von Q1 + braun zur Leuchte (NYM-J 3×1,5 ohne Schwarz) – Hinweis der Lehrkraft 28.11.2026: drei braune Adern in X4
   w.adern('W', G.Q1.u, G.Q1.v, ['L', 'S', 'R', 'PE', 'N'], 90); w.adern('W', G.Q1.u, G.Q1.v - 0.012, ['L', 'PE', 'N'], -90);
   w.adern('W', G.X1.u, G.X1.v - 0.012, ['L', 'PE', 'N'], -90); w.adern('E', G.X2.u, G.X2.v, ['L', 'PE', 'N'], 90);
   w.adern('C', G.E1.u, G.E1.v, ['L', 'PE', 'N'], -90);
