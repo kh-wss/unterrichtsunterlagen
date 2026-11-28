@@ -289,7 +289,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       <li>Ist Q1 geschlossen, läuft im Stromlaufplan eine rot gestrichelte Linie von L1 über Q1 und den Lampendraht nach N. Sie zeigt den Weg durch den geschlossenen Stromkreis; die Stromrichtung selbst kehrt sich bei Wechselstrom 100-mal je Sekunde um.</li>
       <li>Moderne Installation (Knopf „Modern“): Licht- und Steckdosenstromkreis getrennt, beide Zuleitungen kommen aus dem Fußboden. Abzweigdosen entfallen: Die tiefe Gerätedose von Q1 dient als Geräte-Verbindungsdose (Baunetz Wissen, „Gerätedosen“), N und PE werden dort mit Klemmen durchverbunden. Die Leitung läuft von Q1 senkrecht in die Decke und im Leerrohr gerade zur Leuchte; deshalb ist die Decke hier an der Türwand angeklappt. Steckdosen nach RAL-RG 678, Ausstattungswert 3 (***): Abstellraum mindestens 2 Steckdosen. Auf Wunsch der Lehrkraft sind es mehr: X1 und X2 zweifach an der Fensterwand, X3 vierfach an der rechten Wand, X4 zweifach an der vorderen Wand, von X1 bis X4 durchgeschleift (10 Steckdosen). Nach RAL-RG 678 dürfen kleine Räume auch an Stromkreise der übrigen Wohnbereiche angeschlossen werden. Querschnitte nach üblicher Praxis: Licht NYM-J 3×1,5, Steckdosen NYM-J 3×2,5 an B16 mit RCD 30&#8239;mA. Mehrfachsteckdose im Plan: schräger Strich im Halbkreis mit der Anzahl (Festlegung der Lehrkraft).</li>
       <li>Auf Putz (Knopf „Auf Putz“, Wunsch der Lehrkraft): Das Zeichen der Verlegeart steht unter der Leitung: Der Querstrich (Wandoberfläche) liegt direkt unter ihr, die Schrägstriche gehen nach unten weg. NYM mit Schellen auf der fertigen Wand. Befestigungsabstände für Leitungen nach DIN VDE 0100-520 (Tabelle, nach Sekundärquellen zitiert): Außendurchmesser <i>D</i> ≤ 9&#8239;mm waagerecht ≤ 250&#8239;mm, senkrecht ≤ 400&#8239;mm; 9&#8239;mm &lt; <i>D</i> ≤ 15&#8239;mm waagerecht ≤ 300&#8239;mm, senkrecht ≤ 400&#8239;mm. Kleinster Biegeradius bei fester Verlegung nach DIN VDE 0298-3: <i>r</i> = 4 · <i>D</i>. Außendurchmesser nach Herstellerangaben (ca.): NYM-J 3×1,5 ≈ 8,5&#8239;mm (<i>r</i> ≥ 34&#8239;mm), NYM-J 5×1,5 ≈ 9,5&#8239;mm, NYM-J 3×2,5 ≈ 9,4&#8239;mm (<i>r</i> ≥ 38&#8239;mm). Angenommen: erste Schelle 5&#8239;cm vor Dose und Bogen; Ecken zwischen zwei Flächen ohne gezeichneten Bogen. Die Installationszonen nach DIN 18015-3 gelten nur für unsichtbar verlegte Leitungen; die Leitungen bleiben hier trotzdem auf denselben Linien. Leitungen 1,6-fach breiter gezeichnet.</li>
-      <li>Stromlaufplan in aufgelöster Darstellung (Zusatz, nicht in der Abfolge): Strompfade senkrecht zwischen L1 oben und N, PE unten, oben nummeriert, ohne Lage im Raum. Q1 als Schließer mit Hand und Raste, L1 am festen Kontakt. Der Schutzleiter endet an der Leuchte mit einem T (Anschluss am Gehäuse). Steckdosen: L von oben, N und PE von unten herumgeführt; modern jede Steckdose ein eigener Strompfad, Mehrfachsteckdosen strichpunktiert umrahmt.</li>
+      <li>Stromlaufplan in aufgelöster Darstellung (Zusatz, nicht in der Abfolge): Strompfade senkrecht zwischen L1 oben und N, PE unten, oben nummeriert, ohne Lage im Raum. Q1 als Schließer mit Hand und Raste, L1 am festen Kontakt; Betätigung von links (im aufgelösten Plan nur von links oder oben). Steckdosen mit nach rechts offenen Halbkreisen, Adern von links. Der Schutzleiter endet an der Leuchte mit einem T (Anschluss am Gehäuse). Steckdosen: L von oben, PE und N von unten; modern jede Steckdose ein eigener Strompfad, Mehrfachsteckdosen strichpunktiert umrahmt.</li>
       <li>Darstellung: eigene Zentralprojektion ohne Bibliothek; vordere Wände werden ausgeblendet, damit man in den Raum sieht. Die Decke mit Leitung und Leuchte bleibt durchsichtig sichtbar.</li>
     </ul>
   </details>
@@ -1603,15 +1603,16 @@ function iadZeichnen() {
   // Lichtpfad: L1 → Q1 (Schließer mit Hand und Raste) → E1 → N; PE mit T an die Leuchte
   const licht = (x, n) => {
     pfadNr(x, n); punkt(x, yL); ader([[x, yL], [x, yo]], 'L');
-    const ende = an ? [x + 4, yo - 3] : [x + 24, yo - 6], m = [(x + ende[0]) / 2, (yu + ende[1]) / 2];
+    /* Betätigung im aufgelösten Plan immer von links oder oben, nie von unten oder rechts (Festlegung der Lehrkraft 28.11.2026) */
+    const s = -1, ende = an ? [x + s * 4, yo - 3] : [x + s * 24, yo - 6], m = [(x + ende[0]) / 2, (yu + ende[1]) / 2];
     ln([[x, yu], ende], '#111', 2.6);
-    const x1 = x + 48, x2 = x + 62, xb = x + 79;
+    const x1 = x + s * 48, x2 = x + s * 62, xb = x + s * 79;
     ln([m, [x1, m[1]]], '#111', 1.6, 'stroke-dasharray="6 5"'); ln([[x1, m[1]], [(x1 + x2) / 2, m[1] + 10], [x2, m[1]], [xb, m[1]]], '#111', 1.6);
     ln([[xb, m[1] - 17], [xb, m[1] + 17]], '#111', 1.6);
-    tx(x - 14, (yo + yu) / 2 + 10, 'Q1', 'lbl', 'end');
-    tx(xb + 14, (yo + yu) / 2 + 8, an ? 'Q1 anklicken: aus' : 'Q1 anklicken: ein', 'lbl-xs', 'start');
-    IAD.q1 = [x - 40, yo - 25, xb + 210, yu + 25];
-    h.push(`<rect x="${x - 40}" y="${yo - 25}" width="${xb - x + 250}" height="${yu - yo + 50}" fill="transparent" style="cursor:pointer"/>`);
+    tx(x + 16, (yo + yu) / 2 + 10, 'Q1', 'lbl', 'start');
+    tx(x + 66, (yo + yu) / 2 + 8, an ? 'Q1 anklicken: aus' : 'Q1 anklicken: ein', 'lbl-xs', 'start');
+    IAD.q1 = [xb - 20, yo - 25, x + 270, yu + 25];
+    h.push(`<rect x="${xb - 20}" y="${yo - 25}" width="${x + 290 - xb}" height="${yu - yo + 50}" fill="transparent" style="cursor:pointer"/>`);
     const r = 32;
     ader([[x, yu], [x, yE - r]], 'S'); ader([[x, yE + r], [x, yN]], 'N'); punkt(x, yN);
     h.push(`<circle cx="${x}" cy="${yE}" r="${r}" fill="${an ? '#FFE36B' : '#fff'}" stroke="#111" stroke-width="2.4"/>`);
@@ -1621,22 +1622,23 @@ function iadZeichnen() {
     ln([[x + r + 10, yE - 16], [x + r + 10, yE + 16]], A.PE, 3.2);   // T: Schutzleiteranschluss am Gehäuse
     return { x, r };
   };
-  // Steckdose mit Schutzkontakt: drei Bögen N – PE – L (offen nach oben), PE mit Querstrich; N und PE gerade von unten,
-  // L von oben rechts herum (keine Kreuzung außer PE über N-Schiene). Bezug x0 = PE-Bogen.
-  const steckdose = (x0, n) => {
-    const r = 12, s = 26, xL = x0 + s, xU = x0 + s + r + 9;
-    pfadNr(xU, n);
-    const bogen = (x) => h.push(`<path d="M${x - r} ${ys - r}A${r} ${r} 0 0 0 ${x + r} ${ys - r}" fill="none" stroke="#111" stroke-width="2.2"/>`);
-    punkt(xU, yL); ader([[xU, yL], [xU, ys + 36], [xL, ys + 36], [xL, ys]], 'L');
-    punkt(x0 - s, yN); ader([[x0 - s, yN], [x0 - s, ys]], 'N');
-    punkt(x0, yPE); ader([[x0, yPE], [x0, ys]], 'PE');
-    [x0 - s, x0, x0 + s].forEach(bogen); ln([[x0 - r, ys], [x0 + r, ys]], '#111', 2.2);
-    ln([[x0 - s, ys + 18], [x0 + s, ys + 18]], '#111', 1.2, 'stroke-dasharray="5 4"');
+  // Steckdose mit Schutzkontakt: drei Halbkreise übereinander, nach rechts offen (Wunsch der Lehrkraft 28.11.2026),
+  // Adern waagerecht von links: L oben, PE Mitte (mit Querstrich), N unten. L von oben, PE und N von unten – ohne Kreuzung
+  // außer PE über die N-Schiene. Bezug xa = Scheitel der Halbkreise.
+  const steckdose = (xa, n) => {
+    const r = 12, dy = 30, yA = { L: ys - dy, PE: ys, N: ys + dy }, lane = { L: xa - 44, PE: xa - 30, N: xa - 16 };
+    pfadNr(lane.L, n);
+    punkt(lane.L, yL); ader([[lane.L, yL], [lane.L, yA.L], [xa, yA.L]], 'L');
+    punkt(lane.PE, yPE); ader([[lane.PE, yPE], [lane.PE, yA.PE], [xa, yA.PE]], 'PE');
+    punkt(lane.N, yN); ader([[lane.N, yN], [lane.N, yA.N], [xa, yA.N]], 'N');
+    for (const y of [yA.L, yA.PE, yA.N]) h.push(`<path d="M${xa + r} ${y - r}A${r} ${r} 0 0 0 ${xa + r} ${y + r}" fill="none" stroke="#111" stroke-width="2.2"/>`);
+    ln([[xa, ys - r], [xa, ys + r]], '#111', 2.2);   // Querstrich am Schutzkontakt
+    ln([[xa - 9, yA.L], [xa - 9, yA.N]], '#111', 1.2, 'stroke-dasharray="5 4"');
   };
   let weg = null;
   if (!S.modern) {
     schiene(480, 1870);
-    const L1 = licht(760, 1); steckdose(1180, 2); tx(1180 - 52, ys - 8, 'X1', 'lbl', 'end'); steckdose(1560, 3); tx(1560 - 52, ys - 8, 'X2', 'lbl', 'end');
+    const L1 = licht(760, 1); steckdose(1220, 2); tx(1220 + 26, ys + 10, 'X1', 'lbl', 'start'); steckdose(1600, 3); tx(1600 + 26, ys + 10, 'X2', 'lbl', 'start');
     weg = [[480, yL], [L1.x, yL], [L1.x, yu], [L1.x, yN], [480, yN]];
     tx(480, 220, 'Ein Stromkreis für Licht und Steckdosen', 'lbl-xs', 'start');
   } else {
@@ -1644,14 +1646,14 @@ function iadZeichnen() {
     const L1 = licht(640, 1);
     weg = [[520, yL], [L1.x, yL], [L1.x, yu], [L1.x, yN], [520, yN]];
     schiene(890, 1895); tx(890, 220, 'Steckdosenstromkreis', 'lbl-xs', 'start');
-    let x = 932, n = 2;
+    let x = 960, n = 2;
     SD.forEach((g) => {
       const x0 = x;
-      for (let i = 0; i < g.z; i++) { steckdose(x, n++); x += 96; }
-      const xl = x - 96;
-      h.push(`<rect x="${x0 - 46}" y="${ys - 40}" width="${xl - x0 + 98}" height="${92}" fill="none" stroke="#111" stroke-width="1.3" stroke-dasharray="14 5 2 5"/>`);
-      tx(x0 - 46, ys - 52, `${g.n}${g.z > 1 ? ` (${g.z}-fach)` : ''}`, 'lbl-s halo', 'start');   // Hof: die L-Leitungen laufen durch die Schrift
-      x += 12;
+      for (let i = 0; i < g.z; i++) { steckdose(x, n++); x += 88; }
+      const xl = x - 88;
+      h.push(`<rect x="${x0 - 56}" y="${ys - 52}" width="${xl - x0 + 82}" height="${104}" fill="none" stroke="#111" stroke-width="1.3" stroke-dasharray="14 5 2 5"/>`);
+      tx(x0 - 56, ys - 64, `${g.n}${g.z > 1 ? ` (${g.z}-fach)` : ''}`, 'lbl-s halo', 'start');   // Hof: die L-Leitungen laufen durch die Schrift
+      x += 16;
     });
   }
   if (an && weg) h.push(`<path d="${d(weg)}" fill="none" stroke="#FF0000" stroke-width="3.5" stroke-dasharray="16 12" stroke-dashoffset="${(-zeit * 45).toFixed(1)}"/>`);
