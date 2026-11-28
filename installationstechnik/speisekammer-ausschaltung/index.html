@@ -683,9 +683,13 @@ function schliesser(e, k, u, v0, v1, s) {
   for (const an of [false, true]) {
     const nw = an ? 'an' : 'aus', ende = an ? [u + s * 0.006, v1 + 0.004] : [u + s * 0.035, v1 + 0.008];
     L(e, k, [[u, v0], ende], { w: 2.2, col: SCHWARZ, nurWenn: nw });
-    const m = [(u + ende[0]) / 2, (v0 + ende[1]) / 2], x1 = u + s * 0.07, x2 = u + s * 0.09, xb = u + s * 0.115;
-    L(e, k, [m, [x1, m[1]]], { w: 1.4, dash: [5, 4], nurWenn: nw });
-    L(e, k, [[x1, m[1]], [(x1 + x2) / 2, m[1] - 0.014], [x2, m[1]], [xb, m[1]]], { w: 1.4, nurWenn: nw });
+    /* Wirklinie wie TikZ \Hand* (Skill schaltzeichen/installationsplaene, Kh 16.10. und 28.11.2026): je Seite zwei Striche,
+       Strich : Lücke = 10 : 7, das V in der Mitte; die Striche schließen direkt an das V an. */
+    const m = [(u + ende[0]) / 2, (v0 + ende[1]) / 2], xb = u + s * 0.115, y = m[1];
+    const Lw = xb - m[0], mx = m[0] + Lw / 2, vv = s * 0.01, q = (Lw / 2 - vv) / 27;
+    for (const [a, b] of [[0, 10], [17, 27]]) L(e, k, [[m[0] + a * q, y], [m[0] + b * q, y]], { w: 1.4, nurWenn: nw });
+    L(e, k, [[mx - vv, y], [mx, y - 0.014], [mx + vv, y]], { w: 1.4, nurWenn: nw });
+    for (const [a, b] of [[27, 17], [10, 0]]) L(e, k, [[xb - a * q, y], [xb - b * q, y]], { w: 1.4, nurWenn: nw });
     L(e, k, [[xb, m[1] - 0.025], [xb, m[1] + 0.025]], { w: 1.4, nurWenn: nw });
   }
 }
@@ -1606,8 +1610,11 @@ function iadZeichnen() {
     /* Betätigung im aufgelösten Plan immer von links oder oben, nie von unten oder rechts (Festlegung der Lehrkraft 28.11.2026) */
     const s = -1, ende = an ? [x + s * 4, yo - 3] : [x + s * 24, yo - 6], m = [(x + ende[0]) / 2, (yu + ende[1]) / 2];
     ln([[x, yu], ende], '#111', 2.6);
-    const x1 = x + s * 48, x2 = x + s * 62, xb = x + s * 79;
-    ln([m, [x1, m[1]]], '#111', 1.6, 'stroke-dasharray="6 5"'); ln([[x1, m[1]], [(x1 + x2) / 2, m[1] + 10], [x2, m[1]], [xb, m[1]]], '#111', 1.6);
+    // Wirklinie wie \Hand*: je Seite zwei Striche (10 : 7), V in der Mitte, Striche schließen an das V an (Kh 16.10./28.11.2026)
+    const xb = x + s * 79, Lw = xb - m[0], mx = m[0] + Lw / 2, vv = s * 7, eh = (Lw / 2 - vv) / 27;
+    for (const [a, b] of [[0, 10], [17, 27]]) ln([[m[0] + a * eh, m[1]], [m[0] + b * eh, m[1]]], '#111', 1.6);
+    ln([[mx - vv, m[1]], [mx, m[1] + 10], [mx + vv, m[1]]], '#111', 1.6);
+    for (const [a, b] of [[27, 17], [10, 0]]) ln([[xb - a * eh, m[1]], [xb - b * eh, m[1]]], '#111', 1.6);
     ln([[xb, m[1] - 17], [xb, m[1] + 17]], '#111', 1.6);
     tx(x + 16, (yo + yu) / 2 + 10, 'Q1', 'lbl', 'start');
     tx(x + 66, (yo + yu) / 2 + 8, an ? 'Q1 anklicken: aus' : 'Q1 anklicken: ein', 'lbl-xs', 'start');
