@@ -257,6 +257,9 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       </div>
     </div>
     <div class="row">
+      <div class="kasten" role="group" aria-labelledby="lg-verl" style="flex:0 1 auto"><span class="lg" id="lg-verl">Verlegung</span>
+        <div class="seg" id="seg-verl"><button type="button" data-v="0">unter Putz</button><button type="button" data-v="1">auf Putz</button></div>
+      </div>
       <div class="kasten" role="group" aria-labelledby="lg-ebenen"><span class="lg" id="lg-ebenen">Ebenen</span>
         <label class="chk" for="chk-masse"><input id="chk-masse" type="checkbox">Maße</label>
         <label class="chk" for="chk-zonen"><input id="chk-zonen" type="checkbox">Zonen</label>
@@ -267,8 +270,8 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
     <details class="keys">
       <summary>Tastatur, Maus und Verlinken</summary>
       <div class="hint">
-        <kbd>→</kbd> / <kbd>←</kbd> nächste / vorige Station · <kbd>Pos1</kbd> Station 1 · <kbd>A</kbd> auffalten / zusammenfalten · <kbd>M</kbd> klassisch / modern · <kbd>Leertaste</kbd> Schalter Q1 (Stationen 6–9 und 11) · <kbd>+</kbd> / <kbd>−</kbd> zoomen · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
-        Raum mit der Maus oder dem Finger drehen, mit zwei Fingern oder dem Mausrad zoomen. Eine Station lässt sich verlinken, z.&nbsp;B. <code>#s7</code>; <code>?falt=1</code> öffnet aufgefaltet, <code>?modern=1</code> mit moderner Installation.
+        <kbd>→</kbd> / <kbd>←</kbd> nächste / vorige Station · <kbd>Pos1</kbd> Station 1 · <kbd>A</kbd> auffalten / zusammenfalten · <kbd>M</kbd> klassisch / modern · <kbd>P</kbd> unter / auf Putz · <kbd>Leertaste</kbd> Schalter Q1 (Stationen 6–9 und 11) · <kbd>+</kbd> / <kbd>−</kbd> zoomen · <kbd>F</kbd> Vollbild · <kbd>Esc</kbd> Vollbild beenden.
+        Raum mit der Maus oder dem Finger drehen, mit zwei Fingern oder dem Mausrad zoomen. Eine Station lässt sich verlinken, z.&nbsp;B. <code>#s7</code>; <code>?falt=1</code> öffnet aufgefaltet, <code>?modern=1</code> mit moderner Installation, <code>?aufputz=1</code> auf Putz.
       </div>
     </details>
   </div>
@@ -284,6 +287,7 @@ html.vollbild .vb-ende{display:block;position:fixed;top:10px;left:10px;z-index:2
       <li>Aderzahl: zwischen X3, Q1 und X4 werden 4 Leiter gebraucht (L1, N, PE, geschalteter Leiter). Eine NYM-J 4×1,5 hat nach DIN VDE 0293-308 die Aderfarben grün-gelb, braun, schwarz, grau – ohne blauen Neutralleiter. In der realen Installation ist deshalb NYM-J 5×1,5 gezeichnet; die graue Ader bleibt frei.</li>
       <li>Ist Q1 geschlossen, läuft im Stromlaufplan eine rot gestrichelte Linie von L1 über Q1 und den Lampendraht nach N. Sie zeigt den Weg durch den geschlossenen Stromkreis; die Stromrichtung selbst kehrt sich bei Wechselstrom 100-mal je Sekunde um.</li>
       <li>Moderne Installation (Knopf „Modern“): Licht- und Steckdosenstromkreis getrennt, beide Zuleitungen kommen aus dem Fußboden. Abzweigdosen entfallen: Die tiefe Gerätedose von Q1 dient als Geräte-Verbindungsdose (Baunetz Wissen, „Gerätedosen“), N und PE werden dort mit Klemmen durchverbunden. Die Leitung läuft von Q1 senkrecht in die Decke und im Leerrohr gerade zur Leuchte; deshalb ist die Decke hier an der Türwand angeklappt. Steckdosen nach RAL-RG 678, Ausstattungswert 3 (***): Abstellraum mindestens 2 Steckdosen. Auf Wunsch der Lehrkraft sind es mehr: X1 und X2 zweifach an der Fensterwand, X3 vierfach an der rechten Wand, X4 zweifach an der vorderen Wand, von X1 bis X4 durchgeschleift (10 Steckdosen). Nach RAL-RG 678 dürfen kleine Räume auch an Stromkreise der übrigen Wohnbereiche angeschlossen werden. Querschnitte nach üblicher Praxis: Licht NYM-J 3×1,5, Steckdosen NYM-J 3×2,5 an B16 mit RCD 30&#8239;mA. Mehrfachsteckdose im Plan: schräger Strich im Halbkreis mit der Anzahl (Festlegung der Lehrkraft).</li>
+      <li>Auf Putz (Knopf „Auf Putz“, Wunsch der Lehrkraft): Das Zeichen der Verlegeart steht unter der Leitung: Der Querstrich (Wandoberfläche) liegt direkt unter ihr, die Schrägstriche gehen nach unten weg. NYM mit Schellen auf der fertigen Wand. Befestigungsabstände für Leitungen nach DIN VDE 0100-520 (Tabelle, nach Sekundärquellen zitiert): Außendurchmesser <i>D</i> ≤ 9&#8239;mm waagerecht ≤ 250&#8239;mm, senkrecht ≤ 400&#8239;mm; 9&#8239;mm &lt; <i>D</i> ≤ 15&#8239;mm waagerecht ≤ 300&#8239;mm, senkrecht ≤ 400&#8239;mm. Kleinster Biegeradius bei fester Verlegung nach DIN VDE 0298-3: <i>r</i> = 4 · <i>D</i>. Außendurchmesser nach Herstellerangaben (ca.): NYM-J 3×1,5 ≈ 8,5&#8239;mm (<i>r</i> ≥ 34&#8239;mm), NYM-J 5×1,5 ≈ 9,5&#8239;mm, NYM-J 3×2,5 ≈ 9,4&#8239;mm (<i>r</i> ≥ 38&#8239;mm). Angenommen: erste Schelle 5&#8239;cm vor Dose und Bogen; Ecken zwischen zwei Flächen ohne gezeichneten Bogen. Die Installationszonen nach DIN 18015-3 gelten nur für unsichtbar verlegte Leitungen; die Leitungen bleiben hier trotzdem auf denselben Linien. Leitungen 1,6-fach breiter gezeichnet.</li>
       <li>Darstellung: eigene Zentralprojektion ohne Bibliothek; vordere Wände werden ausgeblendet, damit man in den Raum sieht. Die Decke mit Leitung und Leuchte bleibt durchsichtig sichtbar.</li>
     </ul>
   </details>
@@ -345,11 +349,11 @@ const STATIONEN = [
     text: 'Wir schauen von oben in den Raum, die Wände sind waagerecht geschnitten: Das ist der Grundriss. Tür mit Schwenkbogen, Fenster als Lücke mit Doppellinie.' },
   { textM: 'Moderne Installation: Q1 allein neben der Tür, die Leuchte in einer Linie dahinter. Mehrfachsteckdosen an drei Wänden: X1, X2, X3 (4-fach), X4.', kurz: 'Installationsplan', kam: 'oben', falt: 0, mat: 'papier', ebenen: { ring: 1, plan: 1 },
     text: 'Der Installationsplan zeigt Lage und Anzahl der Betriebsmittel im Grundriss. Die Schaltzeichen zeigen zur Wand, an der das Gerät sitzt. Wie es verdrahtet ist, sieht man nicht.' },
-  { textM: 'Modern: zwei getrennte Stromkreise, beide kommen von unten. Keine Abzweigdosen – die Leitungen laufen von Dose zu Dose.', kurz: 'Installationsschaltplan', kam: 'oben', falt: 0, mat: 'papier', ebenen: { ring: 1, plan4: 1, planLtg: 1 },
+  { textA: 'Auf Putz: Leitungen, Abzweigdosen X3 und X4, Aderzahl. Die Verlegeart steht jetzt UNTER der Leitung: Der Querstrich ist die Wandoberfläche, die Leitung liegt darauf – „auf Putz“.', textMA: 'Modern auf Putz: zwei getrennte Stromkreise, beide kommen von unten. Querstrich unter der Leitung = Wandoberfläche: „auf Putz“.', textM: 'Modern: zwei getrennte Stromkreise, beide kommen von unten. Keine Abzweigdosen – die Leitungen laufen von Dose zu Dose.', kurz: 'Installationsschaltplan', kam: 'oben', falt: 0, mat: 'papier', ebenen: { ring: 1, plan4: 1, planLtg: 1 },
     text: 'Dazu kommen die Leitungen – von oben gesehen –, die Abzweigdosen X3 und X4, die Aderzahl und die Verlegeart (unter Putz).' },
-  { kurz: 'Installationszonen', kam: 'raum', falt: 0, mat: 'papier', ebenen: { zonen: 1 },
+  { textA: 'Auf Putz sieht man jede Leitung – die Zonen nach DIN 18015-3 gelten nur für unsichtbar verlegte Leitungen. Man verlegt trotzdem gerade, parallel zu den Kanten, auf denselben Linien.', kurz: 'Installationszonen', kam: 'raum', falt: 0, mat: 'papier', ebenen: { zonen: 1 },
     text: 'Leitungen in der Wand dürfen nur in diesen Zonen liegen (DIN 18015-3). Dann weiß jeder, wo er nicht bohren darf. Die Strich-Punkt-Linie ist das Vorzugsmaß.' },
-  { textM: 'Modern: Licht von unten in die Schalterdose Q1, senkrecht hoch und über die Decke zur Leuchte. Steckdosen von unten in ZW-u, von X1 bis X4 durchgeschleift. Klicke auf Q1!', kurz: 'Übersichtsschaltplan 3D', kam: 'raum', falt: 0, mat: 'papier', ebenen: { ues: 1 },
+  { textA: 'Wie unter Putz, nur das Zeichen der Verlegeart steht unter der Leitung: auf Putz. Klicke auf den Schalter Q1!', textMA: 'Modern auf Putz: Licht von unten in Q1, hoch und über die Decke zur Leuchte; Steckdosen durchgeschleift. Zeichen unter der Leitung: auf Putz. Klicke auf Q1!', textM: 'Modern: Licht von unten in die Schalterdose Q1, senkrecht hoch und über die Decke zur Leuchte. Steckdosen von unten in ZW-u, von X1 bis X4 durchgeschleift. Klicke auf Q1!', kurz: 'Übersichtsschaltplan 3D', kam: 'raum', falt: 0, mat: 'papier', ebenen: { ues: 1 },
     text: 'Die Leitungen aus dem Installationsschaltplan liegen jetzt an der Wand in den Zonen. Einpolig: ein Strich je Leitung, die Aderzahl steht am Schrägstrich. Klicke auf den Schalter Q1!' },
   { textM: 'Aufgefaltet: Die Decke klappt hier über die Türwand – von Q1 läuft die Leitung gerade zur Leuchte. An X1 bis X3 geht die zweite Leitung schräg ab.', kurz: 'Übersichtsschaltplan flach', kam: 'raum', falt: 1, mat: 'papier', ebenen: { ues: 1 },
     text: 'Die Wände werden aufgeklappt wie beim Faltplan: links die Türwand, oben die Decke, rechts die Seitenwand. So entsteht der Übersichtsschaltplan – die Lage bleibt erhalten.' },
@@ -357,9 +361,9 @@ const STATIONEN = [
     text: 'Jetzt wird jeder Leiter gezeichnet: N blau, PE grün-gelb, L1 braun, der geschaltete Leiter zur Leuchte schwarz. Klicke auf Q1: Der Stromkreis schließt sich.' },
   { textM: 'Aufgefaltet, die Decke hängt an der Türwand. Mehrfachsteckdosen: jede Steckdose gezeichnet; an X1 bis X3 gehen die Adern schräg weiter.', kurz: 'Stromlaufplan izD flach', kam: 'raum', falt: 1, zoom: 1.38, pan: [385, 134], zoomM: 1, panM: [0, 0], mat: 'papier', ebenen: { slp: 1 },
     text: 'Aufgefaltet: der Stromlaufplan in zusammenhängender Darstellung, angeordnet wie im Übersichtsschaltplan.' },
-  { textM: 'Modern vor dem Verputzen: zwei Leitungen kommen aus dem Fußboden. Tiefe Gerätedose statt Abzweigdose, Licht NYM-J 3×1,5, Steckdosen NYM-J 3×2,5.', kurz: 'Rohinstallation', kam: 'raum', falt: 0, mat: 'roh', ebenen: { roh: 1 },
+  { textA: 'Auf Putz (Keller, Speisekammer): NYM mit Schellen auf der fertigen Wand. Abstand waagerecht ≤ 25 cm, senkrecht ≤ 40 cm, an Dosen und Bögen eine Schelle. Bögen r ≥ 4 · D. Hier {n} Schellen.', textMA: 'Modern auf Putz: Licht NYM-J 3×1,5 (Schellen waagerecht ≤ 25 cm), Steckdosen NYM-J 3×2,5 (D ≈ 9,4 mm: ≤ 30 cm), senkrecht ≤ 40 cm. Bögen r ≥ 4 · D. Hier {n} Schellen.', textM: 'Modern vor dem Verputzen: zwei Leitungen kommen aus dem Fußboden. Tiefe Gerätedose statt Abzweigdose, Licht NYM-J 3×1,5, Steckdosen NYM-J 3×2,5.', kurz: 'Rohinstallation', kam: 'raum', falt: 0, mat: 'roh', ebenen: { roh: 1 },
     text: 'Vor dem Verputzen: Schlitze in den Zonen, Unterputzdosen, NYM-Leitungen. Zur Leuchte führt ein Leerrohr in der Decke. Aufgefaltet zeigt sich derselbe Verlauf wie im Übersichtsschaltplan.' },
-  { textM: 'Modern: Q1 allein neben der Tür, die Leuchte in einer Linie darüber, Mehrfachsteckdosen an drei Wänden auf 30 cm (X4 vorn: Raum drehen). Klicke auf den Schalter!', kurz: 'Fertige Installation', kam: 'tuer', falt: 0, mat: 'fertig', ebenen: { fertig: 1 },
+  { textA: 'Auf Putz montiert: Abzweigdosen und Geräte sitzen in Aufputzgehäusen, die Leitungen bleiben sichtbar. Klicke auf den Schalter!', textMA: 'Modern auf Putz: Q1 und die Mehrfachsteckdosen in Aufputzgehäusen, Leitungen sichtbar mit Schellen (X4 vorn: Raum drehen). Klicke auf den Schalter!', textM: 'Modern: Q1 allein neben der Tür, die Leuchte in einer Linie darüber, Mehrfachsteckdosen an drei Wänden auf 30 cm (X4 vorn: Raum drehen). Klicke auf den Schalter!', kurz: 'Fertige Installation', kam: 'tuer', falt: 0, mat: 'fertig', ebenen: { fertig: 1 },
     text: 'Verputzt und montiert: Ausschalter Q1 mit Steckdose X1 unter einem Rahmen, Steckdose X2, Leuchte E1. Klicke auf den Schalter!' },
 ];
 
@@ -395,10 +399,12 @@ const FACE_KEYS = ['W', 'N', 'E', 'S', 'C', 'F'];
 
 /* ================= 3 Zustand ================= */
 const SCHALTBAR = [6, 7, 8, 9, 11];   // Stationen, in denen Q1 schaltet (Festlegung der Lehrkraft 27.11.2026: Schaltung anklickbar)
-const S = { station: 1, falt: false, licht: false, zonen: false, legende: true, modern: false, masse: false, roentgen: false, qr: false, dpsi: 0, dphi: 0, zoom: 1, pan: [0, 0] };
+const S = { station: 1, falt: false, licht: false, aufputz: false, zonen: false, legende: true, modern: false, masse: false, roentgen: false, qr: false, dpsi: 0, dphi: 0, zoom: 1, pan: [0, 0] };
 // Ansicht V läuft weich dem Ziel nach (Kamera, Faltung, Deckkraft der Ebenen, Material)
 const EBENEN = ['masse', 'ring', 'plan', 'plan4', 'planLtg', 'zonen', 'ues', 'slp', 'roh', 'fertig', 'roentgen',
-  'planM', 'planLtgM', 'uesM', 'slpM', 'rohM', 'fertigM', 'roentgenM'];   // …M: moderne Installation
+  'planM', 'planLtgM', 'uesM', 'slpM', 'rohM', 'fertigM', 'roentgenM',   // …M: moderne Installation
+  'vl_plan_U', 'vl_plan_A', 'vl_wand_U', 'vl_wand_A', 'vl_plan_UM', 'vl_plan_AM', 'vl_wand_UM', 'vl_wand_AM',   // Zeichen der Verlegeart
+  'apKabel', 'apKabelM', 'rohA', 'fertigA', 'rohMA', 'fertigMA'];   // auf Putz (Wunsch der Lehrkraft 28.11.2026)
 const MATS = ['roh', 'papier', 'fertig'];
 const V = { psi: 0, phi: 0, dist: 7, scale: 300, tgt: [0, 0, 0], falt: 0, eb: {}, mat: {}, hell: 1, zoom: 1, px: 0, py: 0 };
 EBENEN.forEach((k) => { V.eb[k] = 0; }); MATS.forEach((k) => { V.mat[k] = 0; });
@@ -495,12 +501,16 @@ function symbol(e, k, art, abb, o = {}) {
 function strichzahl(e, k, c, dir, n, seite = 1) {
   const abb = abbildung(c, [-dir[1], dir[0]]);
   L(e, k, [abb(0.035, -0.06), abb(-0.035, 0.06)].map(([x, y]) => [x, y]), { w: 2 });
-  const p = abb(-0.075 * seite, 0.085);
-  TX(e, k, p[0], p[1], String(n), { cls: 'lbl-s', dy: 9 });
+  // Aderzahl direkt am Strichende, in Verlängerung des Strichs (Hinweis der Lehrkraft 28.11.2026: „Ziffern direkt an den schrägen Strich“)
+  // immer am Ende auf der Seite, auf der die Ziffer bisher stand; seite ist damit ohne Wirkung (andere Seite: dir umkehren)
+  const ende = abb(-0.035, 0.06), anfang = abb(0.035, -0.06); void seite;
+  EB[e].push({ t: 'T', k, u: ende[0], v: ende[1], html: String(n), cls: 'lbl-s', anchor: 'middle', dx: 0, dy: 0, von: anfang });
 }
 /* Verlegeart „unter Putz“: Balken mit drei Schrägstrichen über der Leitung (Musterlösung) */
-function unterPutz(e, k, c, dir) {
-  const abb = abbildung(c, [-dir[1], dir[0]]);
+function unterPutz(e, k, c, dir, sp = 1, auf = false) {   // sp = −1 im Grundriss: dort ist v gespiegelt, sonst stünde das Zeichen unter der Leitung (Hinweis der Lehrkraft 27.11.2026)
+  // auf = true: „auf Putz“ – Querstrich (Wandoberfläche) direkt unter der Leitung, Schrägstriche gehen nach unten weg
+  // (Hinweise der Lehrkraft 28.11.2026): dasselbe Zeichen um 0,165 nach unten verschoben, Querstrich jetzt an der Leitung
+  const a0 = abbildung(c, [-dir[1], dir[0]]), abb = (x, y) => (auf ? a0(x, (y - 0.165) * sp) : a0(x, y * sp));
   L(e, k, [abb(-0.005, 0.11), abb(0.075, 0.11)], { w: 2 });   // Querstrich genau über den Schrägstrichen (Festlegung der Lehrkraft 27.11.2026)
   for (const x of [-0.04, 0.0, 0.04]) L(e, k, [abb(x + 0.035, 0.11), abb(x, 0.055)], { w: 2 });
 }
@@ -580,9 +590,9 @@ const bodenPt = (x, y) => [x, T - y];
   L(e, 'F', [bp([PL.X3[0] + RD, PL.X3[1]]), bp([PL.Q1[0] - 0.042, PL.Q1[1]])]);
   strichzahl(e, 'F', bp([0.30, 1.05]), [1, 0], 4, -1);
   L(e, 'F', [bp([PL.Q1[0] + 0.042, PL.Q1[1]]), bp([PL.X1[0] - 0.06, PL.X1[1]])]);
-  strichzahl(e, 'F', bp([0.58, 1.05]), [1, 0], 3, -1);
+  strichzahl(e, 'F', bp([0.58, 1.05]), [-1, 0], 3, -1);   // Ziffer oben, unten stünde sie am Kennzeichen Q1
   L(e, 'F', [bp([PL.X3[0], PL.X3[1] + RD]), bp([PL.X3[0], PL.X4[1]]), bp([PL.X4[0] - RD, PL.X4[1]])]);
-  strichzahl(e, 'F', bp([0.62, PL.X4[1]]), [1, 0], 4, -1); unterPutz(e, 'F', bp([0.85, PL.X4[1]]), [1, 0]);
+  strichzahl(e, 'F', bp([0.62, PL.X4[1]]), [1, 0], 4, -1);
   L(e, 'F', [bp([PL.X4[0], PL.X4[1] - RD]), bp([PL.E1[0], PL.E1[1] + 0.08])]);
   strichzahl(e, 'F', bp([PL.X4[0], 1.10]), [0, -1], 3, 1);
   L(e, 'F', [bp([PL.X4[0] + RD, PL.X4[1]]), bp([B - 0.06, PL.X4[1]]), bp([B - 0.06, PL.X2[1]])]);
@@ -639,7 +649,7 @@ const ZONEN = (() => {
   L(e, 'W', [[G.Q1.u, vQ - 0.042], [G.X1.u, vX]]); strichzahl(e, 'W', [G.Q1.u, (vQ + vX) / 2 - 0.01], [0, -1], 3, -1);
   // X3 → X4 (über Eck), unter Putz
   L(e, 'W', [[G.X3.u + r, G.X3.v], [T, G.X3.v]]); L(e, 'N', [[0, G.X4.v], [G.X4.u - r, G.X4.v]]);
-  strichzahl(e, 'N', [0.40, G.X4.v], [1, 0], 4); unterPutz(e, 'N', [0.70, G.X4.v], [1, 0]);
+  strichzahl(e, 'N', [0.40, G.X4.v], [1, 0], 4);
   // X4 → E1 über die Decke
   L(e, 'N', [[G.X4.u, G.X4.v + r], [G.X4.u, H]]); L(e, 'C', [[G.E1.u, 0], [G.E1.u, G.E1.v - 0.08]]);
   strichzahl(e, 'C', [G.E1.u, 0.40], [0, 1], 3);
@@ -854,7 +864,7 @@ const dosenU = (d) => Array.from({ length: d.z }, (_, i) => d.u + (i - (d.z - 1)
   L(e, 'W', [[1.05, 0], [1.05, vQ - 0.042]]); pfeilSpitze(e, 'W', [1.05, 0.14], [0, 1]);
   strichzahl(e, 'W', [1.05, 0.66], [0, -1], 3, 1);
   L(e, 'W', [[1.05, vQ + 0.042], [1.05, H]]); L(e, 'C', [[0, EM.v], [EM.u - 0.08, EM.v]]);
-  strichzahl(e, 'W', [1.05, 1.70], [0, -1], 3, 1); unterPutz(e, 'W', [1.05, 1.95], [0, 1]);
+  strichzahl(e, 'W', [1.05, 1.70], [0, -1], 3, 1);
   strichzahl(e, 'C', [0.60, EM.v], [1, 0], 3);
   TX(e, 'W', 1.05, 0, 'Licht L1/N/PE', { cls: 'lbl-xs', anchor: 'end', dx: -10, dy: 26 });
   // Steckdosen: von unten in ZS-e, in ZW-u zu X1, durchgeschleift zu X2
@@ -956,10 +966,10 @@ const PLM = { Q1: [0.17, 1.05], E1: [EM.u, T - EM.v] };
   // Pfeil „Steckdosen von unten“ endet auf der Anschlussleitung (Wunsch der Lehrkraft 27.11.2026)
   vonUnten([WL + 0.004, SD_ZU - 0.004], [0.40, 1.24], 'Steckdosen von unten');
   L(f, 'F', [bp([PLM.Q1[0] + 0.042, PLM.Q1[1]]), bp([PLM.E1[0] - 0.08, PLM.E1[1]])]);
-  strichzahl(f, 'F', bp([0.62, PLM.Q1[1]]), [1, 0], 3, 1); unterPutz(f, 'F', bp([0.88, PLM.Q1[1]]), [1, 0]);
+  strichzahl(f, 'F', bp([0.62, PLM.Q1[1]]), [1, 0], 3, 1);
   const pts = [[WL, SD_ZU], [WL, T - WL], sdPlan(SD[0]).p, sdPlan(SD[1]).p, [B - WL, T - WL], sdPlan(SD[2]).p, [B - WL, WL], sdPlan(SD[3]).p];
   L(f, 'F', pts.map(bp));
-  strichzahl(f, 'F', bp([1.30, T - WL]), [1, 0], 3, 1); strichzahl(f, 'F', bp([B - WL, 1.30]), [0, -1], 3, 1); strichzahl(f, 'F', bp([1.90, WL]), [-1, 0], 3, 1);
+  strichzahl(f, 'F', bp([1.30, T - WL]), [1, 0], 3, 1); strichzahl(f, 'F', bp([B - WL, 1.30]), [0, 1], 3, 1);   // Ziffer zum Raum hin, nicht in die Wand strichzahl(f, 'F', bp([1.90, WL]), [-1, 0], 3, 1);
 })();
 const KABEL_M = [
   { typ: 'L', zug: [['W', [[1.05, 0], [1.05, 1.05]]]] },
@@ -1023,6 +1033,147 @@ const KABEL_M = [
 })();
 for (const kb of KABEL_M) for (const [k, pts] of kb.zug) EB.roentgenM.push({ t: 'L', k, pts, w: 2.4, col: '#7a7a7a', dash: [8, 6] });
 
+/* ===== Verlegeart und Installation auf Putz (Wunsch der Lehrkraft 28.11.2026) =====
+   Zeichen: unter Putz = Querstrich mit drei Schrägstrichen über der Leitung; auf Putz = Querstrich als Wandoberfläche direkt
+   unter der Leitung, die Schrägstriche gehen nach unten weg (Hinweis der Lehrkraft 28.11.2026; DIN EN 60617-11, im Tabellenbuch nachzusehen).
+   Befestigung nach DIN VDE 0100-520 (Tabelle der Befestigungsabstände für Leitungen, nach Sekundärquellen):
+   Außendurchmesser D ≤ 9 mm: waagerecht ≤ 250 mm, senkrecht ≤ 400 mm; 9 mm < D ≤ 15 mm: waagerecht ≤ 300 mm, senkrecht ≤ 400 mm.
+   Kleinster Biegeradius bei fester Verlegung nach DIN VDE 0298-3: r = 4 · D.
+   Außendurchmesser (Herstellerangaben, ca.): NYM-J 3×1,5 ≈ 8,5 mm, NYM-J 5×1,5 ≈ 9,5 mm, NYM-J 3×2,5 ≈ 9,4 mm.
+   Annahme (Praxis, keine Normangabe gefunden): erste Schelle 5 cm vor bzw. hinter Dose und Bogen. */
+CFG.ap = {
+  D: { 3: 0.0085, 5: 0.0095, L: 0.0085, S: 0.0094 },          // Außendurchmesser in m je Leitungstyp
+  abstand: (Dm, senk) => (senk ? 0.40 : Dm <= 0.009 ? 0.25 : 0.30),
+  rand: 0.05, rFaktor: 4, dick: 1.6,                           // dick: Leitung im Bild 1,6-fach breiter gezeichnet (wie bei unter Putz)
+};
+for (const [e, k, c, dir, sp] of [['vl_plan_', 'F', bodenPt(0.85, PL.X4[1]), [1, 0], -1], ['vl_wand_', 'N', [0.70, G.X4.v], [1, 0], 1]]) {
+  unterPutz(e + 'U', k, c, dir, sp); unterPutz(e + 'A', k, c, dir, sp, true);
+}
+for (const [e, k, c, dir, sp] of [['vl_plan_', 'F', bodenPt(0.88, PLM.Q1[1]), [1, 0], -1], ['vl_wand_', 'W', [1.05, 1.95], [0, 1], 1]]) {
+  unterPutz(e + 'UM', k, c, dir, sp); unterPutz(e + 'AM', k, c, dir, sp, true);
+}
+/* Gehäuse auf Putz (Halbmaße in m): Abzweigdose 85 × 85 mm, Schalter und Steckdose 80 mm breit */
+const AP_HALB = 0.0425;
+const apDosen = (modern) => modern
+  ? [{ k: 'W', u: GM.Q1.u, v: GM.Q1.v, hu: AP_HALB, hv: AP_HALB }, { k: 'C', u: EM.u, v: EM.v, hu: 0.09, hv: 0.09 },
+    ...SD.map((d) => { const us = dosenU(d); return { k: d.k, u: d.u, v: 0.30, hu: (us[us.length - 1] - us[0]) / 2 + AP_HALB, hv: AP_HALB }; })]
+  : [{ k: 'W', u: G.X3.u, v: G.X3.v, hu: AP_HALB, hv: AP_HALB }, { k: 'N', u: G.X4.u, v: G.X4.v, hu: AP_HALB, hv: AP_HALB },
+    { k: 'W', u: G.Q1.u, v: (G.Q1.v + G.X1.v) / 2, hu: AP_HALB, hv: (G.Q1.v - G.X1.v) / 2 + AP_HALB },
+    { k: 'E', u: G.X2.u, v: G.X2.v, hu: AP_HALB, hv: AP_HALB }, { k: 'C', u: G.E1.u, v: G.E1.v, hu: 0.09, hv: 0.09 }];
+/* Leitung auf Putz: Ecken in der Wand als Bogen mit r = 4 · D, Schellen nach Tabelle. Gibt die Zahl der Schellen zurück. */
+function apLeitung(e, k, pts, Dm, dosen) {
+  const r = CFG.ap.rFaktor * Dm, hw = Dm / 2 * CFG.ap.dick, F = FACES[k];
+  const am = (q) => q[0] < 1e-6 || q[1] < 1e-6 || q[0] > F.L[0] - 1e-6 || q[1] > F.L[1] - 1e-6;
+  const linie = [pts[0]], gerade = [];   // gerade: [a, b, randA, randB]
+  const randAn = (q, d) => {   // Abstand der ersten Schelle vom Punkt q in Richtung d
+    const dose = dosen.find((x) => x.k === k && Math.abs(x.u - q[0]) < 1e-3 && Math.abs(x.v - q[1]) < 1e-3);
+    if (!dose) return CFG.ap.rand;
+    return (Math.abs(d[0]) > Math.abs(d[1]) ? dose.hu : dose.hv) + CFG.ap.rand;
+  };
+  let start = pts[0], randStart = null;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], d = norm([b[0] - a[0], b[1] - a[1], 0]);
+    if (randStart === null) randStart = randAn(a, d);
+    if (i < pts.length - 1 && !am(b)) {   // Bogen um die Ecke b (90°)
+      const c = pts[i + 1], d2 = norm([c[0] - b[0], c[1] - b[1], 0]);
+      const p1 = [b[0] - d[0] * r, b[1] - d[1] * r], p2 = [b[0] + d2[0] * r, b[1] + d2[1] * r], m = [p1[0] + d2[0] * r, p1[1] + d2[1] * r];
+      gerade.push([start, p1, randStart, CFG.ap.rand]);
+      for (let s = 0; s <= 10; s++) { const w = s / 10 * Math.PI / 2; linie.push([m[0] + (p1[0] - m[0]) * Math.cos(w) + (p2[0] - m[0]) * Math.sin(w), m[1] + (p1[1] - m[1]) * Math.cos(w) + (p2[1] - m[1]) * Math.sin(w)]); }
+      start = p2; randStart = CFG.ap.rand;
+    } else if (i === pts.length - 1) { linie.push(b); gerade.push([start, b, randStart, randAn(b, [-d[0], -d[1]])]); }
+    else { linie.push(b); gerade.push([start, b, randStart, CFG.ap.rand]); start = b; randStart = CFG.ap.rand; }
+  }
+  EB['apKabel' + (e.endsWith('M') ? 'M' : '')].push({ t: 'S', k, pts: linie, hw, fill: '#ecebe8', col: '#9a9a96' });
+  let n = 0;
+  for (const [a, b, ra, rb] of gerade) {
+    const l = Math.hypot(b[0] - a[0], b[1] - a[1]); if (l < 1e-6) continue;
+    const d = [(b[0] - a[0]) / l, (b[1] - a[1]) / l], senk = k !== 'C' && Math.abs(d[1]) > Math.abs(d[0]);
+    const amax = CFG.ap.abstand(Dm, senk);
+    let pos;
+    if (l - ra - rb < 0.02) pos = l > 0.03 ? [l / 2] : [];
+    else { const z = Math.ceil((l - ra - rb) / amax - 1e-9); pos = Array.from({ length: z + 1 }, (_, j) => ra + (l - ra - rb) * j / z); }
+    for (const s of pos) {
+      const c = [a[0] + d[0] * s, a[1] + d[1] * s], q = [-d[1] * (hw + 0.004), d[0] * (hw + 0.004)], t2 = [d[0] * 0.006, d[1] * 0.006];
+      EB[e].push({ t: 'L', k, pts: [[c[0] - q[0] - t2[0], c[1] - q[1] - t2[1]], [c[0] + q[0] - t2[0], c[1] + q[1] - t2[1]], [c[0] + q[0] + t2[0], c[1] + q[1] + t2[1]], [c[0] - q[0] + t2[0], c[1] - q[1] + t2[1]]], zu: true, fill: '#fbfbfb', col: '#6b6f73', w: 1 });
+      EB[e].push({ t: 'D', k, c: [c[0] + q[0] * 0.55, c[1] + q[1] * 0.55], r: 1.8, col: '#4a4d50' });
+      n++;
+    }
+  }
+  return n;
+}
+const AP_N = { klassisch: 0, modern: 0 };
+for (const kb of KABEL) for (const [k, pts] of kb.zug) AP_N.klassisch += apLeitung('apKabel', k, pts, CFG.ap.D[kb.typ], apDosen(false));
+for (const kb of KABEL_M) for (const [k, pts] of kb.zug) AP_N.modern += apLeitung('apKabelM', k, pts, CFG.ap.D[kb.typ], apDosen(true));
+/* Gehäuse, Klemmen und Adern (Station 10) und montierte Geräte (Station 11) */
+function apWerkzeug(e) {
+  const rr = (k, u0, v0, u1, v1, fill, col, w = 1.3) => EB[e].push({ t: 'L', k, pts: [[u0, v0], [u1, v0], [u1, v1], [u0, v1]], zu: true, fill, col, w });
+  const gehaeuse = (x, offen) => {
+    rr(x.k, x.u - x.hu, x.v - x.hv, x.u + x.hu, x.v + x.hv, offen ? '#d4d8dc' : '#eceef0', '#7f868d');
+    if (offen) rr(x.k, x.u - x.hu + 0.006, x.v - x.hv + 0.006, x.u + x.hu - 0.006, x.v + x.hv - 0.006, '#5a5f64', '#5a5f64', 0);
+  };
+  const wago = (k, u, v, liste) => liste.forEach(([a, n], i) => {
+    const cu = u + (i % 2 ? 0.0165 : -0.0165), cv = v + (i < 2 ? 0.011 : -0.011), w = 0.027, h = 0.014;
+    rr(k, cu - w / 2, cv - h / 2, cu + w / 2, cv + h / 2, '#e9eef2', '#7d8790', 0.8);
+    for (let j = 0; j < n; j++) {
+      const x = cu - w / 2 + (j + 0.5) * w / n;
+      rr(k, x - 0.003, cv + h / 2 - 0.006, x + 0.003, cv + h / 2, '#f08a24', '#f08a24', 0);
+      EB[e].push({ t: 'L', k, pts: [[x, cv - h / 2], [x, cv - h / 2 - 0.009]], w: 1.6, col: CFG.ader[a] });
+    }
+  });
+  const adern = (k, u, v, farben, richt) => farben.forEach((c, i) => {
+    const a = (richt + (i - (farben.length - 1) / 2) * 22) * D, p0 = [u + 0.008 * Math.cos(a), v + 0.008 * Math.sin(a)], p1 = [u + 0.034 * Math.cos(a), v + 0.034 * Math.sin(a)];
+    EB[e].push({ t: 'L', k, pts: [p0, p1], w: 3, col: CFG.ader[c], dash: c === 'PE' ? [5, 5] : null, gnge: c === 'PE' });
+  });
+  const steckdose = (k, u, v) => {
+    EB[e].push({ t: 'L', k, pts: kreisPts(u, v, 0.024), zu: true, fill: '#f6f6f4', col: '#a5aab0', w: 1.2 });
+    EB[e].push({ t: 'D', k, c: [u - 0.0095, v], r: 1.6, col: '#555' }); EB[e].push({ t: 'D', k, c: [u + 0.0095, v], r: 1.6, col: '#555' });
+  };
+  const lab = (k, u, v, html, dx, dy, anchor = 'middle') => TX(e, k, u, v, html, { cls: 'lbl-xs', dx, dy, anchor, halo: true });
+  return { rr, gehaeuse, wago, adern, steckdose, lab };
+}
+(function rohAuf() {
+  const w = apWerkzeug('rohA'), ds = apDosen(false);
+  ds.filter((x) => x.k !== 'C').forEach((x) => w.gehaeuse(x, true));
+  w.wago('W', G.X3.u, G.X3.v, [['N', 3], ['PE', 3], ['L', 3], ['S', 2]]);
+  w.wago('N', G.X4.u, G.X4.v, [['N', 3], ['PE', 3], ['L', 2], ['S', 2]]);
+  w.adern('W', G.Q1.u, G.Q1.v, ['L', 'S', 'R', 'PE', 'N'], 90); w.adern('W', G.Q1.u, G.Q1.v - 0.012, ['L', 'PE', 'N'], -90);
+  w.adern('W', G.X1.u, G.X1.v - 0.012, ['L', 'PE', 'N'], -90); w.adern('E', G.X2.u, G.X2.v, ['L', 'PE', 'N'], 90);
+  w.adern('C', G.E1.u, G.E1.v, ['L', 'PE', 'N'], -90);
+  w.lab('W', 0.50, 2.10, CFG.kabel3 + ' · Schellen ≤ 25 cm', 0, -20); w.lab('N', 0.62, 2.10, CFG.kabel4 + ' · ≤ 30 cm', 0, -20);
+  w.lab('W', 1.05, 1.58, 'senkrecht ≤ 40 cm', 14, 6, 'start'); w.lab('C', 1.25, 0.40, 'auf der Decke', 14, 6, 'start');
+  w.lab('N', B - 0.15, 1.25, 'Bogen r ≥ 4 · D', -16, 6, 'end');
+  w.lab('W', G.X3.u, G.X3.v, 'X3 Abzweigdose AP', 0, 58); w.lab('N', G.X4.u, G.X4.v, 'X4', 0, 52);
+  w.lab('W', G.Q1.u, G.X1.v, 'Q1/X1 Unterteil AP', 0, 70); w.lab('E', G.X2.u, G.X2.v, 'X2', 0, 52);
+})();
+(function fertigAuf() {
+  const w = apWerkzeug('fertigA'), ds = apDosen(false);
+  ds.filter((x) => x.k !== 'C').forEach((x) => w.gehaeuse(x, false));
+  w.rr('W', G.Q1.u - 0.028, G.Q1.v - 0.028, G.Q1.u + 0.028, G.Q1.v + 0.028, '#ffffff', '#b5bac0');
+  w.steckdose('W', G.X1.u, G.X1.v); w.steckdose('E', G.X2.u, G.X2.v);
+  w.lab('W', G.Q1.u, G.Q1.v, 'Q1 Ausschalter AP', 34, 8, 'start'); w.lab('W', G.X1.u, G.X1.v, 'X1 Steckdose', 34, 14, 'start');
+  w.lab('E', G.X2.u, G.X2.v, 'X2 Steckdose AP', 0, 52); w.lab('C', G.E1.u, G.E1.v, 'E1 Leuchte', 0, 64);
+  w.lab('W', G.X3.u, G.X3.v, 'X3', 0, 52); w.lab('N', G.X4.u, G.X4.v, 'X4', 0, 52);
+})();
+(function rohAufModern() {
+  const w = apWerkzeug('rohMA'), ds = apDosen(true);
+  ds.filter((x) => x.k !== 'C').forEach((x) => w.gehaeuse(x, true));
+  w.wago('W', GM.Q1.u, GM.Q1.v - 0.022, [['N', 2], ['PE', 2]]);
+  w.adern('W', GM.Q1.u, GM.Q1.v + 0.01, ['N', 'L', 'PE'], 90); w.adern('C', EM.u, EM.v, ['L', 'PE', 'N'], -90);
+  for (const d of SD) for (const u of dosenU(d)) w.adern(d.k, u, 0.30, ['L', 'PE', 'N'], 90);
+  w.lab('W', 1.05, 1.70, 'NYM-J 3×1,5 · senkrecht ≤ 40 cm', 14, 6, 'start'); w.lab('C', 0.62, EM.v, 'auf der Decke ≤ 25 cm', 0, -16);
+  w.lab('N', 1.25, 0.30, 'NYM-J 3×2,5 · Schellen ≤ 30 cm', 0, -22);
+  w.lab('W', GM.Q1.u, GM.Q1.v, 'Q1 Unterteil AP', -16, 6, 'end'); w.lab('W', 1.25, 0.0, 'aus dem Fußboden', 0, 36);
+  for (const d of SD) w.lab(d.k, d.u, 0.30, `${d.n}: Unterteil ${d.z}-fach`, 0, 52);
+})();
+(function fertigAufModern() {
+  const w = apWerkzeug('fertigMA'), ds = apDosen(true);
+  ds.filter((x) => x.k !== 'C').forEach((x) => w.gehaeuse(x, false));
+  w.rr('W', GM.Q1.u - 0.028, GM.Q1.v - 0.028, GM.Q1.u + 0.028, GM.Q1.v + 0.028, '#ffffff', '#b5bac0');
+  for (const d of SD) for (const u of dosenU(d)) w.steckdose(d.k, u, 0.30);
+  for (const d of SD) w.lab(d.k, d.u, 0.30, d.z > 1 ? `${d.n} ${d.z}-fach AP` : `${d.n} Steckdose AP`, 0, 52);
+  w.lab('W', GM.Q1.u, GM.Q1.v, 'Q1 Ausschalter AP', 34, 8, 'start'); w.lab('C', EM.u, EM.v, 'E1 Leuchte', 0, 64);
+})();
+
 /* Materialien: Farben je Fläche */
 const MAT = {
   roh:    { wand: '#d5d1c9', decke: '#c8c8c4', boden: '#b9b3a9', kante: '#8b867e' },
@@ -1031,6 +1182,7 @@ const MAT = {
 };
 
 /* ================= 6 Dynamische Elemente (SVG über dem Canvas) ================= */
+const kurzName = (n) => (n === 10 && S.aufputz ? 'Verlegung auf Putz' : STATIONEN[n - 1].kurz);
 const gUI = el('g', { id: 'ui' }), gLbl = el('g', { id: 'labels' }), gTop = el('g', { id: 'oben' });
 const titel = txt(1872, 82, 'Speisekammer', { class: 't-main', 'text-anchor': 'end' }, gTop);   // kurz, damit er neben dem QR-Code die Knöpfe nicht überdeckt
 const untertitel = txt(1872, 128, '', { class: 't-panel', 'text-anchor': 'end' }, gTop);
@@ -1068,8 +1220,11 @@ const knLicht = knopf(20, yB + 124, 182, 52, 'Q1 ein', () => lichtUm());
 const knGerade = knopf(210, yB + 124, 182, 52, 'Ansicht ↺', () => { S.dpsi = 0; S.dphi = 0; ansichtStation(); starte(); });
 const gText = el('g', { id: 'stationstext' }, gUI);
 // Umschalter klassisch / modern (Wunsch der Lehrkraft 27.11.2026)
-const knKlassisch = knopf(412, 18, 190, 48, 'Klassisch', () => variante(false), { cls: 'lbl-xs' });
-const knModern = knopf(608, 18, 190, 48, 'Modern', () => variante(true), { cls: 'lbl-xs' });
+const knKlassisch = knopf(412, 18, 150, 48, 'Klassisch', () => variante(false), { cls: 'lbl-xs' });
+const knModern = knopf(568, 18, 150, 48, 'Modern', () => variante(true), { cls: 'lbl-xs' });
+// Umschalter unter Putz / auf Putz (Wunsch der Lehrkraft 28.11.2026)
+const knUP = knopf(738, 18, 150, 48, 'Unter Putz', () => verlegung(false), { cls: 'lbl-xs' });
+const knAP = knopf(894, 18, 150, 48, 'Auf Putz', () => verlegung(true), { cls: 'lbl-xs' });
 const knLegende = knopf(412, 150, 300, 46, 'ⓘ Zonen erklären', () => { S.legende = !S.legende; syncUI(); }, { cls: 'lbl-xs' });
 gTop.appendChild(knLegende.g);
 // Klickbarer Schalter in Station 11: gestrichelter Rahmen + Hinweis
@@ -1206,7 +1361,7 @@ function zeichnen() {
 }
 /* Leuchte E1 (Station 11) – sitzt 6 cm unter der Decke; leuchtet, wenn Q1 geschlossen ist */
 function leuchte() {
-  const a = Math.max(V.eb.fertig, V.eb.fertigM); if (a < 0.01) return;
+  const a = Math.max(V.eb.fertig, V.eb.fertigM, V.eb.fertigA, V.eb.fertigMA); if (a < 0.01) return;
   const LP = S.modern ? EM : G.E1, n = faceNormale('C'), mitte = welt('C', LP.u, LP.v);
   const ring = (r, tiefe) => kreisPts(LP.u, LP.v, r, 0, 360, 40).map(([u, v]) => proj(add(welt('C', u, v), mul(n, tiefe))));
   ctx.globalAlpha = a;
@@ -1224,7 +1379,7 @@ function leuchte() {
 }
 /* Wippe des Schalters: Stellung zeigt Q1 */
 function wippe() {
-  const a = Math.max(V.eb.fertig, V.eb.fertigM); if (a < 0.01 || !flaechenSichtbar.W) return;
+  const a = Math.max(V.eb.fertig, V.eb.fertigM, V.eb.fertigA, V.eb.fertigMA); if (a < 0.01 || !flaechenSichtbar.W) return;
   const u = G.Q1.u, v = G.Q1.v, oben = S.licht ? 1 : -1;   // gedrückte Seite etwas dunkler
   ctx.globalAlpha = a;
   pfad([[u - 0.024, v], [u + 0.024, v], [u + 0.024, v + 0.024 * oben], [u - 0.024, v + 0.024 * oben]].map((q) => P2('W', q[0], q[1])));
@@ -1238,7 +1393,7 @@ function schalterMarke() {
   const feld = ebn.fertig ? (S.modern ? [G.Q1.u - 0.06, G.Q1.v - 0.06, G.Q1.u + 0.06, G.Q1.v + 0.06] : [G.Q1.u - 0.06, G.Q1.v - 0.135, G.Q1.u + 0.06, G.Q1.v + 0.06])
     : ebn.ues ? [0.96, CFG.symLage.Q1 - 0.07, 1.22, CFG.symLage.Q1 + 0.19]
     : ebn.slp ? (S.modern ? [0.93, 1.06, 1.10, 1.28] : [1.14, 1.04, 1.34, 1.30]) : null;
-  const an = SCHALTBAR.includes(S.station) && feld && flaechenSichtbar.W && Math.max(V.eb.fertig, V.eb.ues, V.eb.slp, V.eb.fertigM, V.eb.uesM, V.eb.slpM) > 0.5;
+  const an = SCHALTBAR.includes(S.station) && feld && flaechenSichtbar.W && Math.max(V.eb.fertig, V.eb.ues, V.eb.slp, V.eb.fertigM, V.eb.uesM, V.eb.slpM, V.eb.fertigA, V.eb.fertigMA) > 0.5;
   show(schalterRahmen, false); show(schalterHinweis, an);   // ohne gestrichelten Rahmen – der Hinweis steht daneben (Wunsch der Lehrkraft 27.11.2026)
   schalterBox = null;
   if (!an) return;
@@ -1300,7 +1455,11 @@ function syncUI() {
   const schaltbar = SCHALTBAR.includes(S.station);
   knLicht.g.classList.toggle('aus', !schaltbar); knLicht.g.classList.toggle('an', S.licht && schaltbar);
   knLicht.t.textContent = S.licht ? 'Q1 aus' : 'Q1 ein';
-  untertitel.textContent = `${S.station} · ${st.kurz}`;
+  untertitel.textContent = `${S.station} · ${kurzName(S.station)}`;
+  stKn[9].t.textContent = `10  ${kurzName(10)}`; $('#sel-station').options[9].textContent = `10 ${kurzName(10)}`;
+  knUP.g.classList.toggle('an', !S.aufputz); knAP.g.classList.toggle('an', S.aufputz);
+  document.querySelectorAll('#seg-verl button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.v === '1') === S.aufputz)));
+  const chR = $('#chk-roentgen'); chR.disabled = S.aufputz; chR.parentElement.style.opacity = S.aufputz ? 0.45 : '';
   const zonenDa = (STATIONEN[S.station - 1].ebenen.zonen || 0) > 0.5 || S.zonen;
   show(gLeg, zonenDa && S.legende); show(knLegende.g, zonenDa);
   knLegende.t.textContent = S.legende ? '✕ Erklärung ausblenden' : 'ⓘ Zonen erklären';
@@ -1309,7 +1468,8 @@ function syncUI() {
   // Stationstext unter den Knöpfen
   gText.innerHTML = '';
   const y0 = yB + 214;
-  umbrechen(S.modern && st.textM ? st.textM : st.text, 22, 368).forEach((z, i) => txt(22, y0 + i * 29, z, { class: 'lbl-xs sans' }, gText));
+  const tAP = S.aufputz ? (S.modern ? st.textMA || st.textA : st.textA) : null;
+  umbrechen((tAP || (S.modern && st.textM ? st.textM : st.text)).replace('{n}', String(AP_N[S.modern ? 'modern' : 'klassisch'])), 22, 368).forEach((z, i) => txt(22, y0 + i * 29, z, { class: 'lbl-xs sans' }, gText));
   // Leiste
   $('#sel-station').value = String(S.station);
   $('#btn-zurueck').disabled = S.station === 1; $('#btn-weiter').disabled = S.station === STATIONEN.length;
@@ -1331,8 +1491,16 @@ function ziel() {
   for (const [e, v] of Object.entries(st.ebenen)) eb[S.modern && MOD[e] ? MOD[e] : e] = v;
   eb.masse = S.masse ? 1 : 0;   // Kästchen „Maße“ steuert die Ebene allein (Station setzt nur den Anfangswert)
   if (S.zonen) eb.zonen = 1;
-  eb[S.modern ? 'roentgenM' : 'roentgen'] = S.roentgen && S.station === 11 ? 0.8 : 0;
-  const mat = {}; MATS.forEach((m) => { mat[m] = st.mat === m ? 1 : 0; });
+  eb[S.modern ? 'roentgenM' : 'roentgen'] = S.roentgen && !S.aufputz && S.station === 11 ? 0.8 : 0;   // auf Putz: Leitungen sichtbar
+  const M = S.modern ? 'M' : '';
+  eb[`vl_plan_${S.aufputz ? 'A' : 'U'}${M}`] = M ? eb.planLtgM || 0 : eb.planLtg || 0;
+  eb[`vl_wand_${S.aufputz ? 'A' : 'U'}${M}`] = M ? eb.uesM || 0 : eb.ues || 0;
+  if (S.aufputz) for (const [a, b] of [['roh', 'rohA'], ['fertig', 'fertigA'], ['rohM', 'rohMA'], ['fertigM', 'fertigMA']]) {
+    if (!eb[a]) continue;
+    eb[b] = eb[a]; eb[a] = 0; eb['apKabel' + M] = Math.max(eb['apKabel' + M] || 0, eb[b]);
+  }
+  const matSt = S.aufputz && S.station === 10 ? 'fertig' : st.mat;   // auf Putz: Leitungen auf der fertigen Wand
+  const mat = {}; MATS.forEach((m) => { mat[m] = matSt === m ? 1 : 0; });
   return { psi: c.psi + S.dpsi, phi: clamp(c.phi + S.dphi, 0, 89.4), dist: c.dist, scale: c.scale, tgt: c.tgt, falt: S.falt ? 1 : 0, eb, mat, hell: S.licht && S.station === 11 ? 1 : 0, zoom: S.zoom, px: S.pan[0], py: S.pan[1] };
 }
 function schritt(dt, sofort = false) {
@@ -1410,6 +1578,7 @@ function ansichtStation() {
   if (S.modern && S.falt) { S.zoom = 1.07; S.pan = [233, 263]; }   // modern: Türwand mit Decke, Fensterwand, rechte Wand füllen das Bild
 }
 function variante(modern) { S.modern = !!modern; ansichtStation(); starte(); }
+function verlegung(auf) { S.aufputz = !!auf; starte(); }
 function falten(an) { S.falt = !!an; S.dpsi = 0; S.dphi = 0; ansichtStation(); starte(); }
 function zoomen(f, m = [CFG.mitte[0], CFG.mitte[1]]) {   // um den Punkt m (Bühnenpixel) zoomen
   const z0 = S.zoom, z1 = clamp(z0 * f, 0.5, 4), c = CFG.mitte;
@@ -1426,6 +1595,7 @@ $('#btn-reset').addEventListener('click', () => { S.masse = false; S.roentgen = 
 $('#btn-licht').addEventListener('click', lichtUm);
 document.querySelectorAll('#seg-fold button').forEach((b) => b.addEventListener('click', () => falten(b.dataset.v === '1')));
 document.querySelectorAll('#seg-inst button').forEach((b) => b.addEventListener('click', () => variante(b.dataset.v === '1')));
+document.querySelectorAll('#seg-verl button').forEach((b) => b.addEventListener('click', () => verlegung(b.dataset.v === '1')));
 $('#btn-dreh-l').addEventListener('click', () => { S.dpsi -= 20; starte(); });
 $('#btn-dreh-r').addEventListener('click', () => { S.dpsi += 20; starte(); });
 $('#btn-dreh-0').addEventListener('click', () => { S.dpsi = 0; S.dphi = 0; ansichtStation(); starte(); });
@@ -1491,6 +1661,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'Home') { e.preventDefault(); gehe(1); }
   else if (e.key === 'a' || e.key === 'A') falten(!S.falt);
   else if (e.key === 'm' || e.key === 'M') variante(!S.modern);
+  else if (e.key === 'p' || e.key === 'P') verlegung(!S.aufputz);
   else if (e.key === '+') zoomen(1.25);
   else if (e.key === '-') zoomen(0.8);
   else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
@@ -1518,7 +1689,7 @@ window.anim = {
   },
   pause(an = true) { angehalten = !!an; if (!an) starte(); },
   vollbild(an = true) { setVollbild(!!an); return document.documentElement.classList.contains('vollbild'); },
-  get state() { const { station, falt, licht, masse, roentgen, qr } = S; return { station, falt, modern: S.modern, licht: licht && SCHALTBAR.includes(station), masse, roentgen, qr, name: STATIONEN[station - 1].kurz }; },
+  get state() { const { station, falt, licht, masse, roentgen, qr } = S; return { station, falt, modern: S.modern, aufputz: S.aufputz, licht: licht && SCHALTBAR.includes(station), masse, roentgen, qr, name: STATIONEN[station - 1].kurz }; },
 };
 
 /* ================= 10 Start =================
@@ -1527,7 +1698,7 @@ S.station = clamp(readStart(), 1, STATIONEN.length);
 S.falt = params.has('falt') ? params.get('falt') !== '0' : !!STATIONEN[S.station - 1].falt;
 S.masse = !!STATIONEN[S.station - 1].ebenen.masse;
 ansichtStation();
-for (const key of ['masse', 'roentgen', 'zonen', 'modern']) if (params.has(key)) S[key] = params.get(key) !== '0';
+for (const key of ['masse', 'roentgen', 'zonen', 'modern', 'aufputz']) if (params.has(key)) S[key] = params.get(key) !== '0';
 if (params.has('licht')) S.licht = params.get('licht') !== '0' && SCHALTBAR.includes(S.station);
 if (params.has('dreh')) S.dpsi = Number(params.get('dreh')) || 0;
 if (params.has('kipp')) S.dphi = Number(params.get('kipp')) || 0;
